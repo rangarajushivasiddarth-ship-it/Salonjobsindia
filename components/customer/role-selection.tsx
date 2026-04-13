@@ -59,7 +59,7 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
               src="/images/fitonze-logo.png"
               alt="Fitonze"
               fill
-              className="object-contain"
+              className="object-contain mix-blend-lighten"
             />
           </div>
         </div>

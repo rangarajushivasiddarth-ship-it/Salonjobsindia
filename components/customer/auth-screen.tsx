@@ -88,7 +88,7 @@ export function AuthScreen({ onSubmit, onBack }: AuthScreenProps) {
               src="/images/fitonze-logo.png"
               alt="Fitonze"
               fill
-              className="object-contain"
+              className="object-contain mix-blend-lighten"
             />
           </div>
         </div>
