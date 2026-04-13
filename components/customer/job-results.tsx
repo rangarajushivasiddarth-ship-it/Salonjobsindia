@@ -232,7 +232,7 @@ export function JobResults() {
                 <ChevronRight className="w-5 h-5 rotate-90" />
               </button>
               <div className="absolute -bottom-8 left-6">
-                <div className="w-16 h-16 rounded-xl bg-card glass flex items-center justify-center neon-glow">
+                <div className="w-16 h-16 rounded-xl bg-card glass flex items-center justify-center gold-glow">
                   <Building2 className="w-8 h-8 text-primary" />
                 </div>
               </div>
@@ -308,7 +308,7 @@ export function JobResults() {
                     setSelectedJob(null)
                   }}
                   disabled={isJobApplied(selectedJob.id)}
-                  className="flex-1 h-14 bg-primary hover:bg-primary/90 neon-glow"
+                  className="flex-1 h-14 bg-primary hover:bg-primary/90 gold-glow"
                 >
                   {isJobApplied(selectedJob.id) ? 'Applied' : 'Apply Now'}
                 </Button>

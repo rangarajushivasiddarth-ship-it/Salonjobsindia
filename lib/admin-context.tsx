@@ -77,7 +77,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     await new Promise(resolve => setTimeout(resolve, 1000))
     
     // Simple validation (in production, this would be a real auth check)
-    if (email === 'admin@salonjobs.com' && password === 'admin123') {
+    if (email === 'admin@fitonze.com' && password === 'admin123') {
       setState(prev => ({
         ...prev,
         isAuthenticated: true,

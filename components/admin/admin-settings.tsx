@@ -193,7 +193,7 @@ export function AdminSettings() {
           <Button
             onClick={handleSave}
             disabled={isSaving}
-            className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 neon-glow"
+            className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 gold-glow"
           >
             {isSaving ? (
               <div className="w-6 h-6 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />

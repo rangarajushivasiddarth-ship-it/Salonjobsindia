@@ -69,7 +69,7 @@ export function SubscriptionScreen() {
         <div className="absolute top-1/4 right-0 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse-glow" />
         
         <div className="relative z-10 text-center animate-scale-in">
-          <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-6 neon-glow">
+          <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-6 gold-glow">
             <Check className="w-12 h-12 text-primary" />
           </div>
           <h1 className="text-2xl font-bold mb-3">Payment Submitted!</h1>
@@ -218,7 +218,7 @@ export function SubscriptionScreen() {
           <Button
             onClick={handleSubmit}
             disabled={!uploadedFile || isSubmitting}
-            className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground neon-glow transition-all duration-300 hover:scale-[1.02] disabled:opacity-50"
+            className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gold-glow transition-all duration-300 hover:scale-[1.02] disabled:opacity-50"
           >
             {isSubmitting ? (
               <div className="w-6 h-6 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />

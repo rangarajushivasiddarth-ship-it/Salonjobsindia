@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Shield, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAdmin } from '@/lib/admin-context'
@@ -28,7 +29,7 @@ export function AdminLogin() {
     setIsLoading(false)
     
     if (!success) {
-      setError('Invalid credentials. Try admin@salonjobs.com / admin123')
+      setError('Invalid credentials. Try admin@fitonze.com / admin123')
     }
   }
 
@@ -43,11 +44,16 @@ export function AdminLogin() {
       <div className="relative z-10 w-full max-w-md px-6">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8 animate-scale-in">
-          <div className="w-20 h-20 rounded-2xl glass neon-glow flex items-center justify-center mb-4">
-            <Shield className="w-10 h-10 text-primary" />
+          <div className="relative w-56 h-24 mb-4">
+            <Image
+              src="/images/fitonze-logo.png"
+              alt="Fitonze"
+              fill
+              className="object-contain"
+            />
           </div>
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground">SalonJobs Management</p>
+          <p className="text-muted-foreground">Fitonze<sup className="text-[8px]">&reg;</sup> Management</p>
         </div>
         
         {/* Login Form */}
@@ -95,7 +101,7 @@ export function AdminLogin() {
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground neon-glow"
+            className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gold-glow"
           >
             {isLoading ? (
               <div className="w-6 h-6 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
@@ -108,7 +114,7 @@ export function AdminLogin() {
         {/* Demo Credentials */}
         <div className="mt-6 p-4 glass-card rounded-xl text-center animate-slide-up" style={{ animationDelay: '200ms' }}>
           <p className="text-sm text-muted-foreground mb-2">Demo credentials:</p>
-          <p className="text-xs font-mono text-primary">admin@salonjobs.com / admin123</p>
+          <p className="text-xs font-mono text-primary">admin@fitonze.com / admin123</p>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Scissors } from 'lucide-react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 
 interface SplashScreenProps {
@@ -10,98 +10,143 @@ interface SplashScreenProps {
 }
 
 export function SplashScreen({ onFindJob, onCreateAlert }: SplashScreenProps) {
-  const [showLogo, setShowLogo] = useState(false)
-  const [showContent, setShowContent] = useState(false)
+  const [phase, setPhase] = useState<'logo-pop' | 'logo-settle' | 'content'>('logo-pop')
 
   useEffect(() => {
-    const logoTimer = setTimeout(() => setShowLogo(true), 100)
-    const contentTimer = setTimeout(() => setShowContent(true), 800)
+    // Phase 1: Logo pops in (1.2s animation)
+    const settleTimer = setTimeout(() => {
+      setPhase('logo-settle')
+    }, 1500)
+
+    // Phase 2: Logo settles to background, content appears
+    const contentTimer = setTimeout(() => {
+      setPhase('content')
+    }, 2500)
+
     return () => {
-      clearTimeout(logoTimer)
+      clearTimeout(settleTimer)
       clearTimeout(contentTimer)
     }
   }, [])
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/20" />
+    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background">
+      {/* Background gradient with gold/black tones */}
+      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/30" />
       
       {/* Animated background orbs */}
-      <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-pulse-glow" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: '1s' }} />
-      
-      {/* Content */}
-      <div className="relative z-10 flex flex-col items-center px-6 text-center">
-        {/* Logo */}
+      <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl animate-pulse-glow" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: '1s' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/3 rounded-full blur-[100px]" />
+
+      {/* Settled Logo Background (visible after settle phase) */}
+      {phase === 'content' && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="relative w-[500px] h-[200px] opacity-[0.06]">
+            <Image
+              src="/images/fitonze-logo.png"
+              alt=""
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Main Logo - Pop In Animation */}
+      {(phase === 'logo-pop' || phase === 'logo-settle') && (
         <div 
-          className={`mb-8 transition-all duration-1000 ${
-            showLogo ? 'animate-logo-pop' : 'opacity-0 scale-0'
+          className={`absolute z-20 flex items-center justify-center transition-all duration-1000 ${
+            phase === 'logo-pop' 
+              ? 'animate-logo-pop-in' 
+              : 'animate-logo-settle'
           }`}
         >
           <div className="relative">
-            <div className="w-28 h-28 rounded-3xl glass neon-glow flex items-center justify-center">
-              <Scissors className="w-14 h-14 text-primary" />
+            {/* Glow effect behind logo */}
+            <div className="absolute -inset-8 bg-primary/20 rounded-full blur-3xl animate-glow-pulse" />
+            
+            <div className="relative w-[320px] h-[130px] md:w-[400px] md:h-[160px]">
+              <Image
+                src="/images/fitonze-logo.png"
+                alt="Fitonze"
+                fill
+                className="object-contain drop-shadow-2xl"
+                priority
+              />
             </div>
-            <div className="absolute -inset-1 bg-primary/20 rounded-3xl blur-xl -z-10 animate-pulse-glow" />
           </div>
         </div>
+      )}
 
-        {/* Brand name */}
-        <h1 
-          className={`text-4xl md:text-5xl font-bold mb-3 transition-all duration-700 ${
-            showLogo ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-          style={{ transitionDelay: '300ms' }}
-        >
-          <span className="text-foreground">Salon</span>
-          <span className="text-primary neon-text">Jobs</span>
-        </h1>
-
-        {/* Tagline */}
-        <p 
-          className={`text-muted-foreground text-lg md:text-xl mb-12 max-w-md transition-all duration-700 ${
-            showLogo ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-          style={{ transitionDelay: '500ms' }}
-        >
-          Find your perfect salon career within your neighborhood
-        </p>
-
-        {/* CTA Buttons */}
-        <div 
-          className={`flex flex-col gap-4 w-full max-w-xs transition-all duration-700 ${
-            showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-          }`}
-        >
-          <Button
-            onClick={onFindJob}
-            size="lg"
-            className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground neon-glow transition-all duration-300 hover:scale-[1.02]"
+      {/* Content - Fades in after logo settles */}
+      {phase === 'content' && (
+        <div className="relative z-10 flex flex-col items-center px-6 text-center">
+          {/* Small logo with trademark */}
+          <div 
+            className="mb-6 animate-content-fade-in"
+            style={{ animationDelay: '0ms' }}
           >
-            Find a Job
-          </Button>
-          
-          <Button
-            onClick={onCreateAlert}
-            variant="outline"
-            size="lg"
-            className="w-full h-14 text-lg font-semibold border-primary/50 text-primary hover:bg-primary/10 transition-all duration-300 hover:scale-[1.02]"
+            <div className="relative w-[240px] h-[100px] md:w-[300px] md:h-[120px]">
+              <Image
+                src="/images/fitonze-logo.png"
+                alt="Fitonze"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
+
+          {/* Tagline */}
+          <p 
+            className="text-muted-foreground text-lg md:text-xl mb-10 max-w-md animate-content-fade-in"
+            style={{ animationDelay: '150ms' }}
           >
-            Create Job Alert
-          </Button>
+            Find your perfect salon career within your neighborhood
+          </p>
+
+          {/* CTA Buttons */}
+          <div 
+            className="flex flex-col gap-4 w-full max-w-xs animate-content-fade-in"
+            style={{ animationDelay: '300ms' }}
+          >
+            <Button
+              onClick={onFindJob}
+              size="lg"
+              className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gold-glow transition-all duration-300 hover:scale-[1.02]"
+            >
+              Find a Job
+            </Button>
+            
+            <Button
+              onClick={onCreateAlert}
+              variant="outline"
+              size="lg"
+              className="w-full h-14 text-lg font-semibold border-primary/50 text-primary hover:bg-primary/10 transition-all duration-300 hover:scale-[1.02]"
+            >
+              Create Job Alert
+            </Button>
+          </div>
+
+          {/* Footer text */}
+          <p 
+            className="mt-10 text-sm text-muted-foreground animate-content-fade-in"
+            style={{ animationDelay: '450ms' }}
+          >
+            Discover salons within 20km of your location
+          </p>
+
+          {/* Trademark notice */}
+          <p 
+            className="mt-4 text-xs text-muted-foreground/60 animate-content-fade-in"
+            style={{ animationDelay: '500ms' }}
+          >
+            Fitonze<sup className="text-[8px]">&reg;</sup> is a registered trademark
+          </p>
         </div>
-
-        {/* Footer text */}
-        <p 
-          className={`mt-12 text-sm text-muted-foreground transition-all duration-700 ${
-            showContent ? 'opacity-100' : 'opacity-0'
-          }`}
-          style={{ transitionDelay: '200ms' }}
-        >
-          Discover salons within 20km of your location
-        </p>
-      </div>
+      )}
     </div>
   )
 }

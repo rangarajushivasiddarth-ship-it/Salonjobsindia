@@ -1,6 +1,7 @@
 'use client'
 
-import { LayoutDashboard, CreditCard, Users, Briefcase, Settings, LogOut, Scissors, Menu, X } from 'lucide-react'
+import { LayoutDashboard, CreditCard, Users, Briefcase, Settings, LogOut, Menu, X } from 'lucide-react'
+import Image from 'next/image'
 import { useState } from 'react'
 import { useAdmin } from '@/lib/admin-context'
 
@@ -19,16 +20,16 @@ export function AdminSidebar() {
   const SidebarContent = () => (
     <>
       {/* Logo */}
-      <div className="p-6 border-b border-border/50">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-            <Scissors className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="font-bold text-lg">SalonJobs</h1>
-            <p className="text-xs text-muted-foreground">Admin Panel</p>
-          </div>
+      <div className="p-4 border-b border-border/50">
+        <div className="relative w-36 h-14 mx-auto">
+          <Image
+            src="/images/fitonze-logo.png"
+            alt="Fitonze"
+            fill
+            className="object-contain"
+          />
         </div>
+        <p className="text-xs text-muted-foreground text-center mt-2">Admin Panel</p>
       </div>
       
       {/* Menu */}
@@ -82,11 +83,13 @@ export function AdminSidebar() {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 p-4 glass">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-              <Scissors className="w-5 h-5 text-primary" />
-            </div>
-            <span className="font-bold">SalonJobs Admin</span>
+          <div className="relative w-28 h-10">
+            <Image
+              src="/images/fitonze-logo.png"
+              alt="Fitonze"
+              fill
+              className="object-contain"
+            />
           </div>
           <button
             onClick={() => setIsMobileOpen(!isMobileOpen)}

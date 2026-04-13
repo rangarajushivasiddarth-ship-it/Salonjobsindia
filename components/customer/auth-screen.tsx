@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Scissors, Mail, Lock, Phone, Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import { Mail, Lock, Phone, Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -82,8 +83,13 @@ export function AuthScreen({ onSubmit, onBack }: AuthScreenProps) {
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 pb-8">
         {/* Logo */}
         <div className="mb-8 animate-scale-in">
-          <div className="w-20 h-20 rounded-2xl glass neon-glow flex items-center justify-center">
-            <Scissors className="w-10 h-10 text-primary" />
+          <div className="relative w-48 h-20">
+            <Image
+              src="/images/fitonze-logo.png"
+              alt="Fitonze"
+              fill
+              className="object-contain"
+            />
           </div>
         </div>
         
@@ -174,7 +180,7 @@ export function AuthScreen({ onSubmit, onBack }: AuthScreenProps) {
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground neon-glow transition-all duration-300 hover:scale-[1.02] animate-slide-up"
+            className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gold-glow transition-all duration-300 hover:scale-[1.02] animate-slide-up"
             style={{ animationDelay: '350ms' }}
           >
             {isLoading ? (

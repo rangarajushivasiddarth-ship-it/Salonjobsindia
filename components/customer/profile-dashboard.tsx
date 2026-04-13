@@ -80,7 +80,7 @@ export function ProfileDashboard() {
           ) : (
             <Button
               onClick={() => goToStep('subscription')}
-              className="w-full h-12 bg-primary hover:bg-primary/90 neon-glow"
+              className="w-full h-12 bg-primary hover:bg-primary/90 gold-glow"
             >
               <Crown className="w-5 h-5 mr-2" />
               Upgrade to Premium

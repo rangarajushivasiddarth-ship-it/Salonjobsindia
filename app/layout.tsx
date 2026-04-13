@@ -9,7 +9,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'SalonJobs - Find Your Perfect Salon Career',
+  title: 'Fitonze\u00AE - Find Your Perfect Salon Career',
   description: 'Hyper-local salon job marketplace connecting job seekers with salon owners. Discover opportunities within 20km of your location.',
   generator: 'v0.app',
   icons: {
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0a0a14',
+  themeColor: '#141210',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,

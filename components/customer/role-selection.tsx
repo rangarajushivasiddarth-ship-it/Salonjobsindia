@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Scissors, Building2, ArrowLeft, ArrowRight, Briefcase, Users } from 'lucide-react'
+import { Building2, ArrowLeft, ArrowRight, Briefcase } from 'lucide-react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import type { UserRole } from '@/lib/types'
 
@@ -53,8 +54,13 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
       <div className="relative z-10 flex-1 flex flex-col px-6 pb-8">
         {/* Logo */}
         <div className="flex items-center justify-center mb-6 animate-scale-in">
-          <div className="w-16 h-16 rounded-xl glass flex items-center justify-center">
-            <Users className="w-8 h-8 text-primary" />
+          <div className="relative w-40 h-16">
+            <Image
+              src="/images/fitonze-logo.png"
+              alt="Fitonze"
+              fill
+              className="object-contain"
+            />
           </div>
         </div>
         
@@ -64,7 +70,7 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
             Choose Your Role
           </h1>
           <p className="text-muted-foreground animate-slide-up" style={{ animationDelay: '100ms' }}>
-            Select how you want to use SalonJobs
+            Select how you want to use Fitonze
           </p>
         </div>
         
@@ -76,7 +82,7 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
               onClick={() => setSelectedRole(role.id)}
               className={`relative p-6 rounded-2xl text-left transition-all duration-300 animate-slide-up ${
                 selectedRole === role.id
-                  ? 'glass-card neon-glow scale-[1.02]'
+                  ? 'glass-card gold-glow scale-[1.02]'
                   : 'glass-card hover:scale-[1.01] opacity-80 hover:opacity-100'
               }`}
               style={{ animationDelay: `${150 + index * 100}ms` }}
@@ -127,7 +133,7 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
           <Button
             onClick={() => selectedRole && onSelect(selectedRole)}
             disabled={!selectedRole}
-            className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground neon-glow transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gold-glow transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             Continue
             <ArrowRight className="w-5 h-5 ml-2" />

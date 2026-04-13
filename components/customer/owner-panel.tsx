@@ -147,7 +147,7 @@ export function OwnerPanel() {
             {/* Add Job Button */}
             <Button
               onClick={() => goToStep('create-job')}
-              className="w-full h-14 bg-primary hover:bg-primary/90 neon-glow"
+              className="w-full h-14 bg-primary hover:bg-primary/90 gold-glow"
             >
               <Plus className="w-5 h-5 mr-2" />
               Post New Job
