@@ -245,16 +245,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setSubscription = useCallback((subscription: Subscription) => {
     const isApproved = subscription.status === 'approved'
-    setState(prev => ({
-      ...prev,
-      subscription,
-      user: prev.user ? { 
+    setState(prev => {
+      // Only update user subscription status if approved
+      const updatedUser = prev.user ? { 
         ...prev.user, 
-        isSubscribed: isApproved,
-        subscriptionExpiry: subscription.expiresAt 
-      } : null,
-      currentStep: isApproved ? 'results' : prev.currentStep,
-    }))
+        isSubscribed: isApproved, // ONLY true if approved
+        subscriptionExpiry: isApproved ? subscription.expiresAt : undefined
+      } : null
+      
+      // Save updated user to storage
+      if (updatedUser) {
+        localStorage.setItem(USER_KEY, JSON.stringify(updatedUser))
+      }
+      
+      return {
+        ...prev,
+        subscription,
+        user: updatedUser,
+        // ONLY navigate to results if approved
+        currentStep: isApproved ? 'results' : prev.currentStep,
+      }
+    })
   }, [])
 
   const saveJob = useCallback((job: Job) => {

@@ -65,12 +65,28 @@ export interface Salon {
   jobs: Job[]
 }
 
+// Subscription Plan Types
+export type JobSeekerPlanType = 'basic' | 'standard' | 'unlimited'
+
+export interface JobSeekerPlan {
+  id: JobSeekerPlanType
+  name: string
+  shopLimit: number | 'unlimited'
+  price: number
+  description: string
+}
+
 // Subscription Types
 export interface Subscription {
   id: string
   userId: string
+  userPhone?: string
+  userName?: string
   screenshotUrl: string
   status: 'pending' | 'approved' | 'rejected'
+  planType?: JobSeekerPlanType
+  shopLimit?: number | 'unlimited'
+  shopsViewed?: number
   createdAt: Date
   approvedAt?: Date
   expiresAt?: Date

@@ -1,7 +1,16 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import type { AdminStats, Subscription, User, Job, AppSettings } from './types'
+import { 
+  getPendingSubscriptions, 
+  approveSubscription as approveSubInStore, 
+  rejectSubscription as rejectSubInStore,
+  getAllJobs,
+  deleteJob as deleteJobInStore,
+  getAllUsersForAdmin,
+  JOB_SEEKER_PLANS
+} from './data-store'
 
 interface AdminState {
   isAuthenticated: boolean
@@ -22,42 +31,22 @@ interface AdminContextType extends AdminState {
   toggleUserBlock: (userId: string) => void
   deleteJob: (jobId: string) => void
   updateSettings: (settings: Partial<AppSettings>) => void
+  refreshData: () => void
 }
 
 const defaultStats: AdminStats = {
-  totalUsers: 1247,
-  activeSubscriptions: 342,
-  totalJobs: 89,
-  pendingApprovals: 12,
+  totalUsers: 0,
+  activeSubscriptions: 0,
+  totalJobs: 0,
+  pendingApprovals: 0,
 }
 
 const defaultSettings: AppSettings = {
-  qrCodeUrl: '/qr-code.png',
+  qrCodeUrl: '/images/payment-qr.png',
   radiusKm: 20,
   paymentInstructions: 'Scan the QR code and complete payment. Upload screenshot for verification.',
   subscriptionDurationDays: 30,
 }
-
-// Mock data
-const mockPendingPayments: Subscription[] = [
-  { id: 'p1', userId: 'u1', screenshotUrl: '/mock-screenshot-1.jpg', status: 'pending', createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000) },
-  { id: 'p2', userId: 'u2', screenshotUrl: '/mock-screenshot-2.jpg', status: 'pending', createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000) },
-  { id: 'p3', userId: 'u3', screenshotUrl: '/mock-screenshot-3.jpg', status: 'pending', createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000) },
-]
-
-const mockUsers: User[] = [
-  { id: 'u1', email: 'priya@example.com', phone: '9876543210', role: 'job_seeker', isSubscribed: true, createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
-  { id: 'u2', email: 'rahul@example.com', phone: '9876543211', role: 'job_seeker', isSubscribed: false, createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000) },
-  { id: 'u3', email: 'glamour@salon.com', phone: '9876543212', role: 'salon_owner', isSubscribed: true, createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000) },
-  { id: 'u4', email: 'style@haven.com', phone: '9876543213', role: 'salon_owner', isSubscribed: true, createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000) },
-  { id: 'u5', email: 'anita@example.com', phone: '9876543214', role: 'job_seeker', isSubscribed: false, createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
-]
-
-const mockJobs: Job[] = [
-  { id: 'j1', salonId: 's1', salonName: 'Glamour Studio', role: 'Hair Stylist', salary: '₹25,000 - ₹35,000', experience: '2-5 years', location: { lat: 19.076, lng: 72.877, address: 'Bandra West', area: 'Bandra' }, contact: '+91 98765 43210', createdAt: new Date(), isActive: true },
-  { id: 'j2', salonId: 's2', salonName: 'Style Haven', role: 'Makeup Artist', salary: '₹20,000 - ₹30,000', experience: '1-3 years', location: { lat: 19.089, lng: 72.865, address: 'Andheri West', area: 'Andheri' }, contact: '+91 98765 43211', createdAt: new Date(), isActive: true },
-  { id: 'j3', salonId: 's3', salonName: 'Beauty Bliss', role: 'Nail Technician', salary: '₹15,000 - ₹22,000', experience: 'Fresher', location: { lat: 19.054, lng: 72.840, address: 'Juhu', area: 'Juhu' }, contact: '+91 98765 43212', createdAt: new Date(), isActive: false },
-]
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined)
 
@@ -66,11 +55,50 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     isAuthenticated: false,
     currentView: 'login',
     stats: defaultStats,
-    pendingPayments: mockPendingPayments,
-    users: mockUsers,
-    jobs: mockJobs,
+    pendingPayments: [],
+    users: [],
+    jobs: [],
     settings: defaultSettings,
   })
+
+  // Load data from shared store
+  const loadData = useCallback(() => {
+    const pendingPayments = getPendingSubscriptions()
+    const jobs = getAllJobs()
+    const users = getAllUsersForAdmin()
+    
+    setState(prev => ({
+      ...prev,
+      pendingPayments,
+      jobs,
+      users,
+      stats: {
+        totalUsers: users.length,
+        activeSubscriptions: users.filter(u => u.isSubscribed).length,
+        totalJobs: jobs.length,
+        pendingApprovals: pendingPayments.length,
+      },
+    }))
+  }, [])
+
+  // Initial data load and polling for real-time updates
+  useEffect(() => {
+    if (state.isAuthenticated) {
+      loadData()
+      
+      // Poll for updates every 5 seconds
+      const interval = setInterval(loadData, 5000)
+      
+      // Also listen for custom events
+      const handleDataUpdate = () => loadData()
+      window.addEventListener('fitonze_data_update', handleDataUpdate)
+      
+      return () => {
+        clearInterval(interval)
+        window.removeEventListener('fitonze_data_update', handleDataUpdate)
+      }
+    }
+  }, [state.isAuthenticated, loadData])
 
   const login = useCallback(async (email: string, password: string) => {
     // Simulate API call
@@ -100,43 +128,38 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     setState(prev => ({ ...prev, currentView: view }))
   }, [])
 
+  const refreshData = useCallback(() => {
+    loadData()
+  }, [loadData])
+
   const approvePayment = useCallback((subscriptionId: string) => {
-    // Find the subscription and user to get phone number
+    // Find the subscription to get user phone
     const subscription = state.pendingPayments.find(p => p.id === subscriptionId)
+    
     if (subscription) {
-      const user = state.users.find(u => u.id === subscription.userId)
-      if (user?.phone) {
+      // Approve in data store (this also updates the user's subscription status)
+      const approved = approveSubInStore(subscriptionId)
+      
+      if (approved && subscription.userPhone) {
         // Send WhatsApp notification
-        const phone = user.phone.replace(/\D/g, '')
+        const phone = subscription.userPhone.replace(/\D/g, '')
+        const planName = subscription.planType ? JOB_SEEKER_PLANS.find(p => p.id === subscription.planType)?.name : 'Premium'
         const message = encodeURIComponent(
-          `Congratulations! Your Fitonze subscription has been activated. You now have access to all premium features. Thank you for subscribing!`
+          `Congratulations! Your Fitonze ${planName} subscription has been activated! You now have access to view salon details. Thank you for subscribing!`
         )
         // Open WhatsApp with pre-filled message
         window.open(`https://wa.me/91${phone}?text=${message}`, '_blank')
       }
+      
+      // Refresh data to update UI
+      loadData()
     }
-    
-    setState(prev => ({
-      ...prev,
-      pendingPayments: prev.pendingPayments.filter(p => p.id !== subscriptionId),
-      stats: {
-        ...prev.stats,
-        activeSubscriptions: prev.stats.activeSubscriptions + 1,
-        pendingApprovals: prev.stats.pendingApprovals - 1,
-      },
-    }))
-  }, [state.pendingPayments, state.users])
+  }, [state.pendingPayments, loadData])
 
   const rejectPayment = useCallback((subscriptionId: string) => {
-    setState(prev => ({
-      ...prev,
-      pendingPayments: prev.pendingPayments.filter(p => p.id !== subscriptionId),
-      stats: {
-        ...prev.stats,
-        pendingApprovals: prev.stats.pendingApprovals - 1,
-      },
-    }))
-  }, [])
+    rejectSubInStore(subscriptionId)
+    loadData()
+  }, [loadData])
 
   const toggleUserBlock = useCallback((userId: string) => {
     setState(prev => ({
@@ -148,15 +171,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const deleteJob = useCallback((jobId: string) => {
-    setState(prev => ({
-      ...prev,
-      jobs: prev.jobs.filter(j => j.id !== jobId),
-      stats: {
-        ...prev.stats,
-        totalJobs: prev.stats.totalJobs - 1,
-      },
-    }))
-  }, [])
+    deleteJobInStore(jobId)
+    loadData()
+  }, [loadData])
 
   const updateSettings = useCallback((newSettings: Partial<AppSettings>) => {
     setState(prev => ({
@@ -177,6 +194,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         toggleUserBlock,
         deleteJob,
         updateSettings,
+        refreshData,
       }}
     >
       {children}

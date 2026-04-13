@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, X, Eye, Image, Clock, User, AlertCircle } from 'lucide-react'
+import { Check, X, Eye, Image as ImageIcon, Clock, User, AlertCircle, Crown } from 'lucide-react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { useAdmin } from '@/lib/admin-context'
 import { AdminSidebar } from './admin-sidebar'
+import { JOB_SEEKER_PLANS } from '@/lib/data-store'
 
 export function AdminPayments() {
   const { pendingPayments, users, approvePayment, rejectPayment } = useAdmin()

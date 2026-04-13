@@ -1,19 +1,36 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { ArrowLeft, QrCode, Upload, Check, Clock, Shield, MapPin, Phone, FileText, X, Image as ImageIcon } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { ArrowLeft, QrCode, Upload, Check, Clock, Shield, MapPin, Phone, FileText, X, Image as ImageIcon, Crown, Sparkles } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
-import type { Subscription } from '@/lib/types'
+import { JOB_SEEKER_PLANS, saveSubscription, getSubscriptionByUserId } from '@/lib/data-store'
+import type { Subscription, JobSeekerPlanType } from '@/lib/types'
 
 export function SubscriptionScreen() {
   const { user, setSubscription, goToStep } = useApp()
+  const [selectedPlan, setSelectedPlan] = useState<JobSeekerPlanType>('basic')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [existingPending, setExistingPending] = useState<Subscription | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Check for existing pending subscription
+  useEffect(() => {
+    if (user?.id) {
+      const existing = getSubscriptionByUserId(user.id)
+      if (existing && existing.status === 'pending') {
+        setExistingPending(existing)
+        setIsSubmitted(true)
+      } else if (existing && existing.status === 'approved') {
+        // Already approved, redirect to results
+        goToStep('results')
+      }
+    }
+  }, [user?.id, goToStep])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -25,35 +42,37 @@ export function SubscriptionScreen() {
     }
   }
 
+  const selectedPlanDetails = JOB_SEEKER_PLANS.find(p => p.id === selectedPlan)!
+
   const handleSubmit = async () => {
-    if (!uploadedFile) return
+    if (!uploadedFile || !user) return
     
     setIsSubmitting(true)
     
-    // Simulate API call
+    // Simulate upload delay
     await new Promise(resolve => setTimeout(resolve, 1500))
     
     const subscription: Subscription = {
       id: crypto.randomUUID(),
-      userId: user?.id || '',
+      userId: user.id,
+      userName: user.name || user.email,
+      userPhone: user.phone,
       screenshotUrl: previewUrl || '',
-      status: 'pending',
+      status: 'pending', // IMPORTANT: Status is PENDING until admin approves
+      planType: selectedPlan,
+      shopLimit: selectedPlanDetails.shopLimit,
+      shopsViewed: 0,
       createdAt: new Date(),
     }
     
+    // Save to shared data store (available to admin)
+    saveSubscription(subscription)
+    
+    // Update local state
+    setSubscription(subscription)
+    
     setIsSubmitting(false)
     setIsSubmitted(true)
-    
-    // In production, this would be set after admin approval
-    // For demo, we'll auto-approve after a delay
-    setTimeout(() => {
-      setSubscription({
-        ...subscription,
-        status: 'approved',
-        approvedAt: new Date(),
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-      })
-    }, 2000)
   }
 
   const benefits = [
@@ -63,26 +82,44 @@ export function SubscriptionScreen() {
     { icon: Shield, text: '30 days unlimited access' },
   ]
 
+  // Show pending status screen
   if (isSubmitted) {
     return (
       <div className="relative min-h-screen flex flex-col items-center justify-center p-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/20" />
         <div className="absolute top-1/4 right-0 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse-glow" />
         
-        <div className="relative z-10 text-center animate-scale-in">
-          <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-6 gold-glow">
-            <Check className="w-12 h-12 text-primary" />
+        <div className="relative z-10 text-center animate-scale-in max-w-sm">
+          <div className="w-24 h-24 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-6">
+            <Clock className="w-12 h-12 text-amber-500" />
           </div>
-          <h1 className="text-2xl font-bold mb-3">Payment Submitted!</h1>
-          <p className="text-muted-foreground mb-2">Your payment is being verified</p>
-          <p className="text-sm text-muted-foreground mb-8">
-            You&apos;ll get access once approved by admin
+          <h1 className="text-2xl font-bold mb-3">Payment Under Review</h1>
+          <p className="text-muted-foreground mb-2">Your payment screenshot has been submitted</p>
+          <p className="text-sm text-muted-foreground mb-6">
+            Admin will verify and approve your subscription. You will receive a WhatsApp notification once approved.
           </p>
           
-          <div className="flex items-center justify-center gap-2 text-primary">
-            <Clock className="w-5 h-5 animate-pulse" />
-            <span>Verification in progress...</span>
+          <div className="p-4 glass-card rounded-xl mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-muted-foreground">Plan</span>
+              <span className="font-semibold">{existingPending?.planType ? JOB_SEEKER_PLANS.find(p => p.id === existingPending.planType)?.name : selectedPlanDetails.name}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Status</span>
+              <span className="flex items-center gap-2 text-amber-500">
+                <Clock className="w-4 h-4 animate-pulse" />
+                Pending Approval
+              </span>
+            </div>
           </div>
+          
+          <Button
+            variant="outline"
+            onClick={() => goToStep('discovery')}
+            className="w-full h-12"
+          >
+            Back to Discovery
+          </Button>
         </div>
       </div>
     )
@@ -111,18 +148,61 @@ export function SubscriptionScreen() {
       <div className="relative z-10 flex-1 px-6 pb-8 overflow-y-auto">
         <div className="max-w-md mx-auto">
           {/* Title */}
-          <div className="text-center mb-8 animate-slide-up">
-            <h1 className="text-2xl md:text-3xl font-bold mb-2">Unlock Premium Access</h1>
-            <p className="text-muted-foreground">Get full access to all salon details</p>
+          <div className="text-center mb-6 animate-slide-up">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">Choose Your Plan</h1>
+            <p className="text-muted-foreground">Select a plan to unlock salon details</p>
+          </div>
+          
+          {/* Plan Selection */}
+          <div className="space-y-3 mb-6">
+            {JOB_SEEKER_PLANS.map((plan, index) => (
+              <button
+                key={plan.id}
+                onClick={() => setSelectedPlan(plan.id)}
+                className={`w-full p-4 rounded-xl text-left transition-all duration-300 animate-slide-up ${
+                  selectedPlan === plan.id
+                    ? 'glass-card gold-glow border-2 border-primary'
+                    : 'glass-card border border-border/50 hover:border-primary/30'
+                }`}
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                      selectedPlan === plan.id ? 'bg-primary/20' : 'bg-secondary/50'
+                    }`}>
+                      {plan.id === 'unlimited' ? (
+                        <Crown className={`w-6 h-6 ${selectedPlan === plan.id ? 'text-primary' : 'text-muted-foreground'}`} />
+                      ) : (
+                        <Sparkles className={`w-6 h-6 ${selectedPlan === plan.id ? 'text-primary' : 'text-muted-foreground'}`} />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">{plan.name}</h3>
+                      <p className="text-sm text-muted-foreground">{plan.description}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-primary">₹{plan.price}</p>
+                    <p className="text-xs text-muted-foreground">30 days</p>
+                  </div>
+                </div>
+                {plan.id === 'unlimited' && (
+                  <div className="mt-3 px-3 py-1 bg-primary/10 rounded-full text-primary text-xs font-medium inline-block">
+                    Best Value
+                  </div>
+                )}
+              </button>
+            ))}
           </div>
           
           {/* Benefits */}
-          <div className="grid grid-cols-2 gap-3 mb-8">
+          <div className="grid grid-cols-2 gap-3 mb-6">
             {benefits.map((benefit, index) => (
               <div
                 key={index}
                 className="p-4 glass-card rounded-xl animate-slide-up"
-                style={{ animationDelay: `${index * 100}ms` }}
+                style={{ animationDelay: `${(index + 3) * 100}ms` }}
               >
                 <benefit.icon className="w-6 h-6 text-primary mb-2" />
                 <p className="text-sm text-foreground">{benefit.text}</p>
@@ -154,8 +234,10 @@ export function SubscriptionScreen() {
             </div>
             
             <div className="text-center">
-              <p className="text-2xl font-bold text-primary mb-1">₹99</p>
-              <p className="text-xs text-muted-foreground">One-time payment for 30 days</p>
+              <p className="text-2xl font-bold text-primary">₹{selectedPlanDetails.price}</p>
+              <p className="text-xs text-muted-foreground">
+                {selectedPlanDetails.name} Plan - {typeof selectedPlanDetails.shopLimit === 'number' ? `${selectedPlanDetails.shopLimit} shops` : 'Unlimited shops'}
+              </p>
             </div>
           </div>
           
@@ -207,10 +289,10 @@ export function SubscriptionScreen() {
             )}
             
             <div className="text-xs text-muted-foreground space-y-1">
-              <p>1. Scan the QR code and complete payment</p>
+              <p>1. Scan the QR code and pay ₹{selectedPlanDetails.price}</p>
               <p>2. Take a screenshot of the payment confirmation</p>
               <p>3. Upload the screenshot above</p>
-              <p>4. Wait for admin approval (usually within 1 hour)</p>
+              <p>4. Wait for admin approval (you&apos;ll get WhatsApp notification)</p>
             </div>
           </div>
         </div>
