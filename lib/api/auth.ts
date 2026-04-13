@@ -101,3 +101,62 @@ export const isAuthenticated = (): boolean => {
   if (typeof window === 'undefined') return false;
   return !!localStorage.getItem('fitonze_access_token');
 };
+
+// Email/password login
+export const login = async (email: string, password: string): Promise<{ success: boolean; data?: { user: User; token: string }; error?: string }> => {
+  try {
+    const response = await api.post<{ user: User; accessToken: string; refreshToken: string }>('/auth/login', { email, password }, { auth: false });
+    
+    if (response.accessToken && response.refreshToken) {
+      setTokens(response.accessToken, response.refreshToken);
+    }
+    
+    return { 
+      success: true, 
+      data: { 
+        user: response.user, 
+        token: response.accessToken 
+      } 
+    };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Login failed' };
+  }
+};
+
+// Email/password registration
+export const registerWithEmail = async (data: {
+  name: string;
+  email: string;
+  password: string;
+  phone: string;
+}): Promise<{ success: boolean; data?: { user: User; token: string }; error?: string }> => {
+  try {
+    const response = await api.post<{ user: User; accessToken: string; refreshToken: string }>('/auth/register', data, { auth: false });
+    
+    if (response.accessToken && response.refreshToken) {
+      setTokens(response.accessToken, response.refreshToken);
+    }
+    
+    return { 
+      success: true, 
+      data: { 
+        user: response.user, 
+        token: response.accessToken 
+      } 
+    };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Registration failed' };
+  }
+};
+
+// Grouped export for easy importing
+export const authApi = {
+  sendOTP,
+  verifyOTP,
+  register: registerWithEmail,
+  getCurrentUser,
+  logout,
+  adminLogin,
+  isAuthenticated,
+  login,
+};

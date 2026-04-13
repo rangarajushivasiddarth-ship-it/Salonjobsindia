@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { body, param, validationResult } from 'express-validator';
 import User from '../models/User.js';
+import { Notification } from '../models/Notification.js';
 import { authenticate, requireAdmin } from '../middleware/auth.js';
 import { asyncHandler, ApiError } from '../middleware/errorHandler.js';
 
@@ -313,6 +314,102 @@ router.delete('/certifications/:itemId', authenticate, asyncHandler(async (req: 
     success: true,
     message: 'Certification removed',
     certifications: user.certifications
+  });
+}));
+
+// ============== NOTIFICATIONS ==============
+
+/**
+ * GET /api/users/notifications
+ * Get user's notifications
+ */
+router.get('/notifications', authenticate, asyncHandler(async (req: Request, res: Response) => {
+  const { page = 1, limit = 20 } = req.query;
+  
+  const skip = (Number(page) - 1) * Number(limit);
+  
+  const [notifications, total] = await Promise.all([
+    Notification.find({ userId: req.user!.id })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit)),
+    Notification.countDocuments({ userId: req.user!.id })
+  ]);
+  
+  res.json({
+    success: true,
+    notifications,
+    pagination: {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+      pages: Math.ceil(total / Number(limit))
+    }
+  });
+}));
+
+/**
+ * PUT /api/users/notifications/:id/read
+ * Mark notification as read
+ */
+router.put('/notifications/:id/read', authenticate, [
+  param('id').isMongoId().withMessage('Invalid notification ID')
+], asyncHandler(async (req: Request, res: Response) => {
+  checkValidation(req);
+  
+  const notification = await Notification.findOneAndUpdate(
+    { _id: req.params.id, userId: req.user!.id },
+    { read: true },
+    { new: true }
+  );
+  
+  if (!notification) {
+    throw new ApiError(404, 'Notification not found');
+  }
+  
+  res.json({
+    success: true,
+    notification
+  });
+}));
+
+/**
+ * PUT /api/users/notifications/read-all
+ * Mark all notifications as read
+ */
+router.put('/notifications/read-all', authenticate, asyncHandler(async (req: Request, res: Response) => {
+  await Notification.updateMany(
+    { userId: req.user!.id, read: false },
+    { read: true }
+  );
+  
+  res.json({
+    success: true,
+    message: 'All notifications marked as read'
+  });
+}));
+
+/**
+ * DELETE /api/users/notifications/:id
+ * Delete a notification
+ */
+router.delete('/notifications/:id', authenticate, [
+  param('id').isMongoId().withMessage('Invalid notification ID')
+], asyncHandler(async (req: Request, res: Response) => {
+  checkValidation(req);
+  
+  const notification = await Notification.findOneAndDelete({
+    _id: req.params.id,
+    userId: req.user!.id
+  });
+  
+  if (!notification) {
+    throw new ApiError(404, 'Notification not found');
+  }
+  
+  res.json({
+    success: true,
+    message: 'Notification deleted'
   });
 }));
 

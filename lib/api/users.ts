@@ -143,3 +143,38 @@ export const getAllUsers = async (params: {
 export const toggleUserStatus = async (id: string): Promise<{ success: boolean; message: string; user: UserProfile }> => {
   return api.patch(`/users/${id}/status`, { isActive: true });
 };
+
+// Wrapper for app-context compatibility
+export const getProfileSafe = async (): Promise<{ success: boolean; data?: UserProfile; error?: string }> => {
+  try {
+    const response = await getProfile();
+    return { success: true, data: response.user };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to get profile' };
+  }
+};
+
+export const updateProfileSafe = async (data: Partial<UserProfile>): Promise<{ success: boolean; data?: UserProfile; error?: string }> => {
+  try {
+    const response = await updateProfile(data);
+    return { success: true, data: response.user };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to update profile' };
+  }
+};
+
+// Grouped export for easy importing
+export const usersApi = {
+  getProfile: getProfileSafe,
+  updateProfile: updateProfileSafe,
+  updateLocation,
+  addPortfolioItem,
+  removePortfolioItem,
+  addWorkHistory,
+  removeWorkHistory,
+  addCertification,
+  removeCertification,
+  getPublicProfile,
+  getAllUsers,
+  toggleUserStatus,
+};

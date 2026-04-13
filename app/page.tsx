@@ -13,7 +13,17 @@ import { CreateJob } from '@/components/customer/create-job'
 import { OwnerPanel } from '@/components/customer/owner-panel'
 
 function CustomerApp() {
-  const { currentStep, login, setRole, goToStep } = useApp()
+  const { currentStep, signIn, signUp, setRole, goToStep, isLoading } = useApp()
+
+  // Show loading while checking auth
+  if (isLoading && currentStep === 'splash') {
+    return (
+      <SplashScreen
+        onFindJob={() => {}}
+        onCreateAlert={() => {}}
+      />
+    )
+  }
 
   const renderScreen = () => {
     switch (currentStep) {
@@ -27,7 +37,8 @@ function CustomerApp() {
       case 'auth':
         return (
           <AuthScreen
-            onSubmit={(email, password, phone) => login(email, password, phone)}
+            onSignIn={signIn}
+            onSignUp={signUp}
             onBack={() => goToStep('splash')}
           />
         )

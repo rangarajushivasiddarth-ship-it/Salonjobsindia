@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { ArrowLeft, QrCode, Upload, Check, Clock, Shield, MapPin, Phone, FileText, X, Image } from 'lucide-react'
+import { ArrowLeft, QrCode, Upload, Check, Clock, Shield, MapPin, Phone, FileText, X, Image as ImageIcon } from 'lucide-react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
 import type { Subscription } from '@/lib/types'
@@ -141,12 +142,15 @@ export function SubscriptionScreen() {
               </div>
             </div>
             
-            {/* QR Code Placeholder */}
-            <div className="w-full aspect-square max-w-[200px] mx-auto bg-foreground rounded-xl flex items-center justify-center mb-4">
-              <div className="text-background text-center p-4">
-                <QrCode className="w-16 h-16 mx-auto mb-2 opacity-50" />
-                <p className="text-xs opacity-70">QR Code will appear here</p>
-              </div>
+            {/* QR Code */}
+            <div className="w-full aspect-square max-w-[200px] mx-auto bg-white rounded-xl flex items-center justify-center mb-4 overflow-hidden">
+              <Image
+                src="/images/payment-qr.png"
+                alt="Payment QR Code"
+                width={200}
+                height={200}
+                className="object-contain"
+              />
             </div>
             
             <div className="text-center">
@@ -197,7 +201,7 @@ export function SubscriptionScreen() {
                 onClick={() => fileInputRef.current?.click()}
                 className="w-full h-32 border-2 border-dashed border-border/50 rounded-xl flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors mb-4"
               >
-                <Image className="w-8 h-8 text-muted-foreground" />
+                <ImageIcon className="w-8 h-8 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">Click to upload screenshot</span>
               </button>
             )}

@@ -1,7 +1,11 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import type { User, Resume, Job, Subscription, UserRole } from './types'
+
+// Check if API is available (backend is running)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || ''
+const isApiAvailable = () => !!API_BASE_URL
 
 interface AppState {
   user: User | null
@@ -10,11 +14,13 @@ interface AppState {
   savedJobs: Job[]
   appliedJobs: string[]
   isAuthenticated: boolean
+  isLoading: boolean
   currentStep: 'splash' | 'auth' | 'role' | 'resume' | 'discovery' | 'subscription' | 'results' | 'profile' | 'create-job' | 'owner-panel'
 }
 
 interface AppContextType extends AppState {
-  login: (email: string, password: string, phone: string) => Promise<void>
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  signUp: (name: string, email: string, password: string, phone: string) => Promise<{ success: boolean; error?: string }>
   logout: () => void
   setRole: (role: UserRole) => void
   setResume: (resume: Resume) => void
@@ -24,9 +30,14 @@ interface AppContextType extends AppState {
   applyToJob: (jobId: string) => void
   goToStep: (step: AppState['currentStep']) => void
   updateUser: (updates: Partial<User>) => void
+  refreshUser: () => Promise<void>
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
+
+// Storage keys
+const TOKEN_KEY = 'fitonze_token'
+const USER_KEY = 'fitonze_user'
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>({
@@ -36,28 +47,133 @@ export function AppProvider({ children }: { children: ReactNode }) {
     savedJobs: [],
     appliedJobs: [],
     isAuthenticated: false,
+    isLoading: true,
     currentStep: 'splash',
   })
 
-  const login = useCallback(async (email: string, _password: string, phone: string) => {
-    // Simulated API call - in production, this would call your backend
-    const mockUser: User = {
-      id: crypto.randomUUID(),
-      email,
-      phone,
-      role: 'job_seeker',
-      isSubscribed: false,
-      createdAt: new Date(),
+  // Check for existing session on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const savedUser = localStorage.getItem(USER_KEY)
+        
+        if (savedUser) {
+          try {
+            const user = JSON.parse(savedUser) as User
+            setState(prev => ({
+              ...prev,
+              user,
+              isAuthenticated: true,
+              isLoading: false,
+              currentStep: user.role ? 
+                (user.role === 'job_seeker' ? 'discovery' : 'owner-panel') 
+                : 'role',
+            }))
+            return
+          } catch {
+            // Invalid saved user, clear storage
+            localStorage.removeItem(TOKEN_KEY)
+            localStorage.removeItem(USER_KEY)
+          }
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error)
+      }
+      
+      setState(prev => ({ ...prev, isLoading: false }))
     }
-    setState(prev => ({
-      ...prev,
-      user: mockUser,
-      isAuthenticated: true,
-      currentStep: 'role',
-    }))
+    
+    // Small delay for splash screen
+    setTimeout(checkAuth, 1500)
+  }, [])
+
+  const signIn = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      // Check if user exists in localStorage (registered users)
+      const registeredUsersStr = localStorage.getItem('fitonze_registered_users')
+      const registeredUsers: Record<string, { email: string; password: string; user: User }> = 
+        registeredUsersStr ? JSON.parse(registeredUsersStr) : {}
+      
+      const userRecord = registeredUsers[email.toLowerCase()]
+      
+      if (!userRecord) {
+        return { success: false, error: 'No account found with this email. Please sign up first.' }
+      }
+      
+      if (userRecord.password !== password) {
+        return { success: false, error: 'Invalid password. Please try again.' }
+      }
+      
+      const user = userRecord.user
+      
+      // Save to storage
+      localStorage.setItem(TOKEN_KEY, 'mock-token-' + Date.now())
+      localStorage.setItem(USER_KEY, JSON.stringify(user))
+      
+      setState(prev => ({
+        ...prev,
+        user,
+        isAuthenticated: true,
+        currentStep: user.role ? 
+          (user.role === 'job_seeker' ? 'discovery' : 'owner-panel') 
+          : 'role',
+      }))
+      
+      return { success: true }
+    } catch (error) {
+      console.error('Sign in error:', error)
+      return { success: false, error: 'Failed to sign in. Please try again.' }
+    }
+  }, [])
+
+  const signUp = useCallback(async (name: string, email: string, password: string, phone: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      // Check if email already exists
+      const registeredUsersStr = localStorage.getItem('fitonze_registered_users')
+      const registeredUsers: Record<string, { email: string; password: string; user: User }> = 
+        registeredUsersStr ? JSON.parse(registeredUsersStr) : {}
+      
+      if (registeredUsers[email.toLowerCase()]) {
+        return { success: false, error: 'An account with this email already exists. Please sign in.' }
+      }
+      
+      // Create new user
+      const user: User = {
+        id: crypto.randomUUID(),
+        email,
+        phone,
+        name,
+        role: undefined as unknown as UserRole, // Will be set in role selection
+        isSubscribed: false,
+        createdAt: new Date(),
+      }
+      
+      // Save to registered users
+      registeredUsers[email.toLowerCase()] = { email, password, user }
+      localStorage.setItem('fitonze_registered_users', JSON.stringify(registeredUsers))
+      
+      // Save current session
+      localStorage.setItem(TOKEN_KEY, 'mock-token-' + Date.now())
+      localStorage.setItem(USER_KEY, JSON.stringify(user))
+      
+      setState(prev => ({
+        ...prev,
+        user,
+        isAuthenticated: true,
+        currentStep: 'role',
+      }))
+      
+      return { success: true }
+    } catch (error) {
+      console.error('Sign up error:', error)
+      return { success: false, error: 'Failed to create account. Please try again.' }
+    }
   }, [])
 
   const logout = useCallback(() => {
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(USER_KEY)
+    
     setState({
       user: null,
       resume: null,
@@ -65,16 +181,51 @@ export function AppProvider({ children }: { children: ReactNode }) {
       savedJobs: [],
       appliedJobs: [],
       isAuthenticated: false,
+      isLoading: false,
       currentStep: 'splash',
     })
   }, [])
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const savedUser = localStorage.getItem(USER_KEY)
+      if (savedUser) {
+        const user = JSON.parse(savedUser) as User
+        setState(prev => ({
+          ...prev,
+          user,
+        }))
+      }
+    } catch (error) {
+      console.error('Failed to refresh user:', error)
+    }
+  }, [])
+
   const setRole = useCallback((role: UserRole) => {
-    setState(prev => ({
-      ...prev,
-      user: prev.user ? { ...prev.user, role } : null,
-      currentStep: role === 'job_seeker' ? 'resume' : 'create-job',
-    }))
+    setState(prev => {
+      if (!prev.user) return prev
+      
+      const updatedUser = { ...prev.user, role }
+      
+      // Update in registered users storage
+      const registeredUsersStr = localStorage.getItem('fitonze_registered_users')
+      if (registeredUsersStr && prev.user.email) {
+        const registeredUsers = JSON.parse(registeredUsersStr)
+        const emailKey = prev.user.email.toLowerCase()
+        if (registeredUsers[emailKey]) {
+          registeredUsers[emailKey].user = updatedUser
+          localStorage.setItem('fitonze_registered_users', JSON.stringify(registeredUsers))
+        }
+      }
+      
+      localStorage.setItem(USER_KEY, JSON.stringify(updatedUser))
+      
+      return {
+        ...prev,
+        user: updatedUser,
+        currentStep: role === 'job_seeker' ? 'resume' : 'create-job',
+      }
+    })
   }, [])
 
   const setResume = useCallback((resume: Resume) => {
@@ -135,7 +286,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppContext.Provider
       value={{
         ...state,
-        login,
+        signIn,
+        signUp,
         logout,
         setRole,
         setResume,
@@ -145,6 +297,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         applyToJob,
         goToStep,
         updateUser,
+        refreshUser,
       }}
     >
       {children}
