@@ -19,7 +19,7 @@ interface AppState {
 }
 
 interface AppContextType extends AppState {
-  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  signIn: (email: string, password: string, phone: string) => Promise<{ success: boolean; error?: string }>
   signUp: (name: string, email: string, password: string, phone: string) => Promise<{ success: boolean; error?: string }>
   logout: () => void
   setRole: (role: UserRole) => void
@@ -87,11 +87,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setTimeout(checkAuth, 1500)
   }, [])
 
-  const signIn = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const signIn = useCallback(async (email: string, password: string, phone: string): Promise<{ success: boolean; error?: string }> => {
     try {
       // Check if user exists in localStorage (registered users)
       const registeredUsersStr = localStorage.getItem('fitonze_registered_users')
-      const registeredUsers: Record<string, { email: string; password: string; user: User }> = 
+      const registeredUsers: Record<string, { email: string; password: string; phone: string; user: User }> = 
         registeredUsersStr ? JSON.parse(registeredUsersStr) : {}
       
       const userRecord = registeredUsers[email.toLowerCase()]
@@ -102,6 +102,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       
       if (userRecord.password !== password) {
         return { success: false, error: 'Invalid password. Please try again.' }
+      }
+      
+      // Verify phone number matches
+      const registeredPhone = userRecord.user.phone?.replace(/\D/g, '')
+      const inputPhone = phone.replace(/\D/g, '')
+      if (registeredPhone && registeredPhone !== inputPhone) {
+        return { success: false, error: 'Phone number does not match. Please check and try again.' }
       }
       
       const user = userRecord.user

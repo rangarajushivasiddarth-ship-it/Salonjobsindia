@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 type AuthMode = 'signin' | 'signup'
 
 interface AuthScreenProps {
-  onSignIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  onSignIn: (email: string, password: string, phone: string) => Promise<{ success: boolean; error?: string }>
   onSignUp: (name: string, email: string, password: string, phone: string) => Promise<{ success: boolean; error?: string }>
   onBack: () => void
 }
@@ -35,6 +35,12 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
       newErrors.email = 'Email is required'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = 'Please enter a valid email'
+    }
+    
+    if (!phone) {
+      newErrors.phone = 'Phone number is required'
+    } else if (!/^\d{10}$/.test(phone.replace(/\D/g, ''))) {
+      newErrors.phone = 'Please enter a valid 10-digit phone number'
     }
     
     if (!password) {
@@ -92,12 +98,12 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
     
     setIsLoading(true)
     
-    const result = await onSignIn(email, password)
+    const result = await onSignIn(email, password, phone)
     
     setIsLoading(false)
     
     if (!result.success) {
-      setApiError(result.error || 'Invalid email or password. Please try again or sign up.')
+      setApiError(result.error || 'Invalid credentials. Please try again or sign up.')
     }
   }
 
@@ -215,27 +221,25 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
             )}
           </div>
           
-          {/* Phone - Only for Sign Up */}
-          {mode === 'signup' && (
-            <div className="space-y-2 animate-slide-up" style={{ animationDelay: '250ms' }}>
-              <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  type="tel"
-                  placeholder="10-digit phone number"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                  className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all"
-                />
-              </div>
-              {errors.phone && (
-                <p className="text-sm text-destructive pl-1">{errors.phone}</p>
-              )}
+          {/* Phone - Required for both Sign In and Sign Up */}
+          <div className="space-y-2 animate-slide-up" style={{ animationDelay: mode === 'signup' ? '250ms' : '200ms' }}>
+            <div className="relative">
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                type="tel"
+                placeholder="10-digit phone number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all"
+              />
             </div>
-          )}
+            {errors.phone && (
+              <p className="text-sm text-destructive pl-1">{errors.phone}</p>
+            )}
+          </div>
           
           {/* Password */}
-          <div className="space-y-2 animate-slide-up" style={{ animationDelay: mode === 'signup' ? '300ms' : '200ms' }}>
+          <div className="space-y-2 animate-slide-up" style={{ animationDelay: mode === 'signup' ? '300ms' : '250ms' }}>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input

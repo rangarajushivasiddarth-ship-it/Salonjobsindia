@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, Briefcase, Users, Settings, LogOut, Edit2, Trash2, Eye, ChevronRight, Building2, MapPin, DollarSign, Clock, Crown, User } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, Briefcase, Users, Settings, LogOut, Edit2, Trash2, Eye, ChevronRight, Building2, MapPin, DollarSign, Clock, Crown, User, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
+
+const MAX_FREE_JOBS = 5
 
 // Mock jobs data for owner
 const MOCK_OWNER_JOBS = [
@@ -54,6 +56,20 @@ export function OwnerPanel() {
   const [activeTab, setActiveTab] = useState<TabType>('jobs')
   const [selectedJob, setSelectedJob] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
+  const [jobsRemaining, setJobsRemaining] = useState(MAX_FREE_JOBS)
+  
+  // Load jobs remaining count
+  useEffect(() => {
+    const storedJobsCount = localStorage.getItem(`fitonze_jobs_posted_${user?.id}`)
+    const storedTopUpCredits = localStorage.getItem(`fitonze_topup_credits_${user?.id}`)
+    
+    if (storedJobsCount) {
+      const count = parseInt(storedJobsCount, 10)
+      const topUpCredits = storedTopUpCredits ? parseInt(storedTopUpCredits, 10) : 0
+      const remaining = Math.max(0, MAX_FREE_JOBS - count) + topUpCredits
+      setJobsRemaining(remaining)
+    }
+  }, [user?.id])
 
   const tabs = [
     { id: 'jobs', label: 'My Jobs', icon: Briefcase },
@@ -144,13 +160,56 @@ export function OwnerPanel() {
       <div className="relative z-10 flex-1 px-4 pb-4 overflow-y-auto">
         {activeTab === 'jobs' && (
           <div className="space-y-4 animate-slide-up">
-            {/* Add Job Button */}
+            {/* Jobs Remaining + Add Job Button */}
+            <div className={`p-3 rounded-xl flex items-center justify-between mb-3 ${
+              jobsRemaining > 2 
+                ? 'bg-primary/10 border border-primary/30' 
+                : jobsRemaining > 0 
+                  ? 'bg-yellow-500/10 border border-yellow-500/30'
+                  : 'bg-destructive/10 border border-destructive/30'
+            }`}>
+              <div className="flex items-center gap-2">
+                {jobsRemaining > 2 ? (
+                  <Briefcase className="w-5 h-5 text-primary" />
+                ) : jobsRemaining > 0 ? (
+                  <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                ) : (
+                  <AlertTriangle className="w-5 h-5 text-destructive" />
+                )}
+                <span className={`text-sm font-medium ${
+                  jobsRemaining > 2 
+                    ? 'text-primary' 
+                    : jobsRemaining > 0 
+                      ? 'text-yellow-500'
+                      : 'text-destructive'
+                }`}>
+                  {jobsRemaining > 0 
+                    ? `${jobsRemaining} job post${jobsRemaining !== 1 ? 's' : ''} remaining`
+                    : 'No job posts remaining'
+                  }
+                </span>
+              </div>
+            </div>
+            
             <Button
               onClick={() => goToStep('create-job')}
-              className="w-full h-14 bg-primary hover:bg-primary/90 gold-glow"
+              className={`w-full h-14 ${
+                jobsRemaining <= 0 
+                  ? 'bg-muted text-muted-foreground hover:bg-muted' 
+                  : 'bg-primary hover:bg-primary/90 gold-glow'
+              }`}
             >
-              <Plus className="w-5 h-5 mr-2" />
-              Post New Job
+              {jobsRemaining <= 0 ? (
+                <>
+                  <Crown className="w-5 h-5 mr-2" />
+                  Top Up to Post
+                </>
+              ) : (
+                <>
+                  <Plus className="w-5 h-5 mr-2" />
+                  Post New Job
+                </>
+              )}
             </Button>
             
             {/* Jobs List */}

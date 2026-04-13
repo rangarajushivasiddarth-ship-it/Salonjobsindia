@@ -101,6 +101,21 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const approvePayment = useCallback((subscriptionId: string) => {
+    // Find the subscription and user to get phone number
+    const subscription = state.pendingPayments.find(p => p.id === subscriptionId)
+    if (subscription) {
+      const user = state.users.find(u => u.id === subscription.userId)
+      if (user?.phone) {
+        // Send WhatsApp notification
+        const phone = user.phone.replace(/\D/g, '')
+        const message = encodeURIComponent(
+          `Congratulations! Your Fitonze subscription has been activated. You now have access to all premium features. Thank you for subscribing!`
+        )
+        // Open WhatsApp with pre-filled message
+        window.open(`https://wa.me/91${phone}?text=${message}`, '_blank')
+      }
+    }
+    
     setState(prev => ({
       ...prev,
       pendingPayments: prev.pendingPayments.filter(p => p.id !== subscriptionId),
@@ -110,7 +125,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         pendingApprovals: prev.stats.pendingApprovals - 1,
       },
     }))
-  }, [])
+  }, [state.pendingPayments, state.users])
 
   const rejectPayment = useCallback((subscriptionId: string) => {
     setState(prev => ({
