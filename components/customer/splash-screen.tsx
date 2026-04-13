@@ -39,18 +39,43 @@ export function SplashScreen({ onFindJob, onCreateAlert }: SplashScreenProps) {
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: '1s' }} />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/3 rounded-full blur-[100px]" />
 
-      {/* Settled Logo Background (visible after settle phase) */}
+      {/* Settled Logo Background (visible after settle phase) - Blended into background */}
       {phase === 'content' && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="relative w-[500px] h-[200px] opacity-[0.06]">
-            <Image
-              src="/images/fitonze-logo.png"
-              alt=""
-              fill
-              className="object-contain"
-              priority
-            />
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+          {/* Multiple layers for deep blend effect */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            {/* Base layer - very subtle, large */}
+            <div 
+              className="relative w-[700px] h-[280px] opacity-[0.025]"
+              style={{ filter: 'blur(3px) saturate(0.3) brightness(0.7)' }}
+            >
+              <Image
+                src="/images/fitonze-logo.png"
+                alt=""
+                fill
+                className="object-contain mix-blend-soft-light"
+                priority
+              />
+            </div>
           </div>
+          {/* Mid layer - slightly more visible */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div 
+              className="relative w-[550px] h-[220px] opacity-[0.04]"
+              style={{ filter: 'blur(1px) saturate(0.5) brightness(0.8)' }}
+            >
+              <Image
+                src="/images/fitonze-logo.png"
+                alt=""
+                fill
+                className="object-contain mix-blend-overlay"
+                priority
+              />
+            </div>
+          </div>
+          {/* Gradient overlay to further blend */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background opacity-60" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background opacity-40" />
         </div>
       )}
 
@@ -65,9 +90,18 @@ export function SplashScreen({ onFindJob, onCreateAlert }: SplashScreenProps) {
         >
           <div className="relative">
             {/* Glow effect behind logo */}
-            <div className="absolute -inset-8 bg-primary/20 rounded-full blur-3xl animate-glow-pulse" />
+            <div 
+              className={`absolute -inset-8 bg-primary/20 rounded-full blur-3xl transition-opacity duration-1000 ${
+                phase === 'logo-settle' ? 'opacity-0' : 'animate-glow-pulse'
+              }`} 
+            />
             
-            <div className="relative w-[320px] h-[130px] md:w-[400px] md:h-[160px]">
+            <div 
+              className={`relative w-[320px] h-[130px] md:w-[400px] md:h-[160px] transition-all duration-1000 ${
+                phase === 'logo-settle' ? 'scale-150 opacity-0' : ''
+              }`}
+              style={phase === 'logo-settle' ? { filter: 'blur(10px) saturate(0)' } : {}}
+            >
               <Image
                 src="/images/fitonze-logo.png"
                 alt="Fitonze"
