@@ -49,7 +49,7 @@ export function AdminLogin() {
               src="/images/fitonze-logo.png"
               alt="Fitonze"
               fill
-              className="object-contain mix-blend-lighten"
+              className="object-contain"
             />
           </div>
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>

@@ -26,7 +26,7 @@ export function AdminSidebar() {
             src="/images/fitonze-logo.png"
             alt="Fitonze"
             fill
-            className="object-contain mix-blend-lighten"
+            className="object-contain"
           />
         </div>
         <p className="text-xs text-muted-foreground text-center mt-2">Admin Panel</p>
@@ -88,7 +88,7 @@ export function AdminSidebar() {
               src="/images/fitonze-logo.png"
               alt="Fitonze"
               fill
-              className="object-contain mix-blend-lighten"
+              className="object-contain"
             />
           </div>
           <button

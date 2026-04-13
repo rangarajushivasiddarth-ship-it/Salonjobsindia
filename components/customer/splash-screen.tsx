@@ -106,7 +106,7 @@ export function SplashScreen({ onFindJob, onCreateAlert }: SplashScreenProps) {
                 src="/images/fitonze-logo.png"
                 alt="Fitonze"
                 fill
-                className="object-contain drop-shadow-2xl mix-blend-lighten"
+                className="object-contain drop-shadow-2xl"
                 priority
               />
             </div>
@@ -127,7 +127,7 @@ export function SplashScreen({ onFindJob, onCreateAlert }: SplashScreenProps) {
                 src="/images/fitonze-logo.png"
                 alt="Fitonze"
                 fill
-                className="object-contain mix-blend-lighten"
+                className="object-contain"
                 priority
               />
             </div>
