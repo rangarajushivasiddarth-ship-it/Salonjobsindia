@@ -1,0 +1,408 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { ArrowLeft, User, Briefcase, Clock, Star, DollarSign, MapPin, Navigation, X, Plus, Check } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useApp } from '@/lib/app-context'
+import type { Resume } from '@/lib/types'
+
+const SKILL_SUGGESTIONS = [
+  'Hair Cutting', 'Hair Coloring', 'Styling', 'Bridal Makeup',
+  'Manicure', 'Pedicure', 'Facial', 'Threading', 'Waxing',
+  'Massage', 'Hair Treatment', 'Keratin', 'Balayage', 'Highlights'
+]
+
+const ROLE_SUGGESTIONS = [
+  'Hair Stylist', 'Makeup Artist', 'Nail Technician', 'Beautician',
+  'Salon Manager', 'Receptionist', 'Spa Therapist', 'Barber'
+]
+
+export function ResumeBuilder() {
+  const { user, setResume, goToStep } = useApp()
+  const [step, setStep] = useState(1)
+  const [isLoading, setIsLoading] = useState(false)
+  const [detectingLocation, setDetectingLocation] = useState(false)
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    role: '',
+    experience: '',
+    skills: [] as string[],
+    salaryExpectation: '',
+    location: {
+      lat: 0,
+      lng: 0,
+      address: '',
+    }
+  })
+  
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [customSkill, setCustomSkill] = useState('')
+
+  const detectLocation = async () => {
+    setDetectingLocation(true)
+    
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords
+          
+          // In production, you would reverse geocode here
+          setFormData(prev => ({
+            ...prev,
+            location: {
+              lat: latitude,
+              lng: longitude,
+              address: 'Current Location Detected',
+            }
+          }))
+          setDetectingLocation(false)
+        },
+        () => {
+          setDetectingLocation(false)
+          setErrors(prev => ({ ...prev, location: 'Could not detect location' }))
+        }
+      )
+    } else {
+      setDetectingLocation(false)
+      setErrors(prev => ({ ...prev, location: 'Geolocation not supported' }))
+    }
+  }
+
+  const validateStep = () => {
+    const newErrors: Record<string, string> = {}
+    
+    if (step === 1) {
+      if (!formData.name.trim()) newErrors.name = 'Name is required'
+      if (!formData.role.trim()) newErrors.role = 'Role is required'
+    } else if (step === 2) {
+      if (!formData.experience) newErrors.experience = 'Experience is required'
+      if (formData.skills.length === 0) newErrors.skills = 'Select at least one skill'
+    } else if (step === 3) {
+      if (!formData.salaryExpectation) newErrors.salary = 'Salary expectation is required'
+      if (!formData.location.address) newErrors.location = 'Location is required'
+    }
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleNext = () => {
+    if (validateStep()) {
+      if (step < 3) {
+        setStep(step + 1)
+      } else {
+        handleSubmit()
+      }
+    }
+  }
+
+  const handleSubmit = async () => {
+    setIsLoading(true)
+    
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    const resume: Resume = {
+      id: crypto.randomUUID(),
+      userId: user?.id || '',
+      ...formData,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    
+    setResume(resume)
+    setIsLoading(false)
+  }
+
+  const toggleSkill = (skill: string) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills.includes(skill)
+        ? prev.skills.filter(s => s !== skill)
+        : [...prev.skills, skill]
+    }))
+  }
+
+  const addCustomSkill = () => {
+    if (customSkill.trim() && !formData.skills.includes(customSkill.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        skills: [...prev.skills, customSkill.trim()]
+      }))
+      setCustomSkill('')
+    }
+  }
+
+  const progressWidth = (step / 3) * 100
+
+  return (
+    <div className="relative min-h-screen flex flex-col overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/20" />
+      <div className="absolute top-1/4 right-0 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
+      
+      {/* Header */}
+      <header className="relative z-10 p-4 flex items-center justify-between">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => step > 1 ? setStep(step - 1) : goToStep('role')}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <span className="text-sm text-muted-foreground">Step {step} of 3</span>
+        <div className="w-10" />
+      </header>
+      
+      {/* Progress Bar */}
+      <div className="relative z-10 px-6 mb-6">
+        <div className="h-1 bg-secondary/50 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-primary transition-all duration-500 ease-out"
+            style={{ width: `${progressWidth}%` }}
+          />
+        </div>
+      </div>
+      
+      {/* Content */}
+      <div className="relative z-10 flex-1 px-6 pb-8 overflow-y-auto">
+        {/* Step 1: Basic Info */}
+        {step === 1 && (
+          <div className="max-w-md mx-auto animate-slide-up">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">Build Your Resume</h1>
+            <p className="text-muted-foreground mb-8">Let&apos;s start with your basic information</p>
+            
+            <div className="space-y-6">
+              {/* Name */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Full Name</label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    placeholder="Enter your full name"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary"
+                  />
+                </div>
+                {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+              </div>
+              
+              {/* Role */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Desired Role</label>
+                <div className="relative">
+                  <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    placeholder="e.g. Hair Stylist"
+                    value={formData.role}
+                    onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
+                    className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary"
+                  />
+                </div>
+                {errors.role && <p className="text-sm text-destructive">{errors.role}</p>}
+                
+                {/* Role suggestions */}
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {ROLE_SUGGESTIONS.slice(0, 4).map(role => (
+                    <button
+                      key={role}
+                      onClick={() => setFormData(prev => ({ ...prev, role }))}
+                      className={`px-3 py-1.5 text-sm rounded-full transition-all ${
+                        formData.role === role
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                      }`}
+                    >
+                      {role}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Step 2: Experience & Skills */}
+        {step === 2 && (
+          <div className="max-w-md mx-auto animate-slide-up">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">Your Experience</h1>
+            <p className="text-muted-foreground mb-8">Tell us about your skills and experience</p>
+            
+            <div className="space-y-6">
+              {/* Experience */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Years of Experience</label>
+                <div className="relative">
+                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <select
+                    value={formData.experience}
+                    onChange={(e) => setFormData(prev => ({ ...prev, experience: e.target.value }))}
+                    className="w-full h-14 pl-12 pr-4 bg-secondary/50 border border-border/50 rounded-lg focus:border-primary focus:outline-none appearance-none text-foreground"
+                  >
+                    <option value="">Select experience</option>
+                    <option value="fresher">Fresher (0-1 years)</option>
+                    <option value="1-2">1-2 years</option>
+                    <option value="2-5">2-5 years</option>
+                    <option value="5-10">5-10 years</option>
+                    <option value="10+">10+ years</option>
+                  </select>
+                </div>
+                {errors.experience && <p className="text-sm text-destructive">{errors.experience}</p>}
+              </div>
+              
+              {/* Skills */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Skills <span className="text-primary">({formData.skills.length} selected)</span>
+                </label>
+                
+                {/* Selected skills */}
+                {formData.skills.length > 0 && (
+                  <div className="flex flex-wrap gap-2 p-3 bg-secondary/30 rounded-lg mb-3">
+                    {formData.skills.map(skill => (
+                      <span
+                        key={skill}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary/20 text-primary rounded-full"
+                      >
+                        {skill}
+                        <button onClick={() => toggleSkill(skill)}>
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Skill suggestions */}
+                <div className="flex flex-wrap gap-2">
+                  {SKILL_SUGGESTIONS.filter(s => !formData.skills.includes(s)).map(skill => (
+                    <button
+                      key={skill}
+                      onClick={() => toggleSkill(skill)}
+                      className="px-3 py-1.5 text-sm rounded-full bg-secondary/50 text-muted-foreground hover:bg-secondary transition-all"
+                    >
+                      <Plus className="w-3 h-3 inline mr-1" />
+                      {skill}
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Custom skill */}
+                <div className="flex gap-2 pt-2">
+                  <Input
+                    placeholder="Add custom skill"
+                    value={customSkill}
+                    onChange={(e) => setCustomSkill(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && addCustomSkill()}
+                    className="flex-1 h-12 bg-secondary/50 border-border/50"
+                  />
+                  <Button onClick={addCustomSkill} size="icon" className="h-12 w-12 bg-primary">
+                    <Plus className="w-5 h-5" />
+                  </Button>
+                </div>
+                
+                {errors.skills && <p className="text-sm text-destructive">{errors.skills}</p>}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Step 3: Salary & Location */}
+        {step === 3 && (
+          <div className="max-w-md mx-auto animate-slide-up">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">Final Details</h1>
+            <p className="text-muted-foreground mb-8">Set your salary expectations and location</p>
+            
+            <div className="space-y-6">
+              {/* Salary */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Salary Expectation (per month)</label>
+                <div className="relative">
+                  <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <select
+                    value={formData.salaryExpectation}
+                    onChange={(e) => setFormData(prev => ({ ...prev, salaryExpectation: e.target.value }))}
+                    className="w-full h-14 pl-12 pr-4 bg-secondary/50 border border-border/50 rounded-lg focus:border-primary focus:outline-none appearance-none text-foreground"
+                  >
+                    <option value="">Select salary range</option>
+                    <option value="10000-15000">₹10,000 - ₹15,000</option>
+                    <option value="15000-25000">₹15,000 - ₹25,000</option>
+                    <option value="25000-40000">₹25,000 - ₹40,000</option>
+                    <option value="40000-60000">₹40,000 - ₹60,000</option>
+                    <option value="60000+">₹60,000+</option>
+                  </select>
+                </div>
+                {errors.salary && <p className="text-sm text-destructive">{errors.salary}</p>}
+              </div>
+              
+              {/* Location */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Your Location</label>
+                
+                {/* Auto-detect button */}
+                <Button
+                  onClick={detectLocation}
+                  disabled={detectingLocation}
+                  variant="outline"
+                  className="w-full h-14 border-primary/50 text-primary hover:bg-primary/10"
+                >
+                  {detectingLocation ? (
+                    <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin mr-2" />
+                  ) : (
+                    <Navigation className="w-5 h-5 mr-2" />
+                  )}
+                  {detectingLocation ? 'Detecting...' : 'Auto-detect Location'}
+                </Button>
+                
+                {/* Manual input */}
+                <div className="relative">
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    placeholder="Or enter address manually"
+                    value={formData.location.address}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      location: { ...prev.location, address: e.target.value } 
+                    }))}
+                    className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary"
+                  />
+                </div>
+                
+                {formData.location.address && (
+                  <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-lg">
+                    <Check className="w-5 h-5 text-primary" />
+                    <span className="text-sm text-primary">{formData.location.address}</span>
+                  </div>
+                )}
+                
+                {errors.location && <p className="text-sm text-destructive">{errors.location}</p>}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Footer */}
+      <div className="relative z-10 p-6 bg-gradient-to-t from-background via-background to-transparent">
+        <div className="max-w-md mx-auto">
+          <Button
+            onClick={handleNext}
+            disabled={isLoading}
+            className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground neon-glow transition-all duration-300 hover:scale-[1.02]"
+          >
+            {isLoading ? (
+              <div className="w-6 h-6 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+            ) : step === 3 ? (
+              'Create Resume'
+            ) : (
+              'Continue'
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
