@@ -52,6 +52,10 @@ export function SubscriptionScreen() {
     // Simulate upload delay
     await new Promise(resolve => setTimeout(resolve, 1500))
     
+    // Calculate expiry date (30 days from now)
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + 30)
+    
     const subscription: Subscription = {
       id: crypto.randomUUID(),
       userId: user.id,
@@ -63,6 +67,7 @@ export function SubscriptionScreen() {
       shopLimit: selectedPlanDetails.shopLimit,
       shopsViewed: 0,
       createdAt: new Date(),
+      expiresAt: expiresAt,
     }
     
     // Save to shared data store (available to admin)

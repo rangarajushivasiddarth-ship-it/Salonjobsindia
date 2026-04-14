@@ -11,9 +11,11 @@ export function ProfileDashboard() {
   const { user, subscription, savedJobs, appliedJobs, goToStep, logout } = useApp()
   const [activeTab, setActiveTab] = useState<TabType>('overview')
 
-  const daysRemaining = subscription?.expiresAt 
-    ? Math.max(0, Math.ceil((new Date(subscription.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-    : 0
+  // Calculate days remaining from subscription or user's subscription expiry
+  const expiryDate = subscription?.expiresAt || user?.subscriptionExpiry
+  const daysRemaining = expiryDate
+    ? Math.max(0, Math.ceil((new Date(expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : (user?.isSubscribed ? 30 : 0) // Default to 30 days if subscribed but no expiry set
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: User },

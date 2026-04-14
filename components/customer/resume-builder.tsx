@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { ArrowLeft, User, Briefcase, Clock, Star, DollarSign, MapPin, Navigation, X, Plus, Check } from 'lucide-react'
+import { useState } from 'react'
+import { ArrowLeft, User, Briefcase, Clock, DollarSign, MapPin, Navigation, X, Plus, Check, Crown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
@@ -23,6 +23,7 @@ export function ResumeBuilder() {
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [detectingLocation, setDetectingLocation] = useState(false)
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
   
   const [formData, setFormData] = useState({
     name: '',
@@ -128,6 +129,12 @@ export function ResumeBuilder() {
   }
 
   const handleSubmit = async () => {
+    // Check if user is subscribed
+    if (!user?.isSubscribed) {
+      setShowSubscriptionModal(true)
+      return
+    }
+    
     setIsLoading(true)
     
     await new Promise(resolve => setTimeout(resolve, 1000))
@@ -437,13 +444,50 @@ export function ResumeBuilder() {
             {isLoading ? (
               <div className="w-6 h-6 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
             ) : step === 3 ? (
-              'Create Resume'
+              'Create Job Alert'
             ) : (
               'Continue'
             )}
           </Button>
         </div>
       </div>
+      
+      {/* Subscription Required Modal */}
+      {showSubscriptionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+          <div className="w-full max-w-sm p-6 glass-card rounded-2xl animate-scale-in">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4">
+                <Crown className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Subscription Required</h3>
+              <p className="text-muted-foreground mb-6">
+                To create a job alert and get matched with salons, you need an active subscription.
+              </p>
+              
+              <div className="flex gap-3 w-full">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSubscriptionModal(false)}
+                  className="flex-1 h-12"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowSubscriptionModal(false)
+                    goToStep('subscription')
+                  }}
+                  className="flex-1 h-12 bg-primary hover:bg-primary/90 gold-glow"
+                >
+                  <Crown className="w-4 h-4 mr-2" />
+                  Subscribe
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
