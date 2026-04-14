@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Building2, Briefcase, DollarSign, Clock, MapPin, Navigation, FileText, Check, Plus, AlertTriangle, Crown, X } from 'lucide-react'
+import { ArrowLeft, Building2, Briefcase, MapPin, Navigation, FileText, Check, Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
@@ -76,14 +76,45 @@ export function CreateJob() {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords
-          setFormData(prev => ({
-            ...prev,
-            location: {
-              lat: latitude,
-              lng: longitude,
-              address: 'Current Location Detected',
-            }
-          }))
+          
+          try {
+            // Reverse geocode to get city, area, and town
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+            )
+            const data = await response.json()
+            
+            const address = data.address || {}
+            const town = address.suburb || address.neighbourhood || address.hamlet || ''
+            const area = address.city_district || address.county || address.state_district || ''
+            const city = address.city || address.town || address.village || address.municipality || ''
+            
+            // Build display string with available parts
+            const locationParts = [town, area, city].filter(Boolean)
+            const displayAddress = locationParts.length > 0 
+              ? locationParts.join(', ')
+              : 'Location Detected'
+            
+            setFormData(prev => ({
+              ...prev,
+              location: {
+                lat: latitude,
+                lng: longitude,
+                address: displayAddress,
+              }
+            }))
+          } catch {
+            // Fallback if geocoding fails
+            setFormData(prev => ({
+              ...prev,
+              location: {
+                lat: latitude,
+                lng: longitude,
+                address: 'Location Detected',
+              }
+            }))
+          }
+          
           setDetectingLocation(false)
         },
         () => {
@@ -111,13 +142,14 @@ export function CreateJob() {
   }
 
   const handleSubmit = async () => {
-    // Check if user has remaining job posts
+    // First validate the form
+    if (!validateForm()) return
+    
+    // Then check if user has remaining job posts
     if (jobsRemaining <= 0) {
       setShowTopUpModal(true)
       return
     }
-    
-    if (!validateForm()) return
     
     setIsLoading(true)
     
@@ -199,48 +231,7 @@ export function CreateJob() {
         <h1 className="font-semibold text-lg">Post a Job</h1>
       </header>
       
-      {/* Jobs Remaining Banner */}
-      <div className="relative z-10 mx-4 mb-4">
-        <div className={`p-3 rounded-xl flex items-center justify-between ${
-          jobsRemaining > 2 
-            ? 'bg-primary/10 border border-primary/30' 
-            : jobsRemaining > 0 
-              ? 'bg-yellow-500/10 border border-yellow-500/30'
-              : 'bg-destructive/10 border border-destructive/30'
-        }`}>
-          <div className="flex items-center gap-2">
-            {jobsRemaining > 2 ? (
-              <Briefcase className="w-5 h-5 text-primary" />
-            ) : jobsRemaining > 0 ? (
-              <AlertTriangle className="w-5 h-5 text-yellow-500" />
-            ) : (
-              <AlertTriangle className="w-5 h-5 text-destructive" />
-            )}
-            <span className={`text-sm font-medium ${
-              jobsRemaining > 2 
-                ? 'text-primary' 
-                : jobsRemaining > 0 
-                  ? 'text-yellow-500'
-                  : 'text-destructive'
-            }`}>
-              {jobsRemaining > 0 
-                ? `${jobsRemaining} job post${jobsRemaining !== 1 ? 's' : ''} remaining`
-                : 'No job posts remaining'
-              }
-            </span>
-          </div>
-          {jobsRemaining <= 2 && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setShowTopUpModal(true)}
-              className="text-primary hover:bg-primary/10"
-            >
-              Top Up
-            </Button>
-          )}
-        </div>
-      </div>
+
       
       {/* Content */}
       <div className="relative z-10 flex-1 px-6 pb-8 overflow-y-auto">
@@ -397,20 +388,11 @@ export function CreateJob() {
         <div className="max-w-md mx-auto">
           <Button
             onClick={handleSubmit}
-            disabled={isLoading || jobsRemaining <= 0}
-            className={`w-full h-14 text-lg font-semibold transition-all duration-300 hover:scale-[1.02] ${
-              jobsRemaining <= 0 
-                ? 'bg-muted text-muted-foreground' 
-                : 'bg-primary hover:bg-primary/90 text-primary-foreground gold-glow'
-            }`}
+            disabled={isLoading}
+            className="w-full h-14 text-lg font-semibold transition-all duration-300 hover:scale-[1.02] bg-primary hover:bg-primary/90 text-primary-foreground gold-glow"
           >
             {isLoading ? (
               <div className="w-6 h-6 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-            ) : jobsRemaining <= 0 ? (
-              <>
-                <Crown className="w-5 h-5 mr-2" />
-                Top Up to Post
-              </>
             ) : (
               <>
                 <Plus className="w-5 h-5 mr-2" />

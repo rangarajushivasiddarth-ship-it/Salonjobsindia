@@ -128,20 +128,20 @@ export function SplashScreen({ onFindJob, onCreateAlert }: SplashScreenProps) {
             style={{ animationDelay: '300ms' }}
           >
             <Button
-              onClick={onFindJob}
+              onClick={onCreateAlert}
               size="lg"
               className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gold-glow transition-all duration-300 hover:scale-[1.02]"
             >
-              Find a Job
+              Create Job Alert
             </Button>
             
             <Button
-              onClick={onCreateAlert}
+              onClick={onFindJob}
               variant="outline"
               size="lg"
               className="w-full h-14 text-lg font-semibold border-primary/50 text-primary hover:bg-primary/10 transition-all duration-300 hover:scale-[1.02]"
             >
-              Create Job Alert
+              Find a Job
             </Button>
           </div>
 

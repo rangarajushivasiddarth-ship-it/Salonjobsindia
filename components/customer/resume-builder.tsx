@@ -48,15 +48,44 @@ export function ResumeBuilder() {
         async (position) => {
           const { latitude, longitude } = position.coords
           
-          // In production, you would reverse geocode here
-          setFormData(prev => ({
-            ...prev,
-            location: {
-              lat: latitude,
-              lng: longitude,
-              address: 'Current Location Detected',
-            }
-          }))
+          try {
+            // Reverse geocode to get city, area, and town
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+            )
+            const data = await response.json()
+            
+            const address = data.address || {}
+            const town = address.suburb || address.neighbourhood || address.hamlet || ''
+            const area = address.city_district || address.county || address.state_district || ''
+            const city = address.city || address.town || address.village || address.municipality || ''
+            
+            // Build display string with available parts
+            const locationParts = [town, area, city].filter(Boolean)
+            const displayAddress = locationParts.length > 0 
+              ? locationParts.join(', ')
+              : 'Location Detected'
+            
+            setFormData(prev => ({
+              ...prev,
+              location: {
+                lat: latitude,
+                lng: longitude,
+                address: displayAddress,
+              }
+            }))
+          } catch {
+            // Fallback if geocoding fails
+            setFormData(prev => ({
+              ...prev,
+              location: {
+                lat: latitude,
+                lng: longitude,
+                address: 'Location Detected',
+              }
+            }))
+          }
+          
           setDetectingLocation(false)
         },
         () => {
