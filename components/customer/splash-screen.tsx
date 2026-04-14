@@ -137,9 +137,8 @@ export function SplashScreen({ onFindJob, onCreateAlert }: SplashScreenProps) {
             
             <Button
               onClick={onFindJob}
-              variant="outline"
               size="lg"
-              className="w-full h-14 text-lg font-semibold border-primary/50 text-primary hover:bg-primary/10 transition-all duration-300 hover:scale-[1.02]"
+              className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gold-glow transition-all duration-300 hover:scale-[1.02]"
             >
               Find a Job
             </Button>
