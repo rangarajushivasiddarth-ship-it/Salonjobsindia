@@ -39,43 +39,59 @@ export function SplashScreen({ onFindJob, onCreateAlert }: SplashScreenProps) {
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: '1s' }} />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/3 rounded-full blur-[100px]" />
 
-      {/* Settled Logo Background (visible after settle phase) - Blended into background */}
+      {/* Settled Logo Background (visible after settle phase) - Seamlessly blended into background */}
       {phase === 'content' && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-          {/* Multiple layers for deep blend effect */}
+          {/* Radial gradient to mask the logo edges */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: 'radial-gradient(ellipse 80% 60% at 50% 50%, transparent 30%, var(--background) 70%)'
+            }}
+          />
+          {/* Base layer - subtle watermark effect */}
           <div className="absolute inset-0 flex items-center justify-center">
-            {/* Base layer - very subtle, large */}
             <div 
-              className="relative w-[700px] h-[280px] opacity-[0.025]"
-              style={{ filter: 'blur(3px) saturate(0.3) brightness(0.7)' }}
+              className="relative w-[600px] h-[240px] opacity-[0.08]"
+              style={{ 
+                filter: 'brightness(0.6) contrast(1.2)',
+                maskImage: 'radial-gradient(ellipse 100% 100% at 50% 50%, black 40%, transparent 80%)',
+                WebkitMaskImage: 'radial-gradient(ellipse 100% 100% at 50% 50%, black 40%, transparent 80%)'
+              }}
             >
               <Image
                 src="/images/fitonze-logo.png"
                 alt=""
                 fill
-                className="object-contain mix-blend-soft-light"
+                className="object-contain mix-blend-luminosity"
                 priority
               />
             </div>
           </div>
-          {/* Mid layer - slightly more visible */}
+          {/* Gold accent glow layer */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div 
-              className="relative w-[550px] h-[220px] opacity-[0.04]"
-              style={{ filter: 'blur(1px) saturate(0.5) brightness(0.8)' }}
+              className="relative w-[500px] h-[200px] opacity-[0.04]"
+              style={{ 
+                filter: 'blur(2px) brightness(1.2)',
+                maskImage: 'radial-gradient(ellipse 100% 100% at 50% 50%, black 30%, transparent 70%)',
+                WebkitMaskImage: 'radial-gradient(ellipse 100% 100% at 50% 50%, black 30%, transparent 70%)'
+              }}
             >
               <Image
                 src="/images/fitonze-logo.png"
                 alt=""
                 fill
-                className="object-contain mix-blend-overlay"
+                className="object-contain mix-blend-color-dodge"
                 priority
               />
             </div>
           </div>
-          {/* Gradient overlay to further blend */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background opacity-60" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background opacity-40" />
+          {/* Edge fade overlays */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background opacity-80" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background opacity-60" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background opacity-50" />
+          <div className="absolute inset-0 bg-gradient-to-l from-background via-transparent to-background opacity-50" />
         </div>
       )}
 
@@ -91,22 +107,28 @@ export function SplashScreen({ onFindJob, onCreateAlert }: SplashScreenProps) {
           <div className="relative">
             {/* Glow effect behind logo */}
             <div 
-              className={`absolute -inset-8 bg-primary/20 rounded-full blur-3xl transition-opacity duration-1000 ${
+              className={`absolute -inset-12 bg-primary/30 rounded-full blur-[60px] transition-opacity duration-1000 ${
                 phase === 'logo-settle' ? 'opacity-0' : 'animate-glow-pulse'
               }`} 
             />
             
+            {/* Logo container with mask for seamless edges */}
             <div 
-              className={`relative w-[320px] h-[130px] md:w-[400px] md:h-[160px] transition-all duration-1000 ${
+              className={`relative w-[340px] h-[140px] md:w-[420px] md:h-[170px] transition-all duration-1000 ${
                 phase === 'logo-settle' ? 'scale-150 opacity-0' : ''
               }`}
-              style={phase === 'logo-settle' ? { filter: 'blur(10px) saturate(0)' } : {}}
+              style={{
+                ...(phase === 'logo-settle' ? { filter: 'blur(10px) saturate(0)' } : {}),
+                maskImage: 'radial-gradient(ellipse 100% 100% at 50% 50%, black 60%, transparent 100%)',
+                WebkitMaskImage: 'radial-gradient(ellipse 100% 100% at 50% 50%, black 60%, transparent 100%)'
+              }}
             >
               <Image
                 src="/images/fitonze-logo.png"
                 alt="Fitonze"
                 fill
-                className="object-contain drop-shadow-2xl"
+                className="object-contain"
+                style={{ filter: 'drop-shadow(0 0 30px rgba(200, 170, 100, 0.4))' }}
                 priority
               />
             </div>
@@ -117,17 +139,24 @@ export function SplashScreen({ onFindJob, onCreateAlert }: SplashScreenProps) {
       {/* Content - Fades in after logo settles */}
       {phase === 'content' && (
         <div className="relative z-10 flex flex-col items-center px-6 text-center">
-          {/* Small logo with trademark */}
+          {/* Small logo with trademark - seamlessly blended */}
           <div 
             className="mb-6 animate-content-fade-in"
             style={{ animationDelay: '0ms' }}
           >
-            <div className="relative w-[240px] h-[100px] md:w-[300px] md:h-[120px]">
+            <div 
+              className="relative w-[260px] h-[105px] md:w-[320px] md:h-[130px]"
+              style={{
+                maskImage: 'radial-gradient(ellipse 100% 100% at 50% 50%, black 55%, transparent 100%)',
+                WebkitMaskImage: 'radial-gradient(ellipse 100% 100% at 50% 50%, black 55%, transparent 100%)'
+              }}
+            >
               <Image
                 src="/images/fitonze-logo.png"
                 alt="Fitonze"
                 fill
                 className="object-contain"
+                style={{ filter: 'drop-shadow(0 0 20px rgba(200, 170, 100, 0.3))' }}
                 priority
               />
             </div>
