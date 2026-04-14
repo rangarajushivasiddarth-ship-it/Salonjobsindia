@@ -15,7 +15,7 @@ const SKILL_SUGGESTIONS = [
 
 const ROLE_SUGGESTIONS = [
   'Hair Stylist', 'Makeup Artist', 'Nail Technician', 'Beautician',
-  'Salon Manager', 'Receptionist', 'Spa Therapist', 'Barber'
+  'Salon Manager', 'Receptionist', 'Spa Therapist', 'Barber', 'Custom'
 ]
 
 export function ResumeBuilder() {
@@ -235,17 +235,29 @@ export function ResumeBuilder() {
                 
                 {/* Role suggestions */}
                 <div className="flex flex-wrap gap-2 pt-2">
-                  {ROLE_SUGGESTIONS.slice(0, 4).map(role => (
+                  {ROLE_SUGGESTIONS.map(role => (
                     <button
                       key={role}
-                      onClick={() => setFormData(prev => ({ ...prev, role }))}
+                      onClick={() => {
+                        if (role === 'Custom') {
+                          // Clear the role to let user type their own
+                          setFormData(prev => ({ ...prev, role: '' }))
+                          // Focus the input
+                          const input = document.querySelector('input[placeholder="e.g. Hair Stylist"]') as HTMLInputElement
+                          input?.focus()
+                        } else {
+                          setFormData(prev => ({ ...prev, role }))
+                        }
+                      }}
                       className={`px-3 py-1.5 text-sm rounded-full transition-all ${
-                        formData.role === role
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                        role === 'Custom'
+                          ? 'bg-accent/20 text-accent hover:bg-accent/30 border border-dashed border-accent/50'
+                          : formData.role === role
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
                       }`}
                     >
-                      {role}
+                      {role === 'Custom' ? '+ Custom Role' : role}
                     </button>
                   ))}
                 </div>

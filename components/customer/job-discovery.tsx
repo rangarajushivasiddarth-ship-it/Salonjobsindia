@@ -43,6 +43,8 @@ export function JobDiscovery() {
   const [salons, setSalons] = useState<SalonWithDetails[]>(MOCK_SALONS)
   const [viewStats, setViewStats] = useState({ remaining: 0 as number | 'unlimited', total: 0 as number | 'unlimited' })
   const [unlockedSalons, setUnlockedSalons] = useState<Set<string>>(new Set())
+  const [showFilterModal, setShowFilterModal] = useState(false)
+  const [areaFilter, setAreaFilter] = useState('')
 
   // Load jobs and subscription status
   useEffect(() => {
@@ -72,9 +74,12 @@ export function JobDiscovery() {
     }
   }, [user?.id])
 
-  const filteredSalons = salons.filter(salon =>
-    salon.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredSalons = salons.filter(salon => {
+    const matchesName = salon.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesArea = !areaFilter || (salon.job?.location?.area?.toLowerCase().includes(areaFilter.toLowerCase()) || 
+                        salon.job?.location?.address?.toLowerCase().includes(areaFilter.toLowerCase()))
+    return matchesName && matchesArea
+  })
 
   const isSubscribed = user?.isSubscribed === true
   const subscription = user?.id ? getSubscriptionByUserId(user.id) : null
@@ -176,10 +181,33 @@ export function JobDiscovery() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="h-12 pl-12 pr-12 bg-secondary/50 border-border/50"
           />
-          <button className="absolute right-4 top-1/2 -translate-y-1/2">
-            <Filter className="w-5 h-5 text-muted-foreground" />
+          <button 
+            onClick={() => setShowFilterModal(true)}
+            className={`absolute right-4 top-1/2 -translate-y-1/2 ${areaFilter ? 'text-primary' : 'text-muted-foreground'}`}
+          >
+            <Filter className="w-5 h-5" />
+            {areaFilter && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
+            )}
           </button>
         </div>
+        
+        {/* Active Filter Badge */}
+        {areaFilter && (
+          <div className="mt-2 flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Filtered by:</span>
+            <span className="flex items-center gap-1 px-2 py-1 text-xs bg-primary/20 text-primary rounded-full">
+              <MapPin className="w-3 h-3" />
+              {areaFilter}
+              <button
+                onClick={() => setAreaFilter('')}
+                className="ml-1 hover:text-primary-foreground"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          </div>
+        )}
       </header>
       
       {/* Subscription Status Banner */}
@@ -510,6 +538,75 @@ export function JobDiscovery() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+      
+      {/* Filter Modal */}
+      {showFilterModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+          <div className="w-full max-w-sm p-6 glass-card rounded-2xl animate-scale-in">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold">Filter by Area</h3>
+              <button
+                onClick={() => setShowFilterModal(false)}
+                className="p-2 hover:bg-secondary/50 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="relative">
+                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  placeholder="Enter area, city or town..."
+                  value={areaFilter}
+                  onChange={(e) => setAreaFilter(e.target.value)}
+                  className="h-12 pl-12 bg-secondary/50 border-border/50 focus:border-primary"
+                />
+              </div>
+              
+              <p className="text-xs text-muted-foreground">
+                Search by area name, city, or town to find salons in that location
+              </p>
+              
+              {/* Quick area suggestions */}
+              <div className="flex flex-wrap gap-2">
+                {['Koramangala', 'Indiranagar', 'HSR Layout', 'Whitefield', 'Jayanagar'].map(area => (
+                  <button
+                    key={area}
+                    onClick={() => setAreaFilter(area)}
+                    className={`px-3 py-1.5 text-sm rounded-full transition-all ${
+                      areaFilter === area
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                    }`}
+                  >
+                    {area}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setAreaFilter('')
+                  setShowFilterModal(false)
+                }}
+                className="flex-1 h-12"
+              >
+                Clear
+              </Button>
+              <Button
+                onClick={() => setShowFilterModal(false)}
+                className="flex-1 h-12 bg-primary hover:bg-primary/90"
+              >
+                Apply Filter
+              </Button>
+            </div>
           </div>
         </div>
       )}

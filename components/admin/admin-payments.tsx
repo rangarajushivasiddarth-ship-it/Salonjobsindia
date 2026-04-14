@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Check, X, Eye, Image as ImageIcon, Clock, User, AlertCircle, Crown } from 'lucide-react'
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { useAdmin } from '@/lib/admin-context'
 import { AdminSidebar } from './admin-sidebar'
@@ -141,13 +140,28 @@ export function AdminPayments() {
               </button>
             </div>
             <div className="p-6">
-              <div className="aspect-video bg-secondary/50 rounded-xl flex items-center justify-center">
-                <div className="text-center">
-                  <Image className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">Screenshot preview</p>
-                  <p className="text-xs text-muted-foreground mt-1">In production, the actual screenshot would be displayed here</p>
-                </div>
-              </div>
+              {(() => {
+                const payment = pendingPayments.find(p => p.id === selectedPayment)
+                if (payment?.screenshotUrl) {
+                  return (
+                    <div className="rounded-xl overflow-hidden">
+                      <img
+                        src={payment.screenshotUrl}
+                        alt="Payment screenshot"
+                        className="w-full max-h-[70vh] object-contain bg-secondary/30"
+                      />
+                    </div>
+                  )
+                }
+                return (
+                  <div className="aspect-video bg-secondary/50 rounded-xl flex items-center justify-center">
+                    <div className="text-center">
+                      <ImageIcon className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No screenshot uploaded</p>
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
           </div>
         </div>
