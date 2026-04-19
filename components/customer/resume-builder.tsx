@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, User, Briefcase, Clock, DollarSign, MapPin, Navigation, X, Plus, Check, Crown } from 'lucide-react'
+import { ArrowLeft, User, Briefcase, Clock, DollarSign, MapPin, Navigation, X, Plus, Check, Crown, Upload, FileText, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
@@ -28,6 +28,7 @@ export function ResumeBuilder() {
   const [formData, setFormData] = useState({
     name: '',
     role: '',
+    dateOfBirth: '',
     experience: '',
     skills: [] as string[],
     salaryExpectation: '',
@@ -35,11 +36,56 @@ export function ResumeBuilder() {
       lat: 0,
       lng: 0,
       address: '',
+    },
+    identityProof: {
+      type: '',
+      file: null as File | null,
+      preview: '',
+    },
+    passportPhoto: {
+      file: null as File | null,
+      preview: '',
     }
   })
   
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [customSkill, setCustomSkill] = useState('')
+  const IDENTITY_PROOF_OPTIONS = ['Aadhar', 'Voter ID', 'PAN', 'Driving License', 'Custom']
+
+  const handleIdentityProofChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setFormData(prev => ({
+          ...prev,
+          identityProof: {
+            ...prev.identityProof,
+            file,
+            preview: reader.result as string,
+          }
+        }))
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handlePassportPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setFormData(prev => ({
+          ...prev,
+          passportPhoto: {
+            file,
+            preview: reader.result as string,
+          }
+        }))
+      }
+      reader.readAsDataURL(file)
+    }
+  }
 
   const detectLocation = async () => {
     setDetectingLocation(true)
@@ -106,10 +152,15 @@ export function ResumeBuilder() {
     if (step === 1) {
       if (!formData.name.trim()) newErrors.name = 'Name is required'
       if (!formData.role.trim()) newErrors.role = 'Role is required'
+      if (!formData.dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required'
     } else if (step === 2) {
       if (!formData.experience) newErrors.experience = 'Experience is required'
       if (formData.skills.length === 0) newErrors.skills = 'Select at least one skill'
     } else if (step === 3) {
+      if (!formData.identityProof.type) newErrors.identityProof = 'Identity proof type is required'
+      if (!formData.identityProof.file) newErrors.identityProofFile = 'Identity proof document is required'
+      if (!formData.passportPhoto.file) newErrors.passportPhoto = 'Passport size photo is required'
+    } else if (step === 4) {
       if (!formData.salaryExpectation) newErrors.salary = 'Salary expectation is required'
       if (!formData.location.address) newErrors.location = 'Location is required'
     }
@@ -120,7 +171,7 @@ export function ResumeBuilder() {
 
   const handleNext = () => {
     if (validateStep()) {
-      if (step < 3) {
+      if (step < 4) {
         setStep(step + 1)
       } else {
         handleSubmit()
@@ -159,7 +210,7 @@ export function ResumeBuilder() {
         : [...prev.skills, skill]
     }))
   }
-
+  
   const addCustomSkill = () => {
     if (customSkill.trim() && !formData.skills.includes(customSkill.trim())) {
       setFormData(prev => ({
@@ -169,8 +220,6 @@ export function ResumeBuilder() {
       setCustomSkill('')
     }
   }
-
-  const progressWidth = (step / 3) * 100
 
   return (
     <div className="relative min-h-screen flex flex-col overflow-hidden">
@@ -188,7 +237,7 @@ export function ResumeBuilder() {
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <span className="text-sm text-muted-foreground">Step {step} of 3</span>
+        <span className="text-sm text-muted-foreground">Step {step} of 4</span>
         <div className="w-10" />
       </header>
       
@@ -197,7 +246,7 @@ export function ResumeBuilder() {
         <div className="h-1 bg-secondary/50 rounded-full overflow-hidden">
           <div 
             className="h-full bg-primary transition-all duration-500 ease-out"
-            style={{ width: `${progressWidth}%` }}
+            style={{ width: `${(step / 4) * 100}%` }}
           />
         </div>
       </div>
@@ -268,6 +317,21 @@ export function ResumeBuilder() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Date of Birth */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Date of Birth</label>
+                <div className="relative">
+                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    type="date"
+                    value={formData.dateOfBirth}
+                    onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                    className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary"
+                  />
+                </div>
+                {errors.dateOfBirth && <p className="text-sm text-destructive">{errors.dateOfBirth}</p>}
               </div>
             </div>
           </div>
@@ -358,8 +422,99 @@ export function ResumeBuilder() {
           </div>
         )}
         
-        {/* Step 3: Salary & Location */}
+        {/* Step 3: Identity & Passport Photos */}
         {step === 3 && (
+          <div className="max-w-md mx-auto animate-slide-up">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">Verification Documents</h1>
+            <p className="text-muted-foreground mb-8">Upload your identity proof and passport size photo</p>
+            
+            <div className="space-y-6">
+              {/* Identity Proof Type */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Identity Proof Type</label>
+                <select
+                  value={formData.identityProof.type}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    identityProof: { ...prev.identityProof, type: e.target.value }
+                  }))}
+                  className="w-full h-14 px-4 bg-secondary/50 border border-border/50 rounded-lg focus:border-primary focus:outline-none appearance-none text-foreground"
+                >
+                  <option value="">Select identity proof type</option>
+                  {IDENTITY_PROOF_OPTIONS.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+                {errors.identityProof && <p className="text-sm text-destructive">{errors.identityProof}</p>}
+              </div>
+
+              {/* Identity Proof Upload */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Upload Identity Proof</label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={handleIdentityProofChange}
+                    className="hidden"
+                    id="identity-proof-input"
+                  />
+                  <label
+                    htmlFor="identity-proof-input"
+                    className="flex flex-col items-center justify-center w-full h-32 px-4 py-6 border-2 border-dashed border-border/50 rounded-lg cursor-pointer bg-secondary/20 hover:bg-secondary/30 transition-colors"
+                  >
+                    <FileText className="w-8 h-8 text-muted-foreground mb-2" />
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {formData.identityProof.file ? 'Click to change' : 'Click to upload'}
+                    </span>
+                    <span className="text-xs text-muted-foreground/60">PNG, JPG, PDF</span>
+                  </label>
+                </div>
+                {formData.identityProof.file && (
+                  <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-lg">
+                    <Check className="w-5 h-5 text-primary" />
+                    <span className="text-sm text-primary">{formData.identityProof.file.name}</span>
+                  </div>
+                )}
+                {errors.identityProofFile && <p className="text-sm text-destructive">{errors.identityProofFile}</p>}
+              </div>
+
+              {/* Passport Photo Upload */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Passport Size Photo</label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePassportPhotoChange}
+                    className="hidden"
+                    id="passport-photo-input"
+                  />
+                  <label
+                    htmlFor="passport-photo-input"
+                    className="flex flex-col items-center justify-center w-full h-32 px-4 py-6 border-2 border-dashed border-border/50 rounded-lg cursor-pointer bg-secondary/20 hover:bg-secondary/30 transition-colors"
+                  >
+                    <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {formData.passportPhoto.file ? 'Click to change' : 'Click to upload'}
+                    </span>
+                    <span className="text-xs text-muted-foreground/60">PNG, JPG (4x6 recommended)</span>
+                  </label>
+                </div>
+                {formData.passportPhoto.file && (
+                  <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-lg">
+                    <Check className="w-5 h-5 text-primary" />
+                    <span className="text-sm text-primary">{formData.passportPhoto.file.name}</span>
+                  </div>
+                )}
+                {errors.passportPhoto && <p className="text-sm text-destructive">{errors.passportPhoto}</p>}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Step 4: Salary & Location */}
+        {step === 4 && (
           <div className="max-w-md mx-auto animate-slide-up">
             <h1 className="text-2xl md:text-3xl font-bold mb-2">Final Details</h1>
             <p className="text-muted-foreground mb-8">Set your salary expectations and location</p>
@@ -443,7 +598,7 @@ export function ResumeBuilder() {
           >
             {isLoading ? (
               <div className="w-6 h-6 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-            ) : step === 3 ? (
+            ) : step === 4 ? (
               'Create Job Alert'
             ) : (
               'Continue'

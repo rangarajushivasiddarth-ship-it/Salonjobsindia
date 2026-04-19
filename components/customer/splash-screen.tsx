@@ -46,7 +46,7 @@ export function SplashScreen({ onFindJob, onCreateAlert }: SplashScreenProps) {
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative w-[600px] h-[240px] opacity-[0.12]">
               <Image
-                src="/images/fitonze-logo.png"
+                src="/images/fitone-logo.png"
                 alt=""
                 fill
                 className="object-contain mix-blend-lighten"
@@ -82,8 +82,8 @@ export function SplashScreen({ onFindJob, onCreateAlert }: SplashScreenProps) {
               style={phase === 'logo-settle' ? { filter: 'blur(10px) saturate(0)' } : {}}
             >
               <Image
-                src="/images/fitonze-logo.png"
-                alt="Fitonze"
+                src="/images/fitone-logo.png"
+                alt="FITONE"
                 fill
                 className="object-contain mix-blend-lighten"
                 style={{ filter: 'drop-shadow(0 0 30px rgba(200, 170, 100, 0.5))' }}
@@ -104,8 +104,8 @@ export function SplashScreen({ onFindJob, onCreateAlert }: SplashScreenProps) {
           >
             <div className="relative w-[280px] h-[115px] md:w-[340px] md:h-[140px]">
               <Image
-                src="/images/fitonze-logo.png"
-                alt="Fitonze"
+                src="/images/fitone-logo.png"
+                alt="FITONE"
                 fill
                 className="object-contain mix-blend-lighten"
                 style={{ filter: 'drop-shadow(0 0 25px rgba(200, 170, 100, 0.4))' }}
@@ -157,7 +157,7 @@ export function SplashScreen({ onFindJob, onCreateAlert }: SplashScreenProps) {
             className="mt-4 text-xs text-muted-foreground/60 animate-content-fade-in"
             style={{ animationDelay: '500ms' }}
           >
-            Fitonze<sup className="text-[8px]">&reg;</sup> is a registered trademark
+            FITONE<sup className="text-[8px]">&reg;</sup> is a registered trademark
           </p>
         </div>
       )}

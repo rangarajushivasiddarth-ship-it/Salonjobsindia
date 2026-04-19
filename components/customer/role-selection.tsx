@@ -56,8 +56,8 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
         <div className="flex items-center justify-center mb-6 animate-scale-in">
           <div className="relative w-40 h-16">
             <Image
-              src="/images/fitonze-logo.png"
-              alt="Fitonze"
+              src="/images/fitone-logo.png"
+              alt="FITONE"
               fill
               className="object-contain"
             />
