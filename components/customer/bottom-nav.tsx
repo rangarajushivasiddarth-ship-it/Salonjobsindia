@@ -1,13 +1,13 @@
 'use client'
 
-import { Home, Search, MessageCircle, Bell, User } from 'lucide-react'
+import { Home, Search, MessageCircle, Bell, User, Briefcase, Building2 } from 'lucide-react'
 import { useApp } from '@/lib/app-context'
 
 type NavItem = {
   id: string
   label: string
   icon: typeof Home
-  step: 'discovery' | 'results' | 'messages' | 'notifications' | 'profile'
+  step: 'discovery' | 'results' | 'messages' | 'notifications' | 'profile' | 'owner-panel' | 'create-job'
   badge?: number
 }
 
@@ -19,17 +19,36 @@ interface BottomNavProps {
 export function BottomNav({ unreadMessages = 0, unreadNotifications = 0 }: BottomNavProps) {
   const { currentStep, goToStep, user } = useApp()
   
-  const navItems: NavItem[] = [
-    { id: 'home', label: 'Home', icon: Home, step: user?.isSubscribed ? 'results' : 'discovery' },
+  const isOwner = user?.role === 'salon_owner'
+  
+  // Different nav items for job seekers vs salon owners
+  const jobSeekerNav: NavItem[] = [
+    { id: 'home', label: 'Jobs', icon: Home, step: user?.isSubscribed ? 'results' : 'discovery' },
     { id: 'search', label: 'Search', icon: Search, step: 'discovery' },
-    { id: 'messages', label: 'Messages', icon: MessageCircle, step: 'messages', badge: unreadMessages },
+    { id: 'messages', label: 'Chats', icon: MessageCircle, step: 'messages', badge: unreadMessages },
     { id: 'notifications', label: 'Alerts', icon: Bell, step: 'notifications', badge: unreadNotifications },
     { id: 'profile', label: 'Profile', icon: User, step: 'profile' },
   ]
   
+  const salonOwnerNav: NavItem[] = [
+    { id: 'home', label: 'Dashboard', icon: Building2, step: 'owner-panel' },
+    { id: 'post', label: 'Post Job', icon: Briefcase, step: 'create-job' },
+    { id: 'messages', label: 'Chats', icon: MessageCircle, step: 'messages', badge: unreadMessages },
+    { id: 'notifications', label: 'Alerts', icon: Bell, step: 'notifications', badge: unreadNotifications },
+    { id: 'profile', label: 'Profile', icon: User, step: 'profile' },
+  ]
+  
+  const navItems = isOwner ? salonOwnerNav : jobSeekerNav
+  
   const isActive = (item: NavItem) => {
     if (item.id === 'home') {
+      if (isOwner) {
+        return currentStep === 'owner-panel'
+      }
       return currentStep === 'discovery' || currentStep === 'results'
+    }
+    if (item.id === 'post') {
+      return currentStep === 'create-job'
     }
     return currentStep === item.step
   }

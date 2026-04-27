@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { ArrowLeft, Send, Building2, Search, Phone, MoreVertical, Check, CheckCheck, Image, Paperclip } from 'lucide-react'
+import { ArrowLeft, Send, Building2, Search, Phone, MoreVertical, Check, CheckCheck, Paperclip, MapPin, Briefcase, MessageCircle, Copy, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
@@ -12,56 +12,89 @@ interface Message {
   timestamp: Date
   isMe: boolean
   status: 'sent' | 'delivered' | 'read'
+  type: 'text' | 'contact' | 'job_card'
+  contactInfo?: {
+    phone: string
+    whatsapp?: string
+  }
+  jobInfo?: {
+    role: string
+    salary: string
+    location: string
+  }
 }
 
 interface Conversation {
   id: string
   salonName: string
   salonId: string
+  salonPhone: string
+  salonWhatsapp?: string
+  jobRole?: string
+  jobSalary?: string
+  location?: string
   lastMessage: string
   timestamp: Date
   unread: number
   messages: Message[]
+  contactShared: boolean
 }
 
-// Mock conversations
+// Mock conversations with contact info
 const MOCK_CONVERSATIONS: Conversation[] = [
   {
     id: 'c1',
     salonName: 'Glamour Studio',
     salonId: 's1',
-    lastMessage: 'Yes, we are still hiring. Can you come for an interview?',
+    salonPhone: '+91 98765 43210',
+    salonWhatsapp: '919876543210',
+    jobRole: 'Hair Stylist',
+    jobSalary: 'Rs.25,000 - Rs.35,000',
+    location: 'Koramangala, Bangalore',
+    lastMessage: 'Yes, we are still hiring. Here is my contact number.',
     timestamp: new Date(Date.now() - 30 * 60 * 1000),
-    unread: 2,
+    unread: 1,
+    contactShared: true,
     messages: [
-      { id: 'm1', text: 'Hi, I saw your job posting for Hair Stylist position. I have 3 years of experience.', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), isMe: true, status: 'read' },
-      { id: 'm2', text: 'Hello! Thanks for reaching out. Your profile looks great!', timestamp: new Date(Date.now() - 1.5 * 60 * 60 * 1000), isMe: false, status: 'read' },
-      { id: 'm3', text: 'Is the position still available?', timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000), isMe: true, status: 'read' },
-      { id: 'm4', text: 'Yes, we are still hiring. Can you come for an interview?', timestamp: new Date(Date.now() - 30 * 60 * 1000), isMe: false, status: 'read' },
+      { id: 'm1', text: 'Hi, I saw your job posting for Hair Stylist position. I have 3 years of experience.', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), isMe: true, status: 'read', type: 'text' },
+      { id: 'm2', text: 'Hello! Thanks for reaching out. Your profile looks great!', timestamp: new Date(Date.now() - 1.5 * 60 * 60 * 1000), isMe: false, status: 'read', type: 'text' },
+      { id: 'm3', text: 'Is the position still available?', timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000), isMe: true, status: 'read', type: 'text' },
+      { id: 'm4', text: 'Yes, we are still hiring. Here is my contact number.', timestamp: new Date(Date.now() - 30 * 60 * 1000), isMe: false, status: 'read', type: 'text' },
+      { id: 'm5', text: '', timestamp: new Date(Date.now() - 29 * 60 * 1000), isMe: false, status: 'read', type: 'contact', contactInfo: { phone: '+91 98765 43210', whatsapp: '919876543210' } },
     ],
   },
   {
     id: 'c2',
     salonName: 'Style Haven',
     salonId: 's2',
-    lastMessage: 'Thank you for applying!',
+    salonPhone: '+91 87654 32109',
+    jobRole: 'Makeup Artist',
+    jobSalary: 'Rs.30,000 - Rs.45,000',
+    location: 'Indiranagar, Bangalore',
+    lastMessage: 'Thank you for applying! We will review your profile.',
     timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
     unread: 0,
+    contactShared: false,
     messages: [
-      { id: 'm5', text: 'I would like to apply for the Makeup Artist position.', timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000), isMe: true, status: 'read' },
-      { id: 'm6', text: 'Thank you for applying!', timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000), isMe: false, status: 'read' },
+      { id: 'm5', text: 'I would like to apply for the Makeup Artist position.', timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000), isMe: true, status: 'read', type: 'text' },
+      { id: 'm6', text: 'Thank you for applying! We will review your profile.', timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000), isMe: false, status: 'read', type: 'text' },
     ],
   },
   {
     id: 'c3',
-    salonName: 'Beauty Bliss',
+    salonName: 'Beauty Bliss Spa',
     salonId: 's3',
+    salonPhone: '+91 76543 21098',
+    jobRole: 'Spa Therapist',
+    jobSalary: 'Rs.20,000 - Rs.28,000',
+    location: 'HSR Layout, Bangalore',
     lastMessage: 'We will get back to you soon.',
     timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
     unread: 0,
+    contactShared: false,
     messages: [
-      { id: 'm7', text: 'Hello, is the receptionist role still open?', timestamp: new Date(Date.now() - 25 * 60 * 60 * 1000), isMe: true, status: 'read' },
-      { id: 'm8', text: 'We will get back to you soon.', timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), isMe: false, status: 'read' },
+      { id: 'm7', text: 'Hello, is the Spa Therapist role still open?', timestamp: new Date(Date.now() - 25 * 60 * 60 * 1000), isMe: true, status: 'read', type: 'text' },
+      { id: 'm8', text: 'We will get back to you soon.', timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), isMe: false, status: 'read', type: 'text' },
     ],
   },
 ]
@@ -72,10 +105,13 @@ export function MessagesScreen() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [newMessage, setNewMessage] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [showContactCard, setShowContactCard] = useState(false)
+  const [copiedPhone, setCopiedPhone] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   
   const filteredConversations = conversations.filter(c => 
-    c.salonName.toLowerCase().includes(searchQuery.toLowerCase())
+    c.salonName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.jobRole?.toLowerCase().includes(searchQuery.toLowerCase())
   )
   
   const totalUnread = conversations.reduce((sum, c) => sum + c.unread, 0)
@@ -101,7 +137,21 @@ export function MessagesScreen() {
     if (selectedConversation) {
       scrollToBottom()
     }
-  }, [selectedConversation])
+  }, [selectedConversation?.messages.length])
+  
+  const copyPhone = (phone: string) => {
+    navigator.clipboard.writeText(phone.replace(/\s/g, ''))
+    setCopiedPhone(true)
+    setTimeout(() => setCopiedPhone(false), 2000)
+  }
+  
+  const openWhatsApp = (number: string) => {
+    window.open(`https://wa.me/${number}`, '_blank')
+  }
+  
+  const callPhone = (phone: string) => {
+    window.open(`tel:${phone.replace(/\s/g, '')}`, '_self')
+  }
   
   const sendMessage = () => {
     if (!newMessage.trim() || !selectedConversation) return
@@ -112,6 +162,7 @@ export function MessagesScreen() {
       timestamp: new Date(),
       isMe: true,
       status: 'sent',
+      type: 'text',
     }
     
     setConversations(prev => prev.map(c => {
@@ -137,10 +188,11 @@ export function MessagesScreen() {
     setTimeout(() => {
       const reply: Message = {
         id: `m${Date.now()}`,
-        text: 'Thanks for your message! We will review and get back to you.',
+        text: 'Thanks for your message! We will review and get back to you shortly.',
         timestamp: new Date(),
         isMe: false,
         status: 'read',
+        type: 'text',
       }
       
       setConversations(prev => prev.map(c => {
@@ -163,12 +215,64 @@ export function MessagesScreen() {
   }
   
   const openConversation = (conversation: Conversation) => {
-    // Mark as read
     setConversations(prev => prev.map(c => 
       c.id === conversation.id ? { ...c, unread: 0 } : c
     ))
     setSelectedConversation({ ...conversation, unread: 0 })
   }
+  
+  // Render contact card message
+  const renderContactCard = (message: Message, conversation: Conversation) => (
+    <div className="p-4 bg-gradient-to-br from-primary/20 to-accent/10 rounded-2xl border border-primary/30 max-w-[85%]">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-8 h-8 rounded-full bg-primary/30 flex items-center justify-center">
+          <Phone className="w-4 h-4 text-primary" />
+        </div>
+        <span className="text-sm font-medium">Contact Shared</span>
+      </div>
+      
+      <div className="space-y-2">
+        <div className="flex items-center justify-between p-3 bg-background/50 rounded-xl">
+          <div>
+            <p className="text-xs text-muted-foreground">Phone Number</p>
+            <p className="font-semibold">{message.contactInfo?.phone}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => copyPhone(message.contactInfo?.phone || '')}
+              className="h-8 w-8 p-0"
+            >
+              {copiedPhone ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => callPhone(message.contactInfo?.phone || '')}
+              className="h-8 w-8 p-0 text-green-500"
+            >
+              <Phone className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+        
+        {message.contactInfo?.whatsapp && (
+          <Button
+            onClick={() => openWhatsApp(message.contactInfo?.whatsapp || '')}
+            className="w-full h-10 bg-green-600 hover:bg-green-700 text-white"
+          >
+            <MessageCircle className="w-4 h-4 mr-2" />
+            Chat on WhatsApp
+          </Button>
+        )}
+      </div>
+      
+      <div className="flex items-center justify-end gap-1 mt-2 text-muted-foreground">
+        <span className="text-[10px]">{formatTime(message.timestamp)}</span>
+      </div>
+    </div>
+  )
   
   // Chat View
   if (selectedConversation) {
@@ -194,27 +298,117 @@ export function MessagesScreen() {
               </div>
               <div>
                 <h1 className="font-semibold">{selectedConversation.salonName}</h1>
-                <p className="text-xs text-muted-foreground">Usually replies within an hour</p>
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Briefcase className="w-3 h-3" />
+                  {selectedConversation.jobRole}
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              {selectedConversation.contactShared && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => callPhone(selectedConversation.salonPhone)}
+                  className="text-green-500 hover:text-green-600 hover:bg-green-500/10"
+                >
+                  <Phone className="w-5 h-5" />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <Phone className="w-5 h-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
+                onClick={() => setShowContactCard(!showContactCard)}
                 className="text-muted-foreground hover:text-foreground"
               >
                 <MoreVertical className="w-5 h-5" />
               </Button>
             </div>
           </div>
+          
+          {/* Job Info Banner */}
+          <div className="mt-3 p-3 bg-secondary/30 rounded-xl flex items-center gap-3">
+            <div className="flex-1">
+              <p className="text-sm font-medium">{selectedConversation.jobRole}</p>
+              <p className="text-xs text-muted-foreground flex items-center gap-2">
+                <span>{selectedConversation.jobSalary}</span>
+                <span>|</span>
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  {selectedConversation.location}
+                </span>
+              </p>
+            </div>
+            {selectedConversation.contactShared && (
+              <div className="px-2 py-1 bg-green-500/20 text-green-500 text-xs font-medium rounded-full">
+                Contact Shared
+              </div>
+            )}
+          </div>
         </header>
+        
+        {/* Contact Card Popup */}
+        {showContactCard && selectedConversation.contactShared && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-6">
+            <div className="w-full max-w-sm p-6 glass-card rounded-2xl animate-scale-in">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-lg">Contact Details</h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowContactCard(false)}
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+              </div>
+              
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Building2 className="w-8 h-8 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold">{selectedConversation.salonName}</h4>
+                  <p className="text-sm text-muted-foreground">{selectedConversation.location}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="p-4 bg-secondary/30 rounded-xl">
+                  <p className="text-xs text-muted-foreground mb-1">Phone Number</p>
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-lg">{selectedConversation.salonPhone}</p>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => copyPhone(selectedConversation.salonPhone)}
+                    >
+                      {copiedPhone ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    onClick={() => callPhone(selectedConversation.salonPhone)}
+                    className="h-12 bg-primary hover:bg-primary/90"
+                  >
+                    <Phone className="w-4 h-4 mr-2" />
+                    Call
+                  </Button>
+                  {selectedConversation.salonWhatsapp && (
+                    <Button
+                      onClick={() => openWhatsApp(selectedConversation.salonWhatsapp!)}
+                      className="h-12 bg-green-600 hover:bg-green-700"
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      WhatsApp
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Messages */}
         <div className="relative z-10 flex-1 p-4 overflow-y-auto">
@@ -224,27 +418,31 @@ export function MessagesScreen() {
                 key={message.id}
                 className={`flex ${message.isMe ? 'justify-end' : 'justify-start'}`}
               >
-                <div
-                  className={`max-w-[80%] p-3 rounded-2xl ${
-                    message.isMe
-                      ? 'bg-primary text-primary-foreground rounded-br-md'
-                      : 'glass-card rounded-bl-md'
-                  }`}
-                >
-                  <p className="text-sm">{message.text}</p>
-                  <div className={`flex items-center justify-end gap-1 mt-1 ${
-                    message.isMe ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                  }`}>
-                    <span className="text-[10px]">
-                      {formatTime(message.timestamp)}
-                    </span>
-                    {message.isMe && (
-                      message.status === 'read' 
-                        ? <CheckCheck className="w-3 h-3" />
-                        : <Check className="w-3 h-3" />
-                    )}
+                {message.type === 'contact' ? (
+                  renderContactCard(message, selectedConversation)
+                ) : (
+                  <div
+                    className={`max-w-[80%] p-3 rounded-2xl ${
+                      message.isMe
+                        ? 'bg-primary text-primary-foreground rounded-br-md'
+                        : 'glass-card rounded-bl-md'
+                    }`}
+                  >
+                    <p className="text-sm">{message.text}</p>
+                    <div className={`flex items-center justify-end gap-1 mt-1 ${
+                      message.isMe ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                    }`}>
+                      <span className="text-[10px]">
+                        {formatTime(message.timestamp)}
+                      </span>
+                      {message.isMe && (
+                        message.status === 'read' 
+                          ? <CheckCheck className="w-3 h-3" />
+                          : <Check className="w-3 h-3" />
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             ))}
             <div ref={messagesEndRef} />
@@ -313,7 +511,7 @@ export function MessagesScreen() {
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
-            placeholder="Search conversations..."
+            placeholder="Search by salon or job role..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="h-10 pl-12 bg-secondary/50 border-border/50"
@@ -337,7 +535,7 @@ export function MessagesScreen() {
                     <Building2 className="w-6 h-6 text-primary" />
                   </div>
                   {conversation.unread > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 flex items-center justify-center text-xs font-bold bg-destructive text-destructive-foreground rounded-full">
+                    <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 flex items-center justify-center text-xs font-bold bg-accent text-accent-foreground rounded-full">
                       {conversation.unread}
                     </span>
                   )}
@@ -345,33 +543,44 @@ export function MessagesScreen() {
                 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className={`font-semibold truncate ${conversation.unread > 0 ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <h3 className={`font-semibold truncate ${conversation.unread > 0 ? 'text-foreground' : ''}`}>
                       {conversation.salonName}
                     </h3>
                     <span className="text-xs text-muted-foreground shrink-0">
                       {formatTime(conversation.timestamp)}
                     </span>
                   </div>
+                  <p className="text-xs text-primary mb-1 flex items-center gap-1">
+                    <Briefcase className="w-3 h-3" />
+                    {conversation.jobRole}
+                  </p>
                   <p className={`text-sm truncate ${conversation.unread > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                     {conversation.lastMessage}
                   </p>
                 </div>
+                
+                {/* Contact shared badge */}
+                {conversation.contactShared && (
+                  <div className="shrink-0">
+                    <Phone className="w-4 h-4 text-green-500" />
+                  </div>
+                )}
               </button>
             ))}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center px-4">
             <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mb-4">
-              <Search className="w-8 h-8 text-muted-foreground" />
+              <MessageCircle className="w-8 h-8 text-muted-foreground" />
             </div>
             <h3 className="font-semibold text-lg mb-2">
               {searchQuery ? 'No conversations found' : 'No messages yet'}
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground max-w-xs">
               {searchQuery 
                 ? 'Try a different search term' 
-                : 'Start a conversation by applying to a job'}
+                : 'Apply to jobs to start conversations with salon owners'}
             </p>
           </div>
         )}

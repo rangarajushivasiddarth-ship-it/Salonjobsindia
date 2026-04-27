@@ -1,21 +1,22 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, User, Briefcase, Clock, DollarSign, MapPin, Navigation, X, Plus, Check, Crown, Upload, FileText, Calendar } from 'lucide-react'
+import { ArrowLeft, User, Briefcase, Clock, DollarSign, MapPin, Navigation, X, Plus, Check, Crown, Upload, FileText, Calendar, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
 import type { Resume } from '@/lib/types'
+import { BEAUTY_ROLES, ROLE_CATEGORIES } from '@/lib/types'
 
 const SKILL_SUGGESTIONS = [
-  'Hair Cutting', 'Hair Coloring', 'Styling', 'Bridal Makeup',
-  'Manicure', 'Pedicure', 'Facial', 'Threading', 'Waxing',
-  'Massage', 'Hair Treatment', 'Keratin', 'Balayage', 'Highlights'
-]
-
-const ROLE_SUGGESTIONS = [
-  'Hair Stylist', 'Makeup Artist', 'Nail Technician', 'Beautician',
-  'Salon Manager', 'Receptionist', 'Spa Therapist', 'Barber', 'Custom'
+  'Hair Cutting', 'Hair Coloring', 'Hair Styling', 'Bridal Makeup',
+  'Party Makeup', 'HD Makeup', 'Airbrush Makeup', 'Manicure', 'Pedicure',
+  'Gel Nails', 'Acrylic Nails', 'Nail Art', 'Facial', 'Threading',
+  'Waxing', 'Body Massage', 'Head Massage', 'Spa Treatment', 'Hair Treatment',
+  'Keratin', 'Smoothening', 'Rebonding', 'Balayage', 'Highlights', 'Global Color',
+  'Mehendi Design', 'Bridal Mehendi', 'Eyebrow Shaping', 'Lash Extensions',
+  'Beard Styling', 'Hair Spa', 'Dandruff Treatment', 'Anti-Aging Facial',
+  'Clean Up', 'De-Tan', 'Body Polishing', 'Perm', 'Hair Extensions'
 ]
 
 export function ResumeBuilder() {
@@ -341,9 +342,9 @@ export function ResumeBuilder() {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">Desired Role</label>
                 <div className="relative">
-                  <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
-                    placeholder="e.g. Hair Stylist"
+                    placeholder="Search or select a role..."
                     value={formData.role}
                     onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
                     className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary"
@@ -351,31 +352,52 @@ export function ResumeBuilder() {
                 </div>
                 {errors.role && <p className="text-sm text-destructive">{errors.role}</p>}
                 
-                {/* Role suggestions */}
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {ROLE_SUGGESTIONS.map(role => (
+                {/* Category filter */}
+                <div className="flex gap-2 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-hide">
+                  {ROLE_CATEGORIES.slice(0, 6).map(category => (
                     <button
-                      key={role}
+                      key={category}
+                      type="button"
                       onClick={() => {
-                        if (role === 'Custom') {
-                          // Clear the role to let user type their own
-                          setFormData(prev => ({ ...prev, role: '' }))
-                          // Focus the input
-                          const input = document.querySelector('input[placeholder="e.g. Hair Stylist"]') as HTMLInputElement
-                          input?.focus()
-                        } else {
-                          setFormData(prev => ({ ...prev, role }))
+                        // Filter and show first role of that category
+                        const categoryRoles = BEAUTY_ROLES.filter(r => r.category === category || category === 'All')
+                        if (categoryRoles.length > 0 && category !== 'All') {
+                          setFormData(prev => ({ ...prev, role: categoryRoles[0].role }))
                         }
                       }}
-                      className={`px-3 py-1.5 text-sm rounded-full transition-all ${
-                        role === 'Custom'
-                          ? 'bg-accent/20 text-accent hover:bg-accent/30 border border-dashed border-accent/50'
-                          : formData.role === role
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                      className="px-3 py-1.5 text-xs rounded-full whitespace-nowrap bg-secondary/50 text-muted-foreground hover:bg-secondary transition-colors"
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Role suggestions - showing filtered or all */}
+                <div className="max-h-48 overflow-y-auto space-y-1 p-2 bg-secondary/20 rounded-xl">
+                  {BEAUTY_ROLES
+                    .filter(r => 
+                      !formData.role || 
+                      r.role.toLowerCase().includes(formData.role.toLowerCase()) ||
+                      r.category.toLowerCase().includes(formData.role.toLowerCase())
+                    )
+                    .slice(0, 12)
+                    .map(({ role, category }) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, role }))}
+                      className={`w-full px-3 py-2.5 text-sm rounded-lg transition-all flex items-center justify-between ${
+                        formData.role === role
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-background/50 text-foreground hover:bg-secondary'
                       }`}
                     >
-                      {role === 'Custom' ? '+ Custom Role' : role}
+                      <span>{role}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        formData.role === role ? 'bg-primary-foreground/20' : 'bg-secondary'
+                      }`}>
+                        {category}
+                      </span>
                     </button>
                   ))}
                 </div>

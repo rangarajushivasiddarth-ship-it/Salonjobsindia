@@ -8,28 +8,97 @@ const JOBS_KEY = 'fitonze_jobs'
 const USERS_KEY = 'fitonze_registered_users'
 const MESSAGES_KEY = 'fitonze_messages'
 
-// Job Seeker Plans
+// Job Seeker Plans - Gold, Premium, Ultra Premium
 export const JOB_SEEKER_PLANS: JobSeekerPlan[] = [
   {
-    id: 'basic',
-    name: 'Basic',
+    id: 'gold',
+    name: 'Gold',
     shopLimit: 10,
     price: 99,
-    description: 'View up to 10 salon details',
+    features: [
+      'View up to 10 salon profiles',
+      'Apply to jobs',
+      'Basic chat support',
+      'Email notifications'
+    ],
+    color: '#FFD700',
   },
   {
-    id: 'standard',
-    name: 'Standard',
+    id: 'premium',
+    name: 'Premium',
     shopLimit: 15,
-    price: 149,
-    description: 'View up to 15 salon details',
+    price: 199,
+    features: [
+      'View up to 15 salon profiles',
+      'Priority applications',
+      'Full chat access',
+      'Push notifications',
+      'Profile boost'
+    ],
+    recommended: true,
+    color: '#C0C0C0',
   },
   {
-    id: 'unlimited',
-    name: 'Unlimited',
+    id: 'ultra_premium',
+    name: 'Ultra Premium',
     shopLimit: 'unlimited',
-    price: 399,
-    description: 'View all salon details',
+    price: 349,
+    features: [
+      'View unlimited salon profiles',
+      'Top priority applications',
+      'Direct call access to owners',
+      'Verified badge',
+      'Featured profile',
+      'Dedicated support'
+    ],
+    color: '#B76E79',
+  },
+]
+
+// Salon Owner Plans - Per Job Post
+export const SALON_OWNER_PLANS = [
+  {
+    id: 'single_post',
+    name: 'Single Post',
+    price: 99,
+    jobPosts: 1,
+    validityDays: 30,
+    features: [
+      '1 Job posting',
+      'Valid for 30 days',
+      'View applicant profiles',
+      'In-app chat'
+    ],
+  },
+  {
+    id: 'triple_post',
+    name: 'Triple Post',
+    price: 249,
+    jobPosts: 3,
+    validityDays: 45,
+    features: [
+      '3 Job postings',
+      'Valid for 45 days',
+      'Priority listing',
+      'Applicant filters',
+      'Chat + Call access'
+    ],
+    recommended: true,
+  },
+  {
+    id: 'bulk_post',
+    name: 'Bulk Post',
+    price: 499,
+    jobPosts: 10,
+    validityDays: 90,
+    features: [
+      '10 Job postings',
+      'Valid for 90 days',
+      'Featured listings',
+      'Advanced analytics',
+      'Priority support',
+      'Bulk hiring tools'
+    ],
   },
 ]
 

@@ -84,7 +84,7 @@ function CustomerApp() {
   }
 
   // Show bottom nav only on main app screens (not auth flow)
-  const showBottomNav = ['discovery', 'results', 'messages', 'notifications', 'profile'].includes(currentStep)
+  const showBottomNav = ['discovery', 'results', 'messages', 'notifications', 'profile', 'owner-panel', 'create-job'].includes(currentStep)
   
   return (
     <>
