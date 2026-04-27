@@ -50,7 +50,69 @@ export function ResumeBuilder() {
   
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [customSkill, setCustomSkill] = useState('')
-  const IDENTITY_PROOF_OPTIONS = ['Aadhar', 'Voter ID', 'PAN', 'Driving License', 'Custom']
+  const [dobInputMode, setDobInputMode] = useState<'calendar' | 'manual'>('calendar')
+  const [manualDob, setManualDob] = useState('')
+  const IDENTITY_PROOF_OPTIONS = ['Aadhar Card', 'PAN Card', 'Driving License', 'Other']
+
+  // Format date from YYYY-MM-DD to DD/MM/YYYY for display
+  const formatDateForDisplay = (dateStr: string) => {
+    if (!dateStr) return ''
+    const parts = dateStr.split('-')
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`
+    }
+    return dateStr
+  }
+
+  // Parse manual date input (DD/MM/YYYY or DD-MM-YYYY) to YYYY-MM-DD
+  const parseManualDate = (input: string) => {
+    // Remove any non-numeric characters except / and -
+    const cleaned = input.replace(/[^0-9/-]/g, '')
+    
+    // Try to parse DD/MM/YYYY or DD-MM-YYYY
+    const match = cleaned.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/)
+    if (match) {
+      const day = match[1].padStart(2, '0')
+      const month = match[2].padStart(2, '0')
+      const year = match[3]
+      
+      // Validate date
+      const date = new Date(`${year}-${month}-${day}`)
+      if (!isNaN(date.getTime()) && 
+          date.getDate() === parseInt(day) && 
+          date.getMonth() + 1 === parseInt(month)) {
+        return `${year}-${month}-${day}`
+      }
+    }
+    return null
+  }
+
+  // Auto-format manual input as user types
+  const handleManualDobChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value
+    
+    // Only allow numbers and slashes
+    value = value.replace(/[^0-9/]/g, '')
+    
+    // Auto-add slashes
+    if (value.length === 2 && !value.includes('/')) {
+      value = value + '/'
+    } else if (value.length === 5 && value.split('/').length === 2) {
+      value = value + '/'
+    }
+    
+    // Limit length
+    if (value.length <= 10) {
+      setManualDob(value)
+      
+      // Try to parse and set the date
+      const parsed = parseManualDate(value)
+      if (parsed) {
+        setFormData(prev => ({ ...prev, dateOfBirth: parsed }))
+        setErrors(prev => ({ ...prev, dateOfBirth: '' }))
+      }
+    }
+  }
 
   const handleIdentityProofChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -322,15 +384,79 @@ export function ResumeBuilder() {
               {/* Date of Birth */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">Date of Birth</label>
-                <div className="relative">
-                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    type="date"
-                    value={formData.dateOfBirth}
-                    onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
-                    className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary"
-                  />
+                
+                {/* Toggle between calendar and manual input */}
+                <div className="flex gap-2 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => setDobInputMode('calendar')}
+                    className={`flex-1 py-2 px-3 text-sm rounded-lg transition-all flex items-center justify-center gap-2 ${
+                      dobInputMode === 'calendar'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                    }`}
+                  >
+                    <Calendar className="w-4 h-4" />
+                    Calendar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDobInputMode('manual')}
+                    className={`flex-1 py-2 px-3 text-sm rounded-lg transition-all flex items-center justify-center gap-2 ${
+                      dobInputMode === 'manual'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                    }`}
+                  >
+                    <FileText className="w-4 h-4" />
+                    Type Date
+                  </button>
                 </div>
+
+                {/* Calendar Input */}
+                {dobInputMode === 'calendar' && (
+                  <div className="relative">
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      type="date"
+                      value={formData.dateOfBirth}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))
+                        setManualDob(formatDateForDisplay(e.target.value))
+                      }}
+                      className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary"
+                    />
+                  </div>
+                )}
+
+                {/* Manual Input */}
+                {dobInputMode === 'manual' && (
+                  <div className="relative">
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="DD/MM/YYYY"
+                      value={manualDob}
+                      onChange={handleManualDobChange}
+                      className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary"
+                      maxLength={10}
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/60">
+                      DD/MM/YYYY
+                    </span>
+                  </div>
+                )}
+
+                {/* Show selected date */}
+                {formData.dateOfBirth && (
+                  <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-lg">
+                    <Check className="w-4 h-4 text-primary" />
+                    <span className="text-sm text-primary">
+                      Selected: {formatDateForDisplay(formData.dateOfBirth)}
+                    </span>
+                  </div>
+                )}
+
                 {errors.dateOfBirth && <p className="text-sm text-destructive">{errors.dateOfBirth}</p>}
               </div>
             </div>
@@ -454,26 +580,47 @@ export function ResumeBuilder() {
                 <div className="relative">
                   <input
                     type="file"
-                    accept="image/*,.pdf"
+                    accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
                     onChange={handleIdentityProofChange}
                     className="hidden"
                     id="identity-proof-input"
                   />
-                  <label
-                    htmlFor="identity-proof-input"
-                    className="flex flex-col items-center justify-center w-full h-32 px-4 py-6 border-2 border-dashed border-border/50 rounded-lg cursor-pointer bg-secondary/20 hover:bg-secondary/30 transition-colors"
-                  >
-                    <FileText className="w-8 h-8 text-muted-foreground mb-2" />
-                    <span className="text-sm font-medium text-muted-foreground">
-                      {formData.identityProof.file ? 'Click to change' : 'Click to upload'}
-                    </span>
-                    <span className="text-xs text-muted-foreground/60">PNG, JPG, PDF</span>
-                  </label>
+                  
+                  {/* Show preview if file is uploaded */}
+                  {formData.identityProof.preview && formData.identityProof.file?.type.startsWith('image/') ? (
+                    <div className="flex flex-col items-center">
+                      <div className="relative w-full h-32 rounded-lg overflow-hidden border-2 border-primary/50 mb-3">
+                        <img
+                          src={formData.identityProof.preview}
+                          alt="Identity Proof Preview"
+                          className="w-full h-full object-contain bg-secondary/30"
+                        />
+                      </div>
+                      <label
+                        htmlFor="identity-proof-input"
+                        className="flex items-center gap-2 px-4 py-2 bg-secondary/50 rounded-lg cursor-pointer hover:bg-secondary transition-colors"
+                      >
+                        <Upload className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Change Document</span>
+                      </label>
+                    </div>
+                  ) : (
+                    <label
+                      htmlFor="identity-proof-input"
+                      className="flex flex-col items-center justify-center w-full h-32 px-4 py-6 border-2 border-dashed border-border/50 rounded-lg cursor-pointer bg-secondary/20 hover:bg-secondary/30 transition-colors"
+                    >
+                      <FileText className="w-8 h-8 text-muted-foreground mb-2" />
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {formData.identityProof.file ? 'Click to change' : 'Click to upload'}
+                      </span>
+                      <span className="text-xs text-muted-foreground/60">PNG, JPG, PDF</span>
+                    </label>
+                  )}
                 </div>
                 {formData.identityProof.file && (
                   <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-lg">
                     <Check className="w-5 h-5 text-primary" />
-                    <span className="text-sm text-primary">{formData.identityProof.file.name}</span>
+                    <span className="text-sm text-primary truncate">{formData.identityProof.file.name}</span>
                   </div>
                 )}
                 {errors.identityProofFile && <p className="text-sm text-destructive">{errors.identityProofFile}</p>}
@@ -485,21 +632,43 @@ export function ResumeBuilder() {
                 <div className="relative">
                   <input
                     type="file"
-                    accept="image/*"
+                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                     onChange={handlePassportPhotoChange}
                     className="hidden"
                     id="passport-photo-input"
                   />
-                  <label
-                    htmlFor="passport-photo-input"
-                    className="flex flex-col items-center justify-center w-full h-32 px-4 py-6 border-2 border-dashed border-border/50 rounded-lg cursor-pointer bg-secondary/20 hover:bg-secondary/30 transition-colors"
-                  >
-                    <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                    <span className="text-sm font-medium text-muted-foreground">
-                      {formData.passportPhoto.file ? 'Click to change' : 'Click to upload'}
-                    </span>
-                    <span className="text-xs text-muted-foreground/60">PNG, JPG (4x6 recommended)</span>
-                  </label>
+                  
+                  {/* Show preview if photo is uploaded */}
+                  {formData.passportPhoto.preview ? (
+                    <div className="flex flex-col items-center">
+                      <div className="relative w-32 h-40 rounded-lg overflow-hidden border-2 border-primary/50 mb-3">
+                        <img
+                          src={formData.passportPhoto.preview}
+                          alt="Passport Photo Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <label
+                        htmlFor="passport-photo-input"
+                        className="flex items-center gap-2 px-4 py-2 bg-secondary/50 rounded-lg cursor-pointer hover:bg-secondary transition-colors"
+                      >
+                        <Upload className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Change Photo</span>
+                      </label>
+                    </div>
+                  ) : (
+                    <label
+                      htmlFor="passport-photo-input"
+                      className="flex flex-col items-center justify-center w-full h-40 px-4 py-6 border-2 border-dashed border-border/50 rounded-lg cursor-pointer bg-secondary/20 hover:bg-secondary/30 transition-colors"
+                    >
+                      <div className="w-20 h-24 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center mb-3">
+                        <User className="w-10 h-10 text-muted-foreground/30" />
+                      </div>
+                      <Upload className="w-6 h-6 text-muted-foreground mb-2" />
+                      <span className="text-sm font-medium text-muted-foreground">Upload Passport Size Photo</span>
+                      <span className="text-xs text-muted-foreground/60">JPG, JPEG, PNG</span>
+                    </label>
+                  )}
                 </div>
                 {formData.passportPhoto.file && (
                   <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-lg">
