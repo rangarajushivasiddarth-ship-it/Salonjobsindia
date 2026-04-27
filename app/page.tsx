@@ -11,6 +11,10 @@ import { JobResults } from '@/components/customer/job-results'
 import { ProfileDashboard } from '@/components/customer/profile-dashboard'
 import { CreateJob } from '@/components/customer/create-job'
 import { OwnerPanel } from '@/components/customer/owner-panel'
+import { MessagesScreen } from '@/components/customer/messages-screen'
+import { NotificationsScreen } from '@/components/customer/notifications-screen'
+import { SettingsScreen } from '@/components/customer/settings-screen'
+import { BottomNav } from '@/components/customer/bottom-nav'
 
 function CustomerApp() {
   const { currentStep, signIn, signUp, setRole, goToStep, isLoading } = useApp()
@@ -63,6 +67,12 @@ function CustomerApp() {
         return <CreateJob />
       case 'owner-panel':
         return <OwnerPanel />
+      case 'messages':
+        return <MessagesScreen />
+      case 'notifications':
+        return <NotificationsScreen />
+      case 'settings':
+        return <SettingsScreen />
       default:
         return (
           <SplashScreen
@@ -73,7 +83,15 @@ function CustomerApp() {
     }
   }
 
-  return <>{renderScreen()}</>
+  // Show bottom nav only on main app screens (not auth flow)
+  const showBottomNav = ['discovery', 'results', 'messages', 'notifications', 'profile'].includes(currentStep)
+  
+  return (
+    <>
+      {renderScreen()}
+      {showBottomNav && <BottomNav unreadMessages={2} unreadNotifications={3} />}
+    </>
+  )
 }
 
 export default function Home() {

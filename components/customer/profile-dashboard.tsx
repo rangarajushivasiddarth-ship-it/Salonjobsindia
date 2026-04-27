@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, User, Crown, Calendar, Heart, Briefcase, LogOut, ChevronRight, MapPin, Building2, Settings, Bell, Shield } from 'lucide-react'
+import { ArrowLeft, User, Crown, Calendar, Heart, Briefcase, LogOut, ChevronRight, MapPin, Building2, Settings, Bell, Shield, TrendingUp, Eye, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
 
@@ -24,7 +24,7 @@ export function ProfileDashboard() {
   ]
 
   return (
-    <div className="relative min-h-screen flex flex-col overflow-hidden">
+    <div className="relative min-h-screen flex flex-col overflow-hidden pb-20">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/20" />
       <div className="absolute top-0 left-0 w-full h-48 bg-gradient-to-b from-primary/10 to-transparent" />
@@ -43,6 +43,7 @@ export function ProfileDashboard() {
         <Button
           variant="ghost"
           size="icon"
+          onClick={() => goToStep('settings')}
           className="text-muted-foreground hover:text-foreground"
         >
           <Settings className="w-5 h-5" />
@@ -133,6 +134,56 @@ export function ProfileDashboard() {
                 <Briefcase className="w-6 h-6 text-primary mb-2" />
                 <p className="text-2xl font-bold">{appliedJobs.length}</p>
                 <p className="text-sm text-muted-foreground">Applications</p>
+              </div>
+              <div className="p-4 glass-card rounded-xl">
+                <Eye className="w-6 h-6 text-green-500 mb-2" />
+                <p className="text-2xl font-bold">23</p>
+                <p className="text-sm text-muted-foreground">Profile Views</p>
+              </div>
+              <div className="p-4 glass-card rounded-xl">
+                <TrendingUp className="w-6 h-6 text-amber-500 mb-2" />
+                <p className="text-2xl font-bold">85%</p>
+                <p className="text-sm text-muted-foreground">Match Rate</p>
+              </div>
+            </div>
+            
+            {/* Recent Activity */}
+            <div className="mt-4">
+              <h3 className="font-semibold mb-3">Recent Activity</h3>
+              <div className="space-y-3">
+                <div className="p-3 glass-card rounded-xl flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Eye className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Glamour Studio viewed your profile</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> 2 hours ago
+                    </p>
+                  </div>
+                </div>
+                <div className="p-3 glass-card rounded-xl flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
+                    <Briefcase className="w-5 h-5 text-accent" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">New job match: Hair Stylist at Style Haven</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> 5 hours ago
+                    </p>
+                  </div>
+                </div>
+                <div className="p-3 glass-card rounded-xl flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                    <Crown className="w-5 h-5 text-green-500" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Subscription activated successfully</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> 1 day ago
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
             

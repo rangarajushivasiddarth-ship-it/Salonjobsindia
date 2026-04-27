@@ -15,7 +15,7 @@ interface AppState {
   appliedJobs: string[]
   isAuthenticated: boolean
   isLoading: boolean
-  currentStep: 'splash' | 'auth' | 'role' | 'resume' | 'discovery' | 'subscription' | 'results' | 'profile' | 'create-job' | 'owner-panel'
+  currentStep: 'splash' | 'auth' | 'role' | 'resume' | 'discovery' | 'subscription' | 'results' | 'profile' | 'create-job' | 'owner-panel' | 'messages' | 'notifications' | 'settings'
 }
 
 interface AppContextType extends AppState {

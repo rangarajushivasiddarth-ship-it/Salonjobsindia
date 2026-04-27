@@ -304,6 +304,15 @@
   animation: glow-pulse 2s ease-in-out infinite;
 }
 
+/* Safe area for mobile devices */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
