@@ -39,24 +39,6 @@ export function SplashScreen({ onFindJob, onCreateAlert }: SplashScreenProps) {
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: '1s' }} />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/3 rounded-full blur-[100px]" />
 
-      {/* Settled Logo Background (visible after settle phase) - Only gold text visible */}
-      {phase === 'content' && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-          {/* Logo with lighten blend - dark background syncs, only gold shows */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative w-[600px] h-[240px] opacity-[0.12]">
-              <Image
-                src="/images/fitone-logo.png"
-                alt=""
-                fill
-                className="object-contain mix-blend-lighten"
-                priority
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Main Logo - Pop In Animation */}
       {(phase === 'logo-pop' || phase === 'logo-settle') && (
         <div 
@@ -67,26 +49,26 @@ export function SplashScreen({ onFindJob, onCreateAlert }: SplashScreenProps) {
           }`}
         >
           <div className="relative">
-            {/* Glow effect behind logo */}
+            {/* Subtle glow effect behind logo */}
             <div 
-              className={`absolute -inset-12 bg-primary/30 rounded-full blur-[60px] transition-opacity duration-1000 ${
+              className={`absolute -inset-8 bg-amber-500/20 rounded-full blur-[40px] transition-opacity duration-1000 ${
                 phase === 'logo-settle' ? 'opacity-0' : 'animate-glow-pulse'
               }`} 
             />
             
-            {/* Logo with lighten blend - dark background syncs, only gold shows */}
+            {/* Logo - clean display without blend modes */}
             <div 
               className={`relative w-[340px] h-[140px] md:w-[420px] md:h-[170px] transition-all duration-1000 ${
                 phase === 'logo-settle' ? 'scale-150 opacity-0' : ''
               }`}
-              style={phase === 'logo-settle' ? { filter: 'blur(10px) saturate(0)' } : {}}
+              style={phase === 'logo-settle' ? { filter: 'blur(10px)' } : {}}
             >
               <Image
                 src="/images/fitone-logo.png"
-                alt="FITONE"
+                alt="FITONE - Born to Shine"
                 fill
-                className="object-contain mix-blend-lighten"
-                style={{ filter: 'drop-shadow(0 0 30px rgba(200, 170, 100, 0.5))' }}
+                className="object-contain"
+                style={{ filter: 'drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3))' }}
                 priority
               />
             </div>
@@ -97,18 +79,18 @@ export function SplashScreen({ onFindJob, onCreateAlert }: SplashScreenProps) {
       {/* Content - Fades in after logo settles */}
       {phase === 'content' && (
         <div className="relative z-10 flex flex-col items-center px-6 text-center">
-          {/* Small logo - dark background syncs, only gold text visible */}
+          {/* Logo - clean display */}
           <div 
             className="mb-6 animate-content-fade-in"
             style={{ animationDelay: '0ms' }}
           >
-            <div className="relative w-[280px] h-[115px] md:w-[340px] md:h-[140px]">
+            <div className="relative w-[300px] h-[120px] md:w-[380px] md:h-[155px]">
               <Image
                 src="/images/fitone-logo.png"
-                alt="FITONE"
+                alt="FITONE - Born to Shine"
                 fill
-                className="object-contain mix-blend-lighten"
-                style={{ filter: 'drop-shadow(0 0 25px rgba(200, 170, 100, 0.4))' }}
+                className="object-contain"
+                style={{ filter: 'drop-shadow(0 4px 15px rgba(0, 0, 0, 0.2))' }}
                 priority
               />
             </div>
