@@ -234,6 +234,7 @@ export function SubscriptionScreen() {
                 alt="Payment QR Code"
                 width={200}
                 height={200}
+                style={{ width: 'auto', height: 'auto' }}
                 className="object-contain"
               />
             </div>
