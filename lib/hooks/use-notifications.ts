@@ -1,7 +1,7 @@
 'use client'
 
 import useSWR from 'swr'
-import { apiClient } from '@/lib/api/client'
+import api from '@/lib/api/client'
 
 // =============================================================================
 // REAL-TIME NOTIFICATIONS HOOK
@@ -34,7 +34,7 @@ export function useNotifications(): UseNotificationsReturn {
   const { data, error, isLoading, mutate } = useSWR(
     'notifications',
     async () => {
-      const response = await apiClient.get<{ notifications: Notification[] }>('/users/notifications')
+      const response = await api.get<{ notifications: Notification[] }>('/users/notifications')
       if (!response.success) {
         throw new Error(response.error || 'Failed to fetch notifications')
       }
@@ -48,7 +48,7 @@ export function useNotifications(): UseNotificationsReturn {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      await apiClient.put(`/users/notifications/${notificationId}/read`, {})
+      await api.put(`/users/notifications/${notificationId}/read`, {})
       mutate()
     } catch (error) {
       console.error('Failed to mark as read:', error)
@@ -57,7 +57,7 @@ export function useNotifications(): UseNotificationsReturn {
 
   const markAllAsRead = async () => {
     try {
-      await apiClient.put('/users/notifications/read-all', {})
+      await api.put('/users/notifications/read-all', {})
       mutate()
     } catch (error) {
       console.error('Failed to mark all as read:', error)
@@ -66,7 +66,7 @@ export function useNotifications(): UseNotificationsReturn {
 
   const deleteNotification = async (notificationId: string) => {
     try {
-      await apiClient.delete(`/users/notifications/${notificationId}`)
+      await api.delete(`/users/notifications/${notificationId}`)
       mutate()
     } catch (error) {
       console.error('Failed to delete notification:', error)

@@ -256,7 +256,23 @@ export function ResumeBuilder() {
     const resume: Resume = {
       id: crypto.randomUUID(),
       userId: user?.id || '',
-      ...formData,
+      name: formData.name,
+      role: formData.role,
+      dateOfBirth: formData.dateOfBirth,
+      experience: formData.experience,
+      skills: formData.skills,
+      salaryExpectation: formData.salaryExpectation,
+      location: formData.location,
+      passportPhoto: {
+        url: formData.passportPhoto.preview || undefined,
+        uploaded: !!formData.passportPhoto.file,
+      },
+      identityProof: {
+        type: formData.identityProof.type as 'Aadhar Card' | 'PAN Card' | 'Driving License' | 'Other',
+        documentUrl: formData.identityProof.preview || undefined,
+        uploaded: !!formData.identityProof.file,
+        verified: false,
+      },
       createdAt: new Date(),
       updatedAt: new Date(),
     }

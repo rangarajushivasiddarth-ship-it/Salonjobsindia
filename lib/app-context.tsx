@@ -288,7 +288,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (state.user && isApproved) {
       await UserService.updateUser(state.user.id, {
         isSubscribed: true,
-        subscriptionPlan: subscription.plan,
+        subscriptionPlan: subscription.planName || subscription.planType,
         subscriptionExpiry: subscription.expiresAt?.toString(),
       })
     }

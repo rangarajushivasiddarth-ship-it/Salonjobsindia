@@ -109,3 +109,38 @@ export const updateApplicationStatus = async (
 export const getApplication = async (id: string): Promise<{ success: boolean; application: Application }> => {
   return api.get(`/applications/${id}`);
 };
+
+// Apply to a job (alias)
+export const apply = async (jobId: string, coverLetter?: string): Promise<{ success: boolean; message?: string; error?: string; application?: Application }> => {
+  return api.post('/applications', { jobId, coverLetter });
+};
+
+// Withdraw application (alias)
+export const withdraw = async (applicationId: string): Promise<{ success: boolean; message?: string; error?: string }> => {
+  return api.put(`/applications/${applicationId}/withdraw`);
+};
+
+// Update status (alias)
+export const updateStatus = async (applicationId: string, status: 'shortlisted' | 'rejected' | 'hired'): Promise<{ success: boolean; message?: string; error?: string }> => {
+  return api.put(`/applications/${applicationId}/status`, { status });
+};
+
+// Get owner applications (alias)
+export const getOwnerApplications = async (): Promise<{ success: boolean; applications?: Application[]; error?: string }> => {
+  return api.get('/applications/owner/all');
+};
+
+// Unified applicationsApi export for hooks
+export const applicationsApi = {
+  applyToJob,
+  apply,
+  getMyApplications,
+  withdrawApplication,
+  withdraw,
+  getJobApplications,
+  getAllOwnerApplications,
+  getOwnerApplications,
+  updateApplicationStatus,
+  updateStatus,
+  getApplication,
+};

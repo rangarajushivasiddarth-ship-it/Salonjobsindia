@@ -125,3 +125,40 @@ export const updateJobStatus = async (id: string, status: string): Promise<{ suc
 export const deleteJob = async (id: string): Promise<{ success: boolean; message: string }> => {
   return api.delete(`/jobs/${id}`);
 };
+
+// Save job
+export const saveJob = async (jobId: string): Promise<{ success: boolean; message: string }> => {
+  return api.post(`/jobs/${jobId}/save`, {});
+};
+
+// Unsave job
+export const unsaveJob = async (jobId: string): Promise<{ success: boolean; message: string }> => {
+  return api.delete(`/jobs/${jobId}/save`);
+};
+
+// Get saved jobs
+export const getSavedJobs = async (): Promise<{ success: boolean; jobs: Job[] }> => {
+  return api.get('/jobs/saved');
+};
+
+// Get job by ID
+export const getJobById = async (jobId: string): Promise<{ success: boolean; job?: Job; error?: string }> => {
+  return api.get(`/jobs/${jobId}`);
+};
+
+// Unified jobsApi export for hooks
+export const jobsApi = {
+  getJobs,
+  getNearbyJobs,
+  getFeaturedJobs,
+  getJob,
+  getJobById,
+  createJob,
+  getMyJobs,
+  updateJob,
+  updateJobStatus,
+  deleteJob,
+  saveJob,
+  unsaveJob,
+  getSavedJobs,
+};

@@ -122,3 +122,30 @@ export const getAllSubscriptions = async (status?: string, page = 1, limit = 20)
   if (status && status !== 'all') params.append('status', status);
   return api.get(`/subscriptions/all?${params.toString()}`);
 };
+
+// Submit payment with screenshot
+export const submitPayment = async (planId: string, screenshotFile: File): Promise<{
+  success: boolean;
+  message?: string;
+  error?: string;
+  subscription?: Subscription;
+}> => {
+  const formData = new FormData();
+  formData.append('planId', planId);
+  formData.append('screenshot', screenshotFile);
+  return api.post('/subscriptions/submit-payment', formData, { formData: true });
+};
+
+// Unified subscriptionsApi export for hooks
+export const subscriptionsApi = {
+  getPlans,
+  getPlan,
+  getMySubscription,
+  subscribe,
+  getSubscriptionHistory,
+  getPendingSubscriptions,
+  approveSubscription,
+  rejectSubscription,
+  getAllSubscriptions,
+  submitPayment,
+};
