@@ -2,11 +2,21 @@
 
 import type { Subscription, Job, User, JobSeekerPlan } from './types'
 
-// Storage keys
-const SUBSCRIPTIONS_KEY = 'fitonze_subscriptions'
-const JOBS_KEY = 'fitonze_jobs'
-const USERS_KEY = 'fitonze_registered_users'
-const MESSAGES_KEY = 'fitonze_messages'
+// Storage keys - unified with data-service for consistency
+const SUBSCRIPTIONS_KEY = 'fitone_subscriptions'
+const JOBS_KEY = 'fitone_jobs'
+const USERS_KEY = 'fitone_users'
+const MESSAGES_KEY = 'fitone_messages'
+const NOTIFICATIONS_KEY = 'fitone_notifications'
+
+// Helper to dispatch sync events
+function dispatchDataUpdate(key: string) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('fitone_data_updated', { detail: { key } }))
+    // Also dispatch legacy event for backward compatibility
+    window.dispatchEvent(new CustomEvent('fitonze_data_update', { detail: { type: key.replace('fitone_', '') } }))
+  }
+}
 
 // Job Seeker Plans - Gold, Premium, Ultra Premium
 export const JOB_SEEKER_PLANS: JobSeekerPlan[] = [
@@ -156,7 +166,7 @@ export function saveSubscription(subscription: Subscription): void {
   localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subscriptions))
   
   // Dispatch event for real-time updates
-  window.dispatchEvent(new CustomEvent('fitonze_data_update', { detail: { type: 'subscription' } }))
+  dispatchDataUpdate(SUBSCRIPTIONS_KEY)
 }
 
 export function approveSubscription(subscriptionId: string): Subscription | null {
@@ -174,24 +184,42 @@ export function approveSubscription(subscriptionId: string): Subscription | null
     // Update user subscription status
     updateUserSubscription(subscription.userId, true)
     
+    // Create notification for user
+    createNotification({
+      userId: subscription.userId,
+      type: 'payment_approved',
+      title: 'Subscription Activated!',
+      message: `Your ${subscription.planName} plan is now active. Enjoy premium features!`,
+      isRead: false,
+    })
+    
     // Dispatch event for real-time updates
-    window.dispatchEvent(new CustomEvent('fitonze_data_update', { detail: { type: 'subscription', action: 'approved' } }))
+    dispatchDataUpdate(SUBSCRIPTIONS_KEY)
     
     return subscription
   }
   return null
 }
 
-export function rejectSubscription(subscriptionId: string): void {
+export function rejectSubscription(subscriptionId: string, reason?: string): void {
   const subscriptions = getAllSubscriptions()
-  const index = subscriptions.findIndex(s => s.id === subscriptionId)
+  const subscription = subscriptions.find(s => s.id === subscriptionId)
   
-  if (index >= 0) {
-    subscriptions[index].status = 'rejected'
+  if (subscription) {
+    subscription.status = 'rejected'
     localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subscriptions))
     
+    // Create notification for user
+    createNotification({
+      userId: subscription.userId,
+      type: 'payment_rejected',
+      title: 'Payment Rejected',
+      message: reason || 'Your payment could not be verified. Please try again or contact support.',
+      isRead: false,
+    })
+    
     // Dispatch event for real-time updates
-    window.dispatchEvent(new CustomEvent('fitonze_data_update', { detail: { type: 'subscription', action: 'rejected' } }))
+    dispatchDataUpdate(SUBSCRIPTIONS_KEY)
   }
 }
 
@@ -248,12 +276,12 @@ function updateUserSubscription(userId: string, isSubscribed: boolean): void {
         localStorage.setItem(USERS_KEY, JSON.stringify(users))
         
         // Also update USER_KEY if this is the current user
-        const currentUserStr = localStorage.getItem('fitonze_user')
+        const currentUserStr = localStorage.getItem('fitone_current_user')
         if (currentUserStr) {
           const currentUser = JSON.parse(currentUserStr)
           if (currentUser.id === userId) {
             currentUser.isSubscribed = isSubscribed
-            localStorage.setItem('fitonze_user', JSON.stringify(currentUser))
+            localStorage.setItem('fitone_current_user', JSON.stringify(currentUser))
           }
         }
         break
@@ -299,7 +327,7 @@ export function saveJob(job: Job): void {
   localStorage.setItem(JOBS_KEY, JSON.stringify(jobs))
   
   // Dispatch event for real-time updates
-  window.dispatchEvent(new CustomEvent('fitonze_data_update', { detail: { type: 'job' } }))
+  dispatchDataUpdate(JOBS_KEY)
 }
 
 export function deleteJob(jobId: string): void {
@@ -308,7 +336,7 @@ export function deleteJob(jobId: string): void {
   localStorage.setItem(JOBS_KEY, JSON.stringify(jobs))
   
   // Dispatch event for real-time updates
-  window.dispatchEvent(new CustomEvent('fitonze_data_update', { detail: { type: 'job', action: 'deleted' } }))
+  dispatchDataUpdate(JOBS_KEY)
 }
 
 // ============== MESSAGES ==============
@@ -348,7 +376,7 @@ export function sendMessage(message: Omit<Message, 'id' | 'createdAt' | 'isRead'
     localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages))
     
     // Dispatch event for real-time updates
-    window.dispatchEvent(new CustomEvent('fitonze_data_update', { detail: { type: 'message' } }))
+    dispatchDataUpdate(MESSAGES_KEY)
   }
   
   return newMessage
@@ -380,6 +408,84 @@ export function useDataUpdates(callback: (detail: { type: string; action?: strin
   
   return () => {
     window.removeEventListener('fitonze_data_update', handler)
+  }
+}
+
+// ============== NOTIFICATIONS ==============
+
+interface Notification {
+  id?: string
+  userId: string
+  type: 'job' | 'message' | 'subscription' | 'payment_approved' | 'payment_rejected' | 'system'
+  title: string
+  message: string
+  isRead: boolean
+  createdAt?: string
+}
+
+export function getAllNotifications(): Notification[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const data = localStorage.getItem(NOTIFICATIONS_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+export function getNotificationsForUser(userId: string): Notification[] {
+  return getAllNotifications()
+    .filter(n => n.userId === userId)
+    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+}
+
+export function getUnreadNotificationCount(userId: string): number {
+  return getNotificationsForUser(userId).filter(n => !n.isRead).length
+}
+
+export function createNotification(notification: Omit<Notification, 'id' | 'createdAt'>): Notification {
+  const newNotification: Notification = {
+    ...notification,
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+  }
+  
+  const notifications = getAllNotifications()
+  notifications.unshift(newNotification)
+  
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifications))
+    dispatchDataUpdate(NOTIFICATIONS_KEY)
+  }
+  
+  return newNotification
+}
+
+export function markNotificationAsRead(notificationId: string): void {
+  const notifications = getAllNotifications()
+  const notification = notifications.find(n => n.id === notificationId)
+  
+  if (notification) {
+    notification.isRead = true
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifications))
+      dispatchDataUpdate(NOTIFICATIONS_KEY)
+    }
+  }
+}
+
+export function markAllNotificationsAsRead(userId: string): void {
+  const notifications = getAllNotifications()
+  
+  notifications.forEach(n => {
+    if (n.userId === userId) {
+      n.isRead = true
+    }
+  })
+  
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifications))
+    dispatchDataUpdate(NOTIFICATIONS_KEY)
   }
 }
 

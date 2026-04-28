@@ -1,20 +1,18 @@
 'use client'
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
-import type { User, Resume, Job, Subscription, UserRole } from './types'
-
-// Check if API is available (backend is running)
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || ''
-const isApiAvailable = () => !!API_BASE_URL
+import type { User, Resume, Subscription, UserRole } from './types'
+import { UserService, JobSeekerService, SubscriptionService, NotificationService, SyncService } from './data-service'
 
 interface AppState {
   user: User | null
   resume: Resume | null
   subscription: Subscription | null
-  savedJobs: Job[]
+  savedJobs: string[]
   appliedJobs: string[]
   isAuthenticated: boolean
   isLoading: boolean
+  unreadNotifications: number
   currentStep: 'splash' | 'auth' | 'role' | 'resume' | 'discovery' | 'subscription' | 'results' | 'profile' | 'create-job' | 'owner-panel' | 'messages' | 'notifications' | 'settings'
 }
 
@@ -25,19 +23,20 @@ interface AppContextType extends AppState {
   setRole: (role: UserRole) => void
   setResume: (resume: Resume) => void
   setSubscription: (subscription: Subscription) => void
-  saveJob: (job: Job) => void
+  saveJob: (jobId: string) => void
   unsaveJob: (jobId: string) => void
   applyToJob: (jobId: string) => void
   goToStep: (step: AppState['currentStep']) => void
   updateUser: (updates: Partial<User>) => void
   refreshUser: () => Promise<void>
+  refreshNotifications: () => void
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
 
-// Storage keys
-const TOKEN_KEY = 'fitonze_token'
-const USER_KEY = 'fitonze_user'
+// Storage keys for session data
+const SAVED_JOBS_KEY = 'fitone_saved_jobs'
+const APPLIED_JOBS_KEY = 'fitone_applied_jobs'
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>({
@@ -48,6 +47,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     appliedJobs: [],
     isAuthenticated: false,
     isLoading: true,
+    unreadNotifications: 0,
     currentStep: 'splash',
   })
 
@@ -55,26 +55,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const savedUser = localStorage.getItem(USER_KEY)
+        const currentUser = UserService.getCurrentUser()
         
-        if (savedUser) {
-          try {
-            const user = JSON.parse(savedUser) as User
-            setState(prev => ({
-              ...prev,
-              user,
-              isAuthenticated: true,
-              isLoading: false,
-              currentStep: user.role ? 
-                (user.role === 'job_seeker' ? 'discovery' : 'owner-panel') 
-                : 'role',
-            }))
-            return
-          } catch {
-            // Invalid saved user, clear storage
-            localStorage.removeItem(TOKEN_KEY)
-            localStorage.removeItem(USER_KEY)
-          }
+        if (currentUser) {
+          // Load saved jobs and applied jobs
+          const savedJobs = JSON.parse(localStorage.getItem(SAVED_JOBS_KEY) || '[]')
+          const appliedJobs = JSON.parse(localStorage.getItem(APPLIED_JOBS_KEY) || '[]')
+          
+          // Get subscription status
+          const subscription = SubscriptionService.getByUserId(currentUser.id)
+          
+          // Get unread notifications count
+          const unreadCount = NotificationService.getUnreadCount(currentUser.id)
+          
+          setState(prev => ({
+            ...prev,
+            user: currentUser as unknown as User,
+            savedJobs,
+            appliedJobs,
+            subscription: subscription as unknown as Subscription,
+            unreadNotifications: unreadCount,
+            isAuthenticated: true,
+            isLoading: false,
+            currentStep: currentUser.role ? 
+              (currentUser.role === 'job_seeker' ? 
+                (currentUser.isSubscribed ? 'results' : 'discovery') 
+                : 'owner-panel') 
+              : 'role',
+          }))
+          return
         }
       } catch (error) {
         console.error('Auth check failed:', error)
@@ -87,81 +96,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setTimeout(checkAuth, 1500)
   }, [])
 
+  // Subscribe to real-time data updates
+  useEffect(() => {
+    if (!state.user?.id) return
+    
+    const unsubscribe = SyncService.subscribe('*', () => {
+      // Refresh notification count on any data change
+      const unreadCount = NotificationService.getUnreadCount(state.user!.id)
+      setState(prev => ({ ...prev, unreadNotifications: unreadCount }))
+    })
+    
+    return unsubscribe
+  }, [state.user?.id])
+
   const signIn = useCallback(async (email: string, password: string, phone: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      // Check if user exists in localStorage (registered users)
-      const registeredUsersStr = localStorage.getItem('fitonze_registered_users')
-      const registeredUsers: Record<string, { email: string; password: string; phone: string; user: User }> = 
-        registeredUsersStr ? JSON.parse(registeredUsersStr) : {}
+    const result = await UserService.login({ email, password, phone })
+    
+    if (result.success && result.user) {
+      const user = result.user as unknown as User
       
-      const userRecord = registeredUsers[email.toLowerCase()]
-      
-      if (!userRecord) {
-        return { success: false, error: 'No account found with this email. Please sign up first.' }
-      }
-      
-      if (userRecord.password !== password) {
-        return { success: false, error: 'Invalid password. Please try again.' }
-      }
-      
-      // Verify phone number matches
-      const registeredPhone = userRecord.user.phone?.replace(/\D/g, '')
-      const inputPhone = phone.replace(/\D/g, '')
-      if (registeredPhone && registeredPhone !== inputPhone) {
-        return { success: false, error: 'Phone number does not match. Please check and try again.' }
-      }
-      
-      const user = userRecord.user
-      
-      // Save to storage
-      localStorage.setItem(TOKEN_KEY, 'mock-token-' + Date.now())
-      localStorage.setItem(USER_KEY, JSON.stringify(user))
+      // Load user data
+      const savedJobs = JSON.parse(localStorage.getItem(SAVED_JOBS_KEY) || '[]')
+      const appliedJobs = JSON.parse(localStorage.getItem(APPLIED_JOBS_KEY) || '[]')
+      const subscription = SubscriptionService.getByUserId(user.id)
+      const unreadCount = NotificationService.getUnreadCount(user.id)
       
       setState(prev => ({
         ...prev,
         user,
+        savedJobs,
+        appliedJobs,
+        subscription: subscription as unknown as Subscription,
+        unreadNotifications: unreadCount,
         isAuthenticated: true,
         currentStep: user.role ? 
-          (user.role === 'job_seeker' ? 'discovery' : 'owner-panel') 
+          (user.role === 'job_seeker' ? 
+            (user.isSubscribed ? 'results' : 'discovery') 
+            : 'owner-panel') 
           : 'role',
       }))
       
       return { success: true }
-    } catch (error) {
-      console.error('Sign in error:', error)
-      return { success: false, error: 'Failed to sign in. Please try again.' }
     }
+    
+    return { success: false, error: result.error }
   }, [])
 
   const signUp = useCallback(async (name: string, email: string, password: string, phone: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      // Check if email already exists
-      const registeredUsersStr = localStorage.getItem('fitonze_registered_users')
-      const registeredUsers: Record<string, { email: string; password: string; user: User }> = 
-        registeredUsersStr ? JSON.parse(registeredUsersStr) : {}
-      
-      if (registeredUsers[email.toLowerCase()]) {
-        return { success: false, error: 'An account with this email already exists. Please sign in.' }
-      }
-      
-      // Create new user
-      const user: User = {
-        id: crypto.randomUUID(),
-        email,
-        phone,
-        name,
-        role: undefined as unknown as UserRole, // Will be set in role selection
-        isSubscribed: false,
-        createdAt: new Date(),
-      }
-      
-      // Save to registered users
-      registeredUsers[email.toLowerCase()] = { email, password, user }
-      localStorage.setItem('fitonze_registered_users', JSON.stringify(registeredUsers))
-      
-      // Save current session
-      localStorage.setItem(TOKEN_KEY, 'mock-token-' + Date.now())
-      localStorage.setItem(USER_KEY, JSON.stringify(user))
+    const result = await UserService.register({ name, email, password, phone })
+    
+    if (result.success && result.user) {
+      const user = result.user as unknown as User
       
       setState(prev => ({
         ...prev,
@@ -171,15 +156,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }))
       
       return { success: true }
-    } catch (error) {
-      console.error('Sign up error:', error)
-      return { success: false, error: 'Failed to create account. Please try again.' }
     }
+    
+    return { success: false, error: result.error }
   }, [])
 
   const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(USER_KEY)
+    UserService.logout()
     
     setState({
       user: null,
@@ -189,116 +172,131 @@ export function AppProvider({ children }: { children: ReactNode }) {
       appliedJobs: [],
       isAuthenticated: false,
       isLoading: false,
+      unreadNotifications: 0,
       currentStep: 'splash',
     })
   }, [])
 
   const refreshUser = useCallback(async () => {
-    try {
-      const savedUser = localStorage.getItem(USER_KEY)
-      if (savedUser) {
-        const user = JSON.parse(savedUser) as User
-        setState(prev => ({
-          ...prev,
-          user,
-        }))
-      }
-    } catch (error) {
-      console.error('Failed to refresh user:', error)
+    const currentUser = UserService.getCurrentUser()
+    if (currentUser) {
+      setState(prev => ({
+        ...prev,
+        user: currentUser as unknown as User,
+      }))
     }
   }, [])
 
-  const setRole = useCallback((role: UserRole) => {
-    setState(prev => {
-      if (!prev.user) return prev
-      
-      const updatedUser = { ...prev.user, role }
-      
-      // Update in registered users storage
-      const registeredUsersStr = localStorage.getItem('fitonze_registered_users')
-      if (registeredUsersStr && prev.user.email) {
-        const registeredUsers = JSON.parse(registeredUsersStr)
-        const emailKey = prev.user.email.toLowerCase()
-        if (registeredUsers[emailKey]) {
-          registeredUsers[emailKey].user = updatedUser
-          localStorage.setItem('fitonze_registered_users', JSON.stringify(registeredUsers))
-        }
-      }
-      
-      localStorage.setItem(USER_KEY, JSON.stringify(updatedUser))
-      
-      return {
-        ...prev,
-        user: updatedUser,
-        currentStep: role === 'job_seeker' ? 'resume' : 'create-job',
-      }
-    })
-  }, [])
+  const refreshNotifications = useCallback(() => {
+    if (state.user?.id) {
+      const unreadCount = NotificationService.getUnreadCount(state.user.id)
+      setState(prev => ({ ...prev, unreadNotifications: unreadCount }))
+    }
+  }, [state.user?.id])
 
-  const setResume = useCallback((resume: Resume) => {
+  const setRole = useCallback(async (role: UserRole) => {
+    if (!state.user) return
+    
+    const updatedUser = await UserService.updateUser(state.user.id, { role })
+    
+    if (updatedUser) {
+      setState(prev => ({
+        ...prev,
+        user: updatedUser as unknown as User,
+        currentStep: role === 'job_seeker' ? 'resume' : 'create-job',
+      }))
+    }
+  }, [state.user])
+
+  const setResume = useCallback(async (resume: Resume) => {
+    if (!state.user) return
+    
+    // Save job seeker profile
+    await JobSeekerService.create({
+      userId: state.user.id,
+      name: resume.name,
+      role: resume.role,
+      dateOfBirth: '',
+      experience: resume.experience,
+      skills: resume.skills,
+      salaryExpectation: resume.salaryExpectation,
+      location: resume.location,
+      identityProof: {
+        type: '',
+        verified: false,
+      },
+    })
+    
     setState(prev => ({
       ...prev,
       resume,
       currentStep: 'discovery',
     }))
-  }, [])
+  }, [state.user])
 
-  const setSubscription = useCallback((subscription: Subscription) => {
+  const setSubscription = useCallback(async (subscription: Subscription) => {
     const isApproved = subscription.status === 'approved'
-    setState(prev => {
-      // Only update user subscription status if approved
-      const updatedUser = prev.user ? { 
+    
+    if (state.user && isApproved) {
+      await UserService.updateUser(state.user.id, {
+        isSubscribed: true,
+        subscriptionPlan: subscription.plan,
+        subscriptionExpiry: subscription.expiresAt?.toString(),
+      })
+    }
+    
+    setState(prev => ({
+      ...prev,
+      subscription,
+      user: prev.user ? { 
         ...prev.user, 
-        isSubscribed: isApproved, // ONLY true if approved
+        isSubscribed: isApproved,
         subscriptionExpiry: isApproved ? subscription.expiresAt : undefined
-      } : null
-      
-      // Save updated user to storage
-      if (updatedUser) {
-        localStorage.setItem(USER_KEY, JSON.stringify(updatedUser))
-      }
-      
-      return {
-        ...prev,
-        subscription,
-        user: updatedUser,
-        // ONLY navigate to results if approved
-        currentStep: isApproved ? 'results' : prev.currentStep,
-      }
+      } : null,
+      currentStep: isApproved ? 'results' : prev.currentStep,
+    }))
+  }, [state.user])
+
+  const saveJob = useCallback((jobId: string) => {
+    setState(prev => {
+      const newSavedJobs = [...new Set([...prev.savedJobs, jobId])]
+      localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(newSavedJobs))
+      return { ...prev, savedJobs: newSavedJobs }
     })
   }, [])
 
-  const saveJob = useCallback((job: Job) => {
-    setState(prev => ({
-      ...prev,
-      savedJobs: [...prev.savedJobs.filter(j => j.id !== job.id), job],
-    }))
-  }, [])
-
   const unsaveJob = useCallback((jobId: string) => {
-    setState(prev => ({
-      ...prev,
-      savedJobs: prev.savedJobs.filter(j => j.id !== jobId),
-    }))
+    setState(prev => {
+      const newSavedJobs = prev.savedJobs.filter(id => id !== jobId)
+      localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(newSavedJobs))
+      return { ...prev, savedJobs: newSavedJobs }
+    })
   }, [])
 
   const applyToJob = useCallback((jobId: string) => {
-    setState(prev => ({
-      ...prev,
-      appliedJobs: [...new Set([...prev.appliedJobs, jobId])],
-    }))
+    setState(prev => {
+      const newAppliedJobs = [...new Set([...prev.appliedJobs, jobId])]
+      localStorage.setItem(APPLIED_JOBS_KEY, JSON.stringify(newAppliedJobs))
+      return { ...prev, appliedJobs: newAppliedJobs }
+    })
   }, [])
 
   const goToStep = useCallback((step: AppState['currentStep']) => {
     setState(prev => ({ ...prev, currentStep: step }))
   }, [])
 
-  const updateUser = useCallback((updates: Partial<User>) => {
-    setState(prev => ({
-      ...prev,
-      user: prev.user ? { ...prev.user, ...updates } : null,
-    }))
-  }, [])
+  const updateUser = useCallback(async (updates: Partial<User>) => {
+    if (!state.user) return
+    
+    const updatedUser = await UserService.updateUser(state.user.id, updates as Parameters<typeof UserService.updateUser>[1])
+    
+    if (updatedUser) {
+      setState(prev => ({
+        ...prev,
+        user: updatedUser as unknown as User,
+      }))
+    }
+  }, [state.user])
 
   return (
     <AppContext.Provider
@@ -316,6 +314,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         goToStep,
         updateUser,
         refreshUser,
+        refreshNotifications,
       }}
     >
       {children}

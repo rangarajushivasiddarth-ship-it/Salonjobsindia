@@ -1,16 +1,16 @@
 'use client'
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
-import type { AdminStats, Subscription, User, Job, AppSettings } from './types'
+import type { AdminStats, AppSettings, User, Job, Subscription } from './types'
 import { 
-  getPendingSubscriptions, 
-  approveSubscription as approveSubInStore, 
-  rejectSubscription as rejectSubInStore,
-  getAllJobs,
-  deleteJob as deleteJobInStore,
-  getAllUsersForAdmin,
-  JOB_SEEKER_PLANS
-} from './data-store'
+  UserService, 
+  JobService, 
+  SubscriptionService, 
+  AdminService, 
+  SyncService,
+  NotificationService 
+} from './data-service'
+import { JOB_SEEKER_PLANS } from './data-store'
 
 interface AdminState {
   isAuthenticated: boolean
@@ -20,6 +20,7 @@ interface AdminState {
   users: User[]
   jobs: Job[]
   settings: AppSettings
+  lastSyncTime: Date | null
 }
 
 interface AdminContextType extends AdminState {
@@ -27,7 +28,9 @@ interface AdminContextType extends AdminState {
   logout: () => void
   goToView: (view: AdminState['currentView']) => void
   approvePayment: (subscriptionId: string) => void
-  rejectPayment: (subscriptionId: string) => void
+  rejectPayment: (subscriptionId: string, reason?: string) => void
+  approveJob: (jobId: string) => void
+  rejectJob: (jobId: string, reason: string) => void
   toggleUserBlock: (userId: string) => void
   deleteJob: (jobId: string) => void
   updateSettings: (settings: Partial<AppSettings>) => void
@@ -42,11 +45,13 @@ const defaultStats: AdminStats = {
 }
 
 const defaultSettings: AppSettings = {
-  qrCodeUrl: '/images/payment-qr.png',
+  qrCodeUrl: '/images/payment-qr.jpg',
   radiusKm: 20,
   paymentInstructions: 'Scan the QR code and complete payment. Upload screenshot for verification.',
   subscriptionDurationDays: 30,
 }
+
+const ADMIN_SESSION_KEY = 'fitone_admin_session'
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined)
 
@@ -59,53 +64,86 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     users: [],
     jobs: [],
     settings: defaultSettings,
+    lastSyncTime: null,
   })
 
-  // Load data from shared store
+  // Load data from shared data service
   const loadData = useCallback(() => {
-    const pendingPayments = getPendingSubscriptions()
-    const jobs = getAllJobs()
-    const users = getAllUsersForAdmin()
+    const dashboardStats = AdminService.getDashboardStats()
+    const pendingPayments = SubscriptionService.getPending()
+    const users = UserService.getAll()
+    const pendingJobs = JobService.getPendingApproval()
+    const allJobs = JobService.getLiveJobs()
     
     setState(prev => ({
       ...prev,
-      pendingPayments,
-      jobs,
-      users,
+      pendingPayments: pendingPayments as unknown as Subscription[],
+      jobs: [...pendingJobs, ...allJobs] as unknown as Job[],
+      users: users as unknown as User[],
       stats: {
-        totalUsers: users.length,
-        activeSubscriptions: users.filter(u => u.isSubscribed).length,
-        totalJobs: jobs.length,
-        pendingApprovals: pendingPayments.length,
+        totalUsers: dashboardStats.totalUsers,
+        activeSubscriptions: dashboardStats.activeSubscriptions,
+        totalJobs: dashboardStats.totalJobs,
+        pendingApprovals: dashboardStats.pendingJobApprovals + dashboardStats.pendingPayments,
       },
+      lastSyncTime: new Date(),
     }))
   }, [])
 
-  // Initial data load and polling for real-time updates
+  // Check for existing admin session
+  useEffect(() => {
+    const session = localStorage.getItem(ADMIN_SESSION_KEY)
+    if (session) {
+      try {
+        const { isAuthenticated, expiresAt } = JSON.parse(session)
+        if (isAuthenticated && new Date(expiresAt) > new Date()) {
+          setState(prev => ({
+            ...prev,
+            isAuthenticated: true,
+            currentView: 'dashboard',
+          }))
+        } else {
+          localStorage.removeItem(ADMIN_SESSION_KEY)
+        }
+      } catch {
+        localStorage.removeItem(ADMIN_SESSION_KEY)
+      }
+    }
+  }, [])
+
+  // Real-time data sync
   useEffect(() => {
     if (state.isAuthenticated) {
+      // Initial load
       loadData()
       
-      // Poll for updates every 5 seconds
-      const interval = setInterval(loadData, 5000)
+      // Poll for updates every 3 seconds for real-time feel
+      const interval = setInterval(loadData, 3000)
       
-      // Also listen for custom events
-      const handleDataUpdate = () => loadData()
-      window.addEventListener('fitonze_data_update', handleDataUpdate)
+      // Subscribe to data changes
+      const unsubscribe = SyncService.subscribe('*', () => {
+        loadData()
+      })
       
       return () => {
         clearInterval(interval)
-        window.removeEventListener('fitonze_data_update', handleDataUpdate)
+        unsubscribe()
       }
     }
   }, [state.isAuthenticated, loadData])
 
   const login = useCallback(async (email: string, password: string) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, 500))
     
-    // Simple validation (in production, this would be a real auth check)
-    if (email === 'admin@fitonze.com' && password === 'admin123') {
+    // Admin credentials (in production, this would be a real auth check)
+    if (email === 'admin@fitone.com' && password === 'admin123') {
+      // Save session with 24-hour expiry
+      const session = {
+        isAuthenticated: true,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      }
+      localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session))
+      
       setState(prev => ({
         ...prev,
         isAuthenticated: true,
@@ -117,6 +155,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
+    localStorage.removeItem(ADMIN_SESSION_KEY)
     setState(prev => ({
       ...prev,
       isAuthenticated: false,
@@ -132,46 +171,56 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     loadData()
   }, [loadData])
 
-  const approvePayment = useCallback((subscriptionId: string) => {
-    // Find the subscription to get user phone
+  const approvePayment = useCallback(async (subscriptionId: string) => {
     const subscription = state.pendingPayments.find(p => p.id === subscriptionId)
     
     if (subscription) {
-      // Approve in data store (this also updates the user's subscription status)
-      const approved = approveSubInStore(subscriptionId)
+      // Approve subscription
+      await AdminService.approveSubscription(subscriptionId, 'admin')
       
-      if (approved && subscription.userPhone) {
-        // Send WhatsApp notification
-        const phone = subscription.userPhone.replace(/\D/g, '')
-        const planName = subscription.planType ? JOB_SEEKER_PLANS.find(p => p.id === subscription.planType)?.name : 'Premium'
+      // Send WhatsApp notification if phone is available
+      const user = UserService.getById(subscription.userId)
+      if (user?.phone) {
+        const phone = user.phone.replace(/\D/g, '')
+        const planName = JOB_SEEKER_PLANS.find(p => p.id === subscription.plan)?.name || subscription.plan
         const message = encodeURIComponent(
-          `Congratulations! Your Fitonze ${planName} subscription has been activated! You now have access to view salon details. Thank you for subscribing!`
+          `Congratulations! Your FITONE ${planName} subscription has been activated! You now have access to premium features. Thank you for subscribing!`
         )
-        // Open WhatsApp with pre-filled message
         window.open(`https://wa.me/91${phone}?text=${message}`, '_blank')
       }
       
-      // Refresh data to update UI
+      // Refresh data
       loadData()
     }
   }, [state.pendingPayments, loadData])
 
-  const rejectPayment = useCallback((subscriptionId: string) => {
-    rejectSubInStore(subscriptionId)
+  const rejectPayment = useCallback(async (subscriptionId: string, reason?: string) => {
+    await AdminService.rejectSubscription(subscriptionId, 'admin', reason || 'Payment verification failed')
     loadData()
   }, [loadData])
 
-  const toggleUserBlock = useCallback((userId: string) => {
-    setState(prev => ({
-      ...prev,
-      users: prev.users.map(u => 
-        u.id === userId ? { ...u, isBlocked: !(u as any).isBlocked } : u
-      ),
-    }))
-  }, [])
+  const approveJob = useCallback(async (jobId: string) => {
+    await AdminService.approveJob(jobId, 'admin')
+    loadData()
+  }, [loadData])
 
-  const deleteJob = useCallback((jobId: string) => {
-    deleteJobInStore(jobId)
+  const rejectJob = useCallback(async (jobId: string, reason: string) => {
+    await AdminService.rejectJob(jobId, 'admin', reason)
+    loadData()
+  }, [loadData])
+
+  const toggleUserBlock = useCallback(async (userId: string) => {
+    const user = state.users.find(u => u.id === userId)
+    if (user) {
+      await UserService.updateUser(userId, { 
+        isBlocked: !(user as any).isBlocked 
+      } as any)
+      loadData()
+    }
+  }, [state.users, loadData])
+
+  const deleteJob = useCallback(async (jobId: string) => {
+    await JobService.update(jobId, { isActive: false, status: 'rejected' } as any)
     loadData()
   }, [loadData])
 
@@ -180,7 +229,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       ...prev,
       settings: { ...prev.settings, ...newSettings },
     }))
-  }, [])
+    // Save settings to localStorage
+    localStorage.setItem('fitone_admin_settings', JSON.stringify({ ...state.settings, ...newSettings }))
+  }, [state.settings])
 
   return (
     <AdminContext.Provider
@@ -191,6 +242,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         goToView,
         approvePayment,
         rejectPayment,
+        approveJob,
+        rejectJob,
         toggleUserBlock,
         deleteJob,
         updateSettings,
