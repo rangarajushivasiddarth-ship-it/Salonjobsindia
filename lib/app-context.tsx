@@ -108,6 +108,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
     
     return unsubscribe
   }, [state.user?.id])
+  
+  // Poll for subscription approval (every 5 seconds)
+  useEffect(() => {
+    if (!state.user?.id || state.user.isSubscribed) return
+    
+    const checkApproval = () => {
+      // Check from data-store
+      const dataStoreKey = 'fitone_subscriptions'
+      try {
+        const stored = localStorage.getItem(dataStoreKey)
+        if (stored) {
+          const subs = JSON.parse(stored)
+          const userSub = subs.find((s: { userId: string; status: string }) => 
+            s.userId === state.user?.id && s.status === 'approved'
+          )
+          if (userSub) {
+            // Subscription approved! Update state
+            setState(prev => ({
+              ...prev,
+              user: prev.user ? { ...prev.user, isSubscribed: true } : prev.user,
+              subscription: userSub as Subscription,
+              currentStep: prev.user?.role === 'salon_owner' ? 'owner-panel' : 'results',
+            }))
+          }
+        }
+      } catch {
+        // Ignore errors
+      }
+    }
+    
+    const interval = setInterval(checkApproval, 5000)
+    return () => clearInterval(interval)
+  }, [state.user?.id, state.user?.isSubscribed])
 
   const signIn = useCallback(async (email: string, password: string, phone: string): Promise<{ success: boolean; error?: string }> => {
     const result = await UserService.login({ email, password, phone })

@@ -72,11 +72,16 @@ export function AdminPayments() {
                       <User className="w-7 h-7 text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg">{user?.email || 'Unknown User'}</h3>
+                      <h3 className="font-semibold text-lg">{(payment as any).userName || user?.email || 'Unknown User'}</h3>
                       <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <span>{user?.phone || 'No phone'}</span>
+                        <span>{(payment as any).userPhone || user?.phone || 'No phone'}</span>
                         <span>•</span>
-                        <span className="capitalize">{user?.role?.replace('_', ' ') || 'Unknown'}</span>
+                        <span className="capitalize">{(payment as any).userRole?.replace('_', ' ') || user?.role?.replace('_', ' ') || 'Job Seeker'}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm mt-1">
+                        <span className="px-2 py-0.5 bg-primary/20 text-primary rounded-full text-xs font-medium">
+                          {(payment as any).planName || 'Premium'} - Rs.{(payment as any).amount || 199}
+                        </span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
@@ -142,11 +147,12 @@ export function AdminPayments() {
             <div className="p-6">
               {(() => {
                 const payment = pendingPayments.find(p => p.id === selectedPayment)
-                if (payment?.screenshotUrl) {
+                const screenshotUrl = payment?.screenshotUrl || (payment as any)?.paymentScreenshot
+                if (screenshotUrl) {
                   return (
                     <div className="rounded-xl overflow-hidden">
                       <img
-                        src={payment.screenshotUrl}
+                        src={screenshotUrl}
                         alt="Payment screenshot"
                         className="w-full max-h-[70vh] object-contain bg-secondary/30"
                       />

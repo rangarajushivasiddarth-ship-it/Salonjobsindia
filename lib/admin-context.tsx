@@ -10,7 +10,7 @@ import {
   SyncService,
   NotificationService 
 } from './data-service'
-import { JOB_SEEKER_PLANS } from './data-store'
+import { JOB_SEEKER_PLANS, approveSubscription as approveSubscriptionInStore, rejectSubscription as rejectSubscriptionInStore, getAllSubscriptions } from './data-store'
 
 interface AdminState {
   isAuthenticated: boolean
@@ -69,22 +69,31 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   // Load data from shared data service
   const loadData = useCallback(() => {
+    // Get from data-service
     const dashboardStats = AdminService.getDashboardStats()
-    const pendingPayments = SubscriptionService.getPending()
-    const users = UserService.getAll()
+    const pendingPaymentsFromService = SubscriptionService.getPending()
+    const usersFromService = UserService.getAll()
     const pendingJobs = JobService.getPendingApproval()
     const allJobs = JobService.getLiveJobs()
     
+    // Also get from data-store for customer app subscriptions
+    const pendingFromDataStore = getAllSubscriptions().filter(s => s.status === 'pending')
+    
+    // Merge pending subscriptions (use data-store as primary since that's what customer app uses)
+    const mergedPending = pendingFromDataStore.length > 0 
+      ? pendingFromDataStore 
+      : pendingPaymentsFromService
+    
     setState(prev => ({
       ...prev,
-      pendingPayments: pendingPayments as unknown as Subscription[],
+      pendingPayments: mergedPending as unknown as Subscription[],
       jobs: [...pendingJobs, ...allJobs] as unknown as Job[],
-      users: users as unknown as User[],
+      users: usersFromService as unknown as User[],
       stats: {
         totalUsers: dashboardStats.totalUsers,
         activeSubscriptions: dashboardStats.activeSubscriptions,
         totalJobs: dashboardStats.totalJobs,
-        pendingApprovals: dashboardStats.pendingJobApprovals + dashboardStats.pendingPayments,
+        pendingApprovals: mergedPending.length + dashboardStats.pendingJobApprovals,
       },
       lastSyncTime: new Date(),
     }))
@@ -175,16 +184,25 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     const subscription = state.pendingPayments.find(p => p.id === subscriptionId)
     
     if (subscription) {
-      // Approve subscription
-      await AdminService.approveSubscription(subscriptionId, 'admin')
+      // Approve in data-store (this updates customer app)
+      approveSubscriptionInStore(subscriptionId)
       
-      // Send WhatsApp notification if phone is available
-      const user = UserService.getById(subscription.userId)
-      if (user?.phone) {
-        const phone = user.phone.replace(/\D/g, '')
-        const planName = JOB_SEEKER_PLANS.find(p => p.id === subscription.plan)?.name || subscription.plan
+      // Also try to approve in data-service
+      try {
+        await AdminService.approveSubscription(subscriptionId, 'admin')
+      } catch {
+        // May not exist in data-service, that's ok
+      }
+      
+      // Get user phone from subscription or user service
+      const userPhone = (subscription as any).userPhone || UserService.getById(subscription.userId)?.phone
+      const planName = (subscription as any).planName || JOB_SEEKER_PLANS.find(p => p.id === (subscription as any).planType)?.name || 'Premium'
+      
+      // Send WhatsApp notification
+      if (userPhone) {
+        const phone = userPhone.replace(/\D/g, '')
         const message = encodeURIComponent(
-          `Congratulations! Your FITONE ${planName} subscription has been activated! You now have access to premium features. Thank you for subscribing!`
+          `🎉 Congratulations! Your FITONE ${planName} subscription has been activated!\n\n✅ You now have full access to premium features.\n\nThank you for subscribing!\n\n- Team FITONE`
         )
         window.open(`https://wa.me/91${phone}?text=${message}`, '_blank')
       }
@@ -195,7 +213,16 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, [state.pendingPayments, loadData])
 
   const rejectPayment = useCallback(async (subscriptionId: string, reason?: string) => {
-    await AdminService.rejectSubscription(subscriptionId, 'admin', reason || 'Payment verification failed')
+    // Reject in data-store (this updates customer app)
+    rejectSubscriptionInStore(subscriptionId, reason)
+    
+    // Also try to reject in data-service
+    try {
+      await AdminService.rejectSubscription(subscriptionId, 'admin', reason || 'Payment verification failed')
+    } catch {
+      // May not exist in data-service, that's ok
+    }
+    
     loadData()
   }, [loadData])
 

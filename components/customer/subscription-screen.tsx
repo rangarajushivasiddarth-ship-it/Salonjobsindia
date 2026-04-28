@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
 import { JOB_SEEKER_PLANS, SALON_OWNER_PLANS, saveSubscription, getSubscriptionByUserId } from '@/lib/data-store'
+import { SubscriptionService } from '@/lib/data-service'
 import type { Subscription, JobSeekerPlanType } from '@/lib/types'
 
 export function SubscriptionScreen() {
@@ -22,16 +23,26 @@ export function SubscriptionScreen() {
 
   const plans = isOwner ? SALON_OWNER_PLANS : JOB_SEEKER_PLANS
 
-  // Check for existing pending subscription
+  // Check for existing pending subscription and poll for approval
   useEffect(() => {
     if (user?.id) {
-      const existing = getSubscriptionByUserId(user.id)
-      if (existing && existing.status === 'pending') {
-        setExistingPending(existing)
-        setIsSubmitted(true)
-      } else if (existing && existing.status === 'approved') {
-        goToStep(isOwner ? 'owner-panel' : 'results')
+      const checkSubscription = () => {
+        const existing = getSubscriptionByUserId(user.id)
+        if (existing && existing.status === 'pending') {
+          setExistingPending(existing)
+          setIsSubmitted(true)
+        } else if (existing && existing.status === 'approved') {
+          // Subscription approved! Redirect to app
+          goToStep(isOwner ? 'owner-panel' : 'results')
+        }
       }
+      
+      checkSubscription()
+      
+      // Poll every 3 seconds to check if approved
+      const interval = setInterval(checkSubscription, 3000)
+      
+      return () => clearInterval(interval)
     }
   }, [user?.id, goToStep, isOwner])
 
@@ -83,6 +94,18 @@ export function SubscriptionScreen() {
     
     saveSubscription(subscription)
     setSubscription(subscription)
+    
+    // Also save to data-service for admin sync
+    await SubscriptionService.create({
+      userId: user.id,
+      userType: user.role as 'job_seeker' | 'salon_owner',
+      plan: selectedPlanDetails.name,
+      amount: selectedPlanDetails.price,
+      status: 'pending',
+      paymentScreenshot: previewUrl || undefined,
+      expiresAt: expiresAt.toISOString(),
+    })
+    
     setIsSubmitting(false)
     setIsSubmitted(true)
   }
