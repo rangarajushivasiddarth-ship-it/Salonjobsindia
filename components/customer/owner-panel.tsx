@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Briefcase, Users, Settings, LogOut, Edit2, Trash2, Eye, ChevronRight, Building2, MapPin, DollarSign, Clock, Crown, User, Search, Filter, TrendingUp, UserCheck, Bell, BarChart3, MessageCircle, Phone } from 'lucide-react'
+import { Plus, Briefcase, Users, Settings, LogOut, Edit2, Trash2, Eye, ChevronRight, Building2, MapPin, DollarSign, Clock, Crown, User, Search, Filter, TrendingUp, UserCheck, Bell, BarChart3, MessageCircle, Phone, AlertCircle, Check, X, Rocket } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
@@ -19,6 +19,26 @@ interface MockJob {
   applicationsCount: number
   viewsCount: number
   isActive: boolean
+  createdAt: Date
+  status?: 'draft' | 'payment_pending' | 'pending_approval' | 'approved' | 'live' | 'rejected'
+}
+
+interface PendingJob {
+  id: string
+  salonName: string
+  salonMobile: string
+  role: string
+  customRole: string
+  salary: string
+  experience: string
+  description: string
+  location: {
+    lat: number
+    lng: number
+    address: string
+  }
+  status: 'draft' | 'payment_pending' | 'pending_approval' | 'approved' | 'live' | 'rejected'
+  paymentScreenshot?: string
   createdAt: Date
 }
 
@@ -73,6 +93,7 @@ export function OwnerPanel() {
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>('All')
   const [selectedApplicant, setSelectedApplicant] = useState<MockApplicant | null>(null)
   const [selectedCandidate, setSelectedCandidate] = useState<MockCandidate | null>(null)
+  const [pendingJobs, setPendingJobs] = useState<PendingJob[]>([])
   
   // State
   const [ownerJobs, setOwnerJobs] = useState<MockJob[]>([
@@ -106,8 +127,75 @@ export function OwnerPanel() {
       
       // Get unread messages
       setUnreadMessages(getUnreadMessageCount(user.id))
+      
+      // Load pending jobs
+      const stored = localStorage.getItem(`fitone_pending_jobs_${user.id}`)
+      if (stored) {
+        setPendingJobs(JSON.parse(stored))
+      }
     }
   }, [user?.id])
+  
+  // Poll for status updates on pending jobs
+  useEffect(() => {
+    if (!user?.id) return
+    
+    const interval = setInterval(() => {
+      const stored = localStorage.getItem(`fitone_pending_jobs_${user.id}`)
+      if (stored) {
+        setPendingJobs(JSON.parse(stored))
+      }
+    }, 5000)
+    
+    return () => clearInterval(interval)
+  }, [user?.id])
+  
+  const handlePublishJob = (pendingJob: PendingJob) => {
+    // Add to owner jobs as live
+    const newJob: MockJob = {
+      id: pendingJob.id,
+      title: pendingJob.role || pendingJob.customRole,
+      salary: { min: parseInt(pendingJob.salary.replace(/[^\d]/g, '')) || 20000, max: 30000 },
+      experience: pendingJob.experience,
+      applicationsCount: 0,
+      viewsCount: 0,
+      isActive: true,
+      createdAt: new Date(),
+      status: 'live'
+    }
+    setOwnerJobs(prev => [newJob, ...prev])
+    
+    // Update pending job status
+    const updatedPending = pendingJobs.map(j => 
+      j.id === pendingJob.id ? { ...j, status: 'live' as const } : j
+    )
+    setPendingJobs(updatedPending)
+    localStorage.setItem(`fitone_pending_jobs_${user?.id}`, JSON.stringify(updatedPending))
+  }
+  
+  const getJobStatusColor = (status: string) => {
+    switch (status) {
+      case 'draft': return 'bg-secondary text-muted-foreground'
+      case 'payment_pending': return 'bg-amber-500/20 text-amber-400'
+      case 'pending_approval': return 'bg-blue-500/20 text-blue-400'
+      case 'approved': return 'bg-green-500/20 text-green-400'
+      case 'live': return 'bg-primary/20 text-primary'
+      case 'rejected': return 'bg-red-500/20 text-red-400'
+      default: return 'bg-secondary text-muted-foreground'
+    }
+  }
+  
+  const getJobStatusLabel = (status: string) => {
+    switch (status) {
+      case 'draft': return 'Draft'
+      case 'payment_pending': return 'Payment Pending'
+      case 'pending_approval': return 'Under Review'
+      case 'approved': return 'Ready to Publish'
+      case 'live': return 'Live'
+      case 'rejected': return 'Rejected'
+      default: return status
+    }
+  }
 
   const filteredCandidates = candidates.filter(c => {
     const matchesSearch = !searchQuery || 
@@ -311,58 +399,126 @@ export function OwnerPanel() {
           <div className="space-y-4 animate-slide-up">
             <Button onClick={() => goToStep('create-job')} className="w-full h-14 bg-primary hover:bg-primary/90 gold-glow">
               <Plus className="w-5 h-5 mr-2" />
-              Post New Job
+              Post New Job (Rs.149)
             </Button>
             
-            {ownerJobs.map((job) => (
-              <div key={job.id} className="p-5 glass-card rounded-2xl">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="font-semibold text-lg">{job.title}</h3>
-                    <p className="text-sm text-muted-foreground">{formatDate(job.createdAt)}</p>
+            {/* Pending Jobs Section */}
+            {pendingJobs.filter(j => j.status !== 'live').length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-muted-foreground">Pending Jobs</h3>
+                {pendingJobs.filter(j => j.status !== 'live').map((job) => (
+                  <div key={job.id} className="p-4 glass-card rounded-2xl border border-border/50">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h3 className="font-semibold">{job.role || job.customRole}</h3>
+                        <p className="text-sm text-muted-foreground">{job.salonName}</p>
+                      </div>
+                      <span className={`px-2 py-1 text-xs rounded-full ${getJobStatusColor(job.status)}`}>
+                        {getJobStatusLabel(job.status)}
+                      </span>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      <span className="flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
+                        <DollarSign className="w-3 h-3" />
+                        {job.salary}
+                      </span>
+                      <span className="flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-secondary/80 text-foreground">
+                        <MapPin className="w-3 h-3" />
+                        {job.location.address?.split(',')[0] || 'Location'}
+                      </span>
+                    </div>
+                    
+                    {/* Status-specific content */}
+                    {job.status === 'pending_approval' && (
+                      <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-blue-400" />
+                        <p className="text-xs text-blue-400">Payment under review. We&apos;ll notify you once approved.</p>
+                      </div>
+                    )}
+                    
+                    {job.status === 'approved' && (
+                      <div className="space-y-2">
+                        <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center gap-2">
+                          <Check className="w-4 h-4 text-green-400" />
+                          <p className="text-xs text-green-400">Payment approved! Your job is ready to go live.</p>
+                        </div>
+                        <Button 
+                          onClick={() => handlePublishJob(job)}
+                          className="w-full h-10 bg-green-600 hover:bg-green-700"
+                        >
+                          <Rocket className="w-4 h-4 mr-2" />
+                          Publish Job Now
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {job.status === 'rejected' && (
+                      <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-red-400" />
+                        <p className="text-xs text-red-400">Payment rejected. Please contact support or try again.</p>
+                      </div>
+                    )}
                   </div>
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    job.isActive ? 'bg-green-500/20 text-green-400' : 'bg-secondary text-muted-foreground'
-                  }`}>
-                    {job.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
-                
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <span className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-full bg-primary/10 text-primary">
-                    <DollarSign className="w-3 h-3" />
-                    Rs.{job.salary.min.toLocaleString()} - Rs.{job.salary.max.toLocaleString()}
-                  </span>
-                  <span className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-full bg-secondary/80 text-foreground">
-                    <Clock className="w-3 h-3" />
-                    {job.experience}
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between pt-3 border-t border-border/30">
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Eye className="w-4 h-4" />
-                      {job.viewsCount} views
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="w-4 h-4" />
-                      {job.applicationsCount} applicants
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button className="p-2 hover:bg-secondary/50 rounded-lg">
-                      <Edit2 className="w-4 h-4 text-muted-foreground" />
-                    </button>
-                    <button onClick={() => setShowDeleteConfirm(job.id)} className="p-2 hover:bg-destructive/10 rounded-lg">
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </button>
-                  </div>
-                </div>
+                ))}
               </div>
-            ))}
+            )}
             
-            {ownerJobs.length === 0 && (
+            {/* Live Jobs Section */}
+            {ownerJobs.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-muted-foreground">Live Jobs</h3>
+                {ownerJobs.map((job) => (
+                  <div key={job.id} className="p-5 glass-card rounded-2xl">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h3 className="font-semibold text-lg">{job.title}</h3>
+                        <p className="text-sm text-muted-foreground">{formatDate(job.createdAt)}</p>
+                      </div>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        job.isActive ? 'bg-green-500/20 text-green-400' : 'bg-secondary text-muted-foreground'
+                      }`}>
+                        {job.isActive ? 'Live' : 'Inactive'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      <span className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-full bg-primary/10 text-primary">
+                        <DollarSign className="w-3 h-3" />
+                        Rs.{job.salary.min.toLocaleString()} - Rs.{job.salary.max.toLocaleString()}
+                      </span>
+                      <span className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-full bg-secondary/80 text-foreground">
+                        <Clock className="w-3 h-3" />
+                        {job.experience}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between pt-3 border-t border-border/30">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Eye className="w-4 h-4" />
+                          {job.viewsCount} views
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Users className="w-4 h-4" />
+                          {job.applicationsCount} applicants
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button className="p-2 hover:bg-secondary/50 rounded-lg">
+                          <Edit2 className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                        <button onClick={() => setShowDeleteConfirm(job.id)} className="p-2 hover:bg-destructive/10 rounded-lg">
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {ownerJobs.length === 0 && pendingJobs.filter(j => j.status !== 'live').length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <Briefcase className="w-12 h-12 text-muted-foreground mb-4" />
                 <h3 className="font-semibold text-lg mb-2">No jobs posted yet</h3>

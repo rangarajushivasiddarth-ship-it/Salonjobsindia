@@ -207,12 +207,23 @@ export interface Salon {
   createdAt: Date
 }
 
+// Job Post Status
+export type JobPostStatus = 
+  | 'draft'
+  | 'payment_pending'
+  | 'pending_approval'
+  | 'approved'
+  | 'live'
+  | 'rejected'
+  | 'expired'
+
 // Job Types
 export interface Job {
   id: string
   salonId: string
   salonName: string
   salonPhoto?: string
+  salonMobile: string // Required mobile number
   role: BeautyRole
   salary: string
   salaryType: 'monthly' | 'weekly' | 'daily' | 'commission'
@@ -240,6 +251,34 @@ export interface Job {
   isActive: boolean
   isPremium?: boolean
   applicationsCount?: number
+  // Payment & Status fields
+  status: JobPostStatus
+  paymentId?: string
+  paymentAmount?: number
+  paymentScreenshot?: string
+  paymentSubmittedAt?: Date
+  paymentApprovedAt?: Date
+  paymentRejectedAt?: Date
+  rejectionReason?: string
+}
+
+// Job Payment Request
+export interface JobPaymentRequest {
+  id: string
+  jobId: string
+  salonOwnerId: string
+  salonOwnerName?: string
+  salonOwnerPhone?: string
+  salonName: string
+  jobRole: string
+  amount: number
+  screenshotUrl?: string
+  transactionId?: string
+  status: 'pending' | 'approved' | 'rejected'
+  submittedAt: Date
+  processedAt?: Date
+  processedBy?: string
+  rejectionReason?: string
 }
 
 // ==========================================

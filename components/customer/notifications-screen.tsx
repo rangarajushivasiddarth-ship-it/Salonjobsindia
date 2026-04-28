@@ -1,18 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, Bell, Briefcase, Crown, MessageCircle, CheckCircle, Clock, Trash2, Settings } from 'lucide-react'
+import { ArrowLeft, Bell, Briefcase, Crown, MessageCircle, CheckCircle, Clock, Trash2, Settings, CreditCard, X, Check } from 'lucide-react'
+import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
 
 interface Notification {
   id: string
-  type: 'job' | 'message' | 'subscription' | 'system'
+  type: 'job' | 'message' | 'subscription' | 'system' | 'payment_approved' | 'payment_rejected' | 'payment_submitted'
   title: string
   message: string
   timestamp: Date
   isRead: boolean
   actionUrl?: string
+  createdAt?: Date
 }
 
 // Mock notifications
@@ -64,6 +66,20 @@ export function NotificationsScreen() {
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS)
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
   
+  // Load notifications from localStorage (for payment notifications)
+  useEffect(() => {
+    if (user?.id) {
+      const stored = localStorage.getItem(`fitone_notifications_${user.id}`)
+      if (stored) {
+        const storedNotifications = JSON.parse(stored).map((n: Notification & { createdAt?: string }) => ({
+          ...n,
+          timestamp: new Date(n.createdAt || Date.now()),
+        }))
+        setNotifications(prev => [...storedNotifications, ...prev])
+      }
+    }
+  }, [user?.id])
+  
   const filteredNotifications = filter === 'unread' 
     ? notifications.filter(n => !n.isRead)
     : notifications
@@ -86,22 +102,28 @@ export function NotificationsScreen() {
     }
   }
   
-  const getIcon = (type: Notification['type']) => {
-    switch (type) {
-      case 'job': return Briefcase
-      case 'message': return MessageCircle
-      case 'subscription': return Crown
-      default: return Bell
-    }
+const getIcon = (type: Notification['type']) => {
+  switch (type) {
+  case 'job': return Briefcase
+  case 'message': return MessageCircle
+  case 'subscription': return Crown
+  case 'payment_approved': return Check
+  case 'payment_rejected': return X
+  case 'payment_submitted': return CreditCard
+  default: return Bell
+  }
   }
   
   const getIconColor = (type: Notification['type']) => {
-    switch (type) {
-      case 'job': return 'bg-primary/20 text-primary'
-      case 'message': return 'bg-accent/20 text-accent'
-      case 'subscription': return 'bg-amber-500/20 text-amber-500'
-      default: return 'bg-secondary text-muted-foreground'
-    }
+  switch (type) {
+  case 'job': return 'bg-primary/20 text-primary'
+  case 'message': return 'bg-accent/20 text-accent'
+  case 'subscription': return 'bg-amber-500/20 text-amber-500'
+  case 'payment_approved': return 'bg-green-500/20 text-green-400'
+  case 'payment_rejected': return 'bg-red-500/20 text-red-400'
+  case 'payment_submitted': return 'bg-blue-500/20 text-blue-400'
+  default: return 'bg-secondary text-muted-foreground'
+  }
   }
   
   const markAsRead = (id: string) => {

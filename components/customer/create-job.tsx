@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Building2, Briefcase, MapPin, Navigation, FileText, Check, Plus, X } from 'lucide-react'
+import { ArrowLeft, Building2, Briefcase, MapPin, Navigation, FileText, Check, X, Phone, Upload, CreditCard, Clock, AlertCircle, Image as ImageIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
+import Image from 'next/image'
 
 const ROLE_OPTIONS = [
   'Hair Stylist', 'Makeup Artist', 'Nail Technician', 'Beautician',
@@ -20,26 +21,40 @@ const SALARY_OPTIONS = [
   '₹40,000 - ₹60,000', '₹60,000+', 'Negotiable'
 ]
 
-const MAX_FREE_JOBS = 5
+const JOB_POST_PRICE = 149
 
-// Top-up packages
-const TOPUP_PACKAGES = [
-  { id: 'topup-5', jobs: 5, price: 299, popular: false },
-  { id: 'topup-10', jobs: 10, price: 499, popular: true },
-  { id: 'topup-25', jobs: 25, price: 999, popular: false },
-]
+type Step = 'form' | 'payment' | 'pending' | 'success'
+
+interface JobDraft {
+  id: string
+  salonName: string
+  salonMobile: string
+  role: string
+  customRole: string
+  salary: string
+  experience: string
+  description: string
+  location: {
+    lat: number
+    lng: number
+    address: string
+  }
+  status: 'draft' | 'payment_pending' | 'pending_approval' | 'approved' | 'live' | 'rejected'
+  paymentScreenshot?: string
+  createdAt: Date
+}
 
 export function CreateJob() {
   const { user, goToStep } = useApp()
+  const [currentStep, setCurrentStep] = useState<Step>('form')
   const [isLoading, setIsLoading] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
   const [detectingLocation, setDetectingLocation] = useState(false)
-  const [showTopUpModal, setShowTopUpModal] = useState(false)
-  const [jobsPosted, setJobsPosted] = useState(0)
-  const [jobsRemaining, setJobsRemaining] = useState(MAX_FREE_JOBS)
+  const [paymentScreenshot, setPaymentScreenshot] = useState<string | null>(null)
+  const [uploadingScreenshot, setUploadingScreenshot] = useState(false)
   
   const [formData, setFormData] = useState({
     salonName: '',
+    salonMobile: '',
     role: '',
     customRole: '',
     salary: '',
@@ -53,21 +68,25 @@ export function CreateJob() {
   })
   
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [savedJob, setSavedJob] = useState<JobDraft | null>(null)
 
-  // Load jobs posted count from localStorage
+  // Check for existing pending jobs
   useEffect(() => {
-    const storedJobsCount = localStorage.getItem(`fitonze_jobs_posted_${user?.id}`)
-    const storedTopUpCredits = localStorage.getItem(`fitonze_topup_credits_${user?.id}`)
-    
-    if (storedJobsCount) {
-      const count = parseInt(storedJobsCount, 10)
-      setJobsPosted(count)
-      
-      const topUpCredits = storedTopUpCredits ? parseInt(storedTopUpCredits, 10) : 0
-      const remaining = Math.max(0, MAX_FREE_JOBS - count) + topUpCredits
-      setJobsRemaining(remaining)
+    const pendingJobs = localStorage.getItem(`fitone_pending_jobs_${user?.id}`)
+    if (pendingJobs) {
+      const jobs: JobDraft[] = JSON.parse(pendingJobs)
+      const pendingJob = jobs.find(j => j.status === 'pending_approval')
+      if (pendingJob) {
+        setSavedJob(pendingJob)
+        setCurrentStep('pending')
+      }
     }
   }, [user?.id])
+
+  const validateMobileNumber = (mobile: string): boolean => {
+    const cleaned = mobile.replace(/\D/g, '')
+    return cleaned.length === 10 && /^[6-9]/.test(cleaned)
+  }
 
   const detectLocation = async () => {
     setDetectingLocation(true)
@@ -78,7 +97,6 @@ export function CreateJob() {
           const { latitude, longitude } = position.coords
           
           try {
-            // Reverse geocode to get city, area, and town
             const response = await fetch(
               `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
             )
@@ -89,7 +107,6 @@ export function CreateJob() {
             const area = address.city_district || address.county || address.state_district || ''
             const city = address.city || address.town || address.village || address.municipality || ''
             
-            // Build display string with available parts
             const locationParts = [town, area, city].filter(Boolean)
             const displayAddress = locationParts.length > 0 
               ? locationParts.join(', ')
@@ -104,7 +121,6 @@ export function CreateJob() {
               }
             }))
           } catch {
-            // Fallback if geocoding fails
             setFormData(prev => ({
               ...prev,
               location: {
@@ -132,6 +148,11 @@ export function CreateJob() {
     const newErrors: Record<string, string> = {}
     
     if (!formData.salonName.trim()) newErrors.salonName = 'Salon name is required'
+    if (!formData.salonMobile.trim()) {
+      newErrors.salonMobile = 'Mobile number is required'
+    } else if (!validateMobileNumber(formData.salonMobile)) {
+      newErrors.salonMobile = 'Enter a valid 10-digit mobile number'
+    }
     if (!formData.role && !formData.customRole) newErrors.role = 'Role is required'
     if (!formData.salary) newErrors.salary = 'Salary is required'
     if (!formData.experience) newErrors.experience = 'Experience is required'
@@ -141,57 +162,145 @@ export function CreateJob() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async () => {
-    // First validate the form
+  const handleContinueToPayment = () => {
     if (!validateForm()) return
-    
-    // Then check if user has remaining job posts
-    if (jobsRemaining <= 0) {
-      setShowTopUpModal(true)
+    setCurrentStep('payment')
+  }
+
+  const handleScreenshotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      setErrors(prev => ({ ...prev, screenshot: 'Please upload an image file' }))
       return
     }
-    
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors(prev => ({ ...prev, screenshot: 'File size should be less than 5MB' }))
+      return
+    }
+
+    setUploadingScreenshot(true)
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setPaymentScreenshot(reader.result as string)
+      setUploadingScreenshot(false)
+      setErrors(prev => ({ ...prev, screenshot: '' }))
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleSubmitPayment = async () => {
+    if (!paymentScreenshot) {
+      setErrors(prev => ({ ...prev, screenshot: 'Please upload payment screenshot' }))
+      return
+    }
+
     setIsLoading(true)
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500))
     
-    // Update jobs posted count
-    const newJobsPosted = jobsPosted + 1
-    setJobsPosted(newJobsPosted)
-    localStorage.setItem(`fitonze_jobs_posted_${user?.id}`, newJobsPosted.toString())
+    // Create job draft with pending approval status
+    const jobDraft: JobDraft = {
+      id: `job_${Date.now()}`,
+      ...formData,
+      status: 'pending_approval',
+      paymentScreenshot,
+      createdAt: new Date(),
+    }
     
-    // Update remaining jobs
-    const topUpCredits = localStorage.getItem(`fitonze_topup_credits_${user?.id}`)
-    const credits = topUpCredits ? parseInt(topUpCredits, 10) : 0
-    const newRemaining = Math.max(0, MAX_FREE_JOBS - newJobsPosted) + credits
-    setJobsRemaining(newRemaining)
+    // Save to localStorage
+    const existingJobs = localStorage.getItem(`fitone_pending_jobs_${user?.id}`)
+    const jobs: JobDraft[] = existingJobs ? JSON.parse(existingJobs) : []
+    jobs.push(jobDraft)
+    localStorage.setItem(`fitone_pending_jobs_${user?.id}`, JSON.stringify(jobs))
     
+    // Also save to admin job payments queue
+    const adminPayments = localStorage.getItem('fitone_admin_job_payments')
+    const payments = adminPayments ? JSON.parse(adminPayments) : []
+    payments.push({
+      id: `payment_${Date.now()}`,
+      jobId: jobDraft.id,
+      salonOwnerId: user?.id,
+      salonOwnerName: user?.name,
+      salonOwnerPhone: user?.phone,
+      salonName: formData.salonName,
+      salonMobile: formData.salonMobile,
+      jobRole: formData.role || formData.customRole,
+      amount: JOB_POST_PRICE,
+      screenshotUrl: paymentScreenshot,
+      status: 'pending',
+      submittedAt: new Date(),
+    })
+    localStorage.setItem('fitone_admin_job_payments', JSON.stringify(payments))
+    
+    setSavedJob(jobDraft)
     setIsLoading(false)
-    setIsSuccess(true)
-    
-    // Navigate to owner panel after success
-    setTimeout(() => {
-      goToStep('owner-panel')
-    }, 2000)
+    setCurrentStep('pending')
   }
 
-  const handleTopUp = (packageId: string) => {
-    const pkg = TOPUP_PACKAGES.find(p => p.id === packageId)
-    if (!pkg) return
-    
-    // In a real app, this would redirect to payment
-    // For now, simulate adding credits
-    const currentCredits = localStorage.getItem(`fitonze_topup_credits_${user?.id}`)
-    const credits = currentCredits ? parseInt(currentCredits, 10) : 0
-    const newCredits = credits + pkg.jobs
-    
-    localStorage.setItem(`fitonze_topup_credits_${user?.id}`, newCredits.toString())
-    setJobsRemaining(prev => prev + pkg.jobs)
-    setShowTopUpModal(false)
+  // Pending Approval Screen
+  if (currentStep === 'pending') {
+    return (
+      <div className="relative min-h-screen flex flex-col items-center justify-center p-6 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/20" />
+        <div className="absolute top-1/4 right-0 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse-glow" />
+        
+        <div className="relative z-10 text-center max-w-md animate-scale-in">
+          <div className="w-24 h-24 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-6">
+            <Clock className="w-12 h-12 text-accent" />
+          </div>
+          <h1 className="text-2xl font-bold mb-3">Payment Under Review</h1>
+          <p className="text-muted-foreground mb-6">
+            Your payment is being verified by our team. You will be notified once approved.
+          </p>
+          
+          <div className="p-4 glass-card rounded-xl mb-6 text-left">
+            <h3 className="font-semibold mb-3">Job Details</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Salon:</span>
+                <span>{savedJob?.salonName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Role:</span>
+                <span>{savedJob?.role || savedJob?.customRole}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Status:</span>
+                <span className="text-accent">Pending Approval</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Amount Paid:</span>
+                <span>₹{JOB_POST_PRICE}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-4 bg-accent/10 border border-accent/30 rounded-xl mb-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+              <p className="text-sm text-left">
+                Once approved, your job post will go live and you can publish it from your dashboard.
+              </p>
+            </div>
+          </div>
+          
+          <Button
+            onClick={() => goToStep('owner-panel')}
+            className="w-full h-12 bg-primary hover:bg-primary/90"
+          >
+            Go to Dashboard
+          </Button>
+        </div>
+      </div>
+    )
   }
 
-  if (isSuccess) {
+  // Success Screen
+  if (currentStep === 'success') {
     return (
       <div className="relative min-h-screen flex flex-col items-center justify-center p-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/20" />
@@ -211,8 +320,175 @@ export function CreateJob() {
     )
   }
 
+  // Payment Step
+  if (currentStep === 'payment') {
+    return (
+      <div className="relative min-h-screen flex flex-col overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/20" />
+        
+        {/* Header */}
+        <header className="relative z-10 p-4 flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCurrentStep('form')}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h1 className="font-semibold text-lg">Complete Payment</h1>
+        </header>
+        
+        <div className="relative z-10 flex-1 px-6 pb-8 overflow-y-auto">
+          <div className="max-w-md mx-auto space-y-6">
+            {/* Price Card */}
+            <div className="p-6 glass-card rounded-2xl text-center animate-slide-up">
+              <CreditCard className="w-12 h-12 text-primary mx-auto mb-4" />
+              <h2 className="text-xl font-bold mb-2">Job Post Fee</h2>
+              <p className="text-4xl font-bold text-primary mb-2">₹{JOB_POST_PRICE}</p>
+              <p className="text-sm text-muted-foreground">One-time payment per job post</p>
+            </div>
+            
+            {/* Job Summary */}
+            <div className="p-4 glass-card rounded-xl animate-slide-up" style={{ animationDelay: '50ms' }}>
+              <h3 className="font-semibold mb-3">Job Summary</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Salon:</span>
+                  <span>{formData.salonName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Role:</span>
+                  <span>{formData.role || formData.customRole}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Salary:</span>
+                  <span>{formData.salary}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Location:</span>
+                  <span className="text-right max-w-[50%] truncate">{formData.location.address}</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Payment Instructions */}
+            <div className="p-4 glass-card rounded-xl animate-slide-up" style={{ animationDelay: '100ms' }}>
+              <h3 className="font-semibold mb-3">How to Pay</h3>
+              <ol className="space-y-3 text-sm">
+                <li className="flex items-start gap-3">
+                  <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center shrink-0">1</span>
+                  <span>Scan the QR code below or pay to UPI: <strong>fitone@upi</strong></span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center shrink-0">2</span>
+                  <span>Pay exactly <strong>₹{JOB_POST_PRICE}</strong></span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center shrink-0">3</span>
+                  <span>Take a screenshot of the payment confirmation</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center shrink-0">4</span>
+                  <span>Upload the screenshot below</span>
+                </li>
+              </ol>
+            </div>
+            
+            {/* QR Code */}
+            <div className="p-6 glass-card rounded-xl text-center animate-slide-up" style={{ animationDelay: '150ms' }}>
+              <div className="w-48 h-48 mx-auto bg-white rounded-xl p-3 mb-4">
+                <Image
+                  src="/images/payment-qr.jpg"
+                  alt="Payment QR Code"
+                  width={180}
+                  height={180}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">UPI: fitone@upi</p>
+            </div>
+            
+            {/* Screenshot Upload */}
+            <div className="space-y-2 animate-slide-up" style={{ animationDelay: '200ms' }}>
+              <label className="text-sm font-medium">Upload Payment Screenshot</label>
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleScreenshotUpload}
+                  className="hidden"
+                  id="screenshot-input"
+                />
+                
+                {paymentScreenshot ? (
+                  <div className="relative">
+                    <img
+                      src={paymentScreenshot}
+                      alt="Payment screenshot"
+                      className="w-full h-48 object-cover rounded-xl border-2 border-primary/50"
+                    />
+                    <button
+                      onClick={() => setPaymentScreenshot(null)}
+                      className="absolute top-2 right-2 p-1.5 bg-background/80 rounded-full hover:bg-background"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                    <label
+                      htmlFor="screenshot-input"
+                      className="absolute bottom-2 right-2 px-3 py-1.5 bg-background/80 rounded-lg text-sm cursor-pointer hover:bg-background"
+                    >
+                      Change
+                    </label>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="screenshot-input"
+                    className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-border/50 rounded-xl cursor-pointer bg-secondary/20 hover:bg-secondary/30 transition-colors"
+                  >
+                    {uploadingScreenshot ? (
+                      <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Upload className="w-10 h-10 text-muted-foreground mb-3" />
+                        <span className="text-sm font-medium text-muted-foreground">Click to upload screenshot</span>
+                        <span className="text-xs text-muted-foreground/60 mt-1">PNG, JPG up to 5MB</span>
+                      </>
+                    )}
+                  </label>
+                )}
+              </div>
+              {errors.screenshot && <p className="text-sm text-destructive">{errors.screenshot}</p>}
+            </div>
+          </div>
+        </div>
+        
+        {/* Submit Button */}
+        <div className="relative z-10 p-6 bg-gradient-to-t from-background via-background to-transparent">
+          <div className="max-w-md mx-auto">
+            <Button
+              onClick={handleSubmitPayment}
+              disabled={isLoading || !paymentScreenshot}
+              className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 gold-glow disabled:opacity-50"
+            >
+              {isLoading ? (
+                <div className="w-6 h-6 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+              ) : (
+                'Submit Payment'
+              )}
+            </Button>
+            <p className="text-xs text-center text-muted-foreground mt-3">
+              Your job will be published after payment verification
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Form Step
   return (
-    <div className="relative min-h-screen flex flex-col overflow-hidden">
+    <div className="relative min-h-screen flex flex-col overflow-hidden pb-20">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/20" />
       <div className="absolute top-1/4 right-0 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
@@ -228,10 +504,11 @@ export function CreateJob() {
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="font-semibold text-lg">Post a Job</h1>
+        <div>
+          <h1 className="font-semibold text-lg">Post a Job</h1>
+          <p className="text-xs text-muted-foreground">₹{JOB_POST_PRICE} per job post</p>
+        </div>
       </header>
-      
-
       
       {/* Content */}
       <div className="relative z-10 flex-1 px-6 pb-8 overflow-y-auto">
@@ -249,6 +526,32 @@ export function CreateJob() {
               />
             </div>
             {errors.salonName && <p className="text-sm text-destructive">{errors.salonName}</p>}
+          </div>
+          
+          {/* Salon Mobile Number - NEW FIELD */}
+          <div className="space-y-2 animate-slide-up" style={{ animationDelay: '25ms' }}>
+            <label className="text-sm font-medium text-muted-foreground">Salon Mobile Number *</label>
+            <div className="relative">
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                type="tel"
+                placeholder="Enter 10-digit mobile number"
+                value={formData.salonMobile}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 10)
+                  setFormData(prev => ({ ...prev, salonMobile: value }))
+                }}
+                className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary"
+                maxLength={10}
+              />
+            </div>
+            {errors.salonMobile && <p className="text-sm text-destructive">{errors.salonMobile}</p>}
+            {formData.salonMobile && validateMobileNumber(formData.salonMobile) && (
+              <div className="flex items-center gap-2 text-sm text-green-500">
+                <Check className="w-4 h-4" />
+                Valid mobile number
+              </div>
+            )}
           </div>
           
           {/* Role Selection */}
@@ -380,82 +683,32 @@ export function CreateJob() {
             
             {errors.location && <p className="text-sm text-destructive">{errors.location}</p>}
           </div>
-        </div>
-      </div>
-      
-      {/* Submit Button */}
-      <div className="relative z-10 p-6 bg-gradient-to-t from-background via-background to-transparent">
-        <div className="max-w-md mx-auto">
-          <Button
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className="w-full h-14 text-lg font-semibold transition-all duration-300 hover:scale-[1.02] bg-primary hover:bg-primary/90 text-primary-foreground gold-glow"
-          >
-            {isLoading ? (
-              <div className="w-6 h-6 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-            ) : (
-              <>
-                <Plus className="w-5 h-5 mr-2" />
-                Post Job
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-      
-      {/* Top Up Modal */}
-      {showTopUpModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
-          <div className="w-full max-w-sm glass-card rounded-2xl animate-scale-in overflow-hidden">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold">Top Up Job Posts</h2>
-                <button
-                  onClick={() => setShowTopUpModal(false)}
-                  className="p-2 hover:bg-secondary/50 rounded-full transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <p className="text-muted-foreground mb-6">
-                You have used all your free job posts. Purchase more to continue posting.
-              </p>
-              
-              <div className="space-y-3">
-                {TOPUP_PACKAGES.map((pkg) => (
-                  <button
-                    key={pkg.id}
-                    onClick={() => handleTopUp(pkg.id)}
-                    className={`w-full p-4 rounded-xl border-2 transition-all text-left relative ${
-                      pkg.popular 
-                        ? 'border-primary bg-primary/10' 
-                        : 'border-border/50 hover:border-primary/50'
-                    }`}
-                  >
-                    {pkg.popular && (
-                      <span className="absolute -top-2 right-4 px-2 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
-                        Popular
-                      </span>
-                    )}
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold text-lg">{pkg.jobs} Job Posts</p>
-                        <p className="text-sm text-muted-foreground">
-                          Rs. {(pkg.price / pkg.jobs).toFixed(0)} per post
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xl font-bold text-primary">Rs. {pkg.price}</p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
+          
+          {/* Price Notice */}
+          <div className="p-4 bg-primary/10 border border-primary/30 rounded-xl animate-slide-up" style={{ animationDelay: '300ms' }}>
+            <div className="flex items-center gap-3">
+              <CreditCard className="w-6 h-6 text-primary shrink-0" />
+              <div>
+                <p className="font-semibold">Job Post Fee: ₹{JOB_POST_PRICE}</p>
+                <p className="text-sm text-muted-foreground">Payment required after form submission</p>
               </div>
             </div>
           </div>
         </div>
-      )}
+      </div>
+      
+      {/* Submit Button */}
+      <div className="fixed bottom-0 left-0 right-0 z-10 p-6 bg-gradient-to-t from-background via-background to-transparent">
+        <div className="max-w-md mx-auto">
+          <Button
+            onClick={handleContinueToPayment}
+            disabled={isLoading}
+            className="w-full h-14 text-lg font-semibold transition-all duration-300 hover:scale-[1.02] bg-primary hover:bg-primary/90 text-primary-foreground gold-glow"
+          >
+            Continue to Payment
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }
