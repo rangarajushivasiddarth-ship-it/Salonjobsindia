@@ -136,7 +136,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     await new Promise(resolve => setTimeout(resolve, 500))
     
     // Admin credentials (in production, this would be a real auth check)
-    if (email === 'admin@fitone.com' && password === 'admin123') {
+    if (email === 'admin@fitonze.com' && password === 'admin123') {
       // Save session with 24-hour expiry
       const session = {
         isAuthenticated: true,

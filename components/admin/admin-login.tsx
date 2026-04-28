@@ -29,7 +29,7 @@ export function AdminLogin() {
     setIsLoading(false)
     
     if (!success) {
-      setError('Invalid credentials. Try admin@fitonze.com / admin123')
+      setError('Invalid email or password')
     }
   }
 
