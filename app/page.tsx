@@ -23,8 +23,7 @@ function CustomerApp() {
   if (isLoading && currentStep === 'splash') {
     return (
       <SplashScreen
-        onFindJob={() => {}}
-        onCreateAlert={() => {}}
+        onComplete={() => goToStep('auth')}
       />
     )
   }
@@ -34,8 +33,7 @@ function CustomerApp() {
       case 'splash':
         return (
           <SplashScreen
-            onFindJob={() => goToStep('auth')}
-            onCreateAlert={() => goToStep('auth')}
+            onComplete={() => goToStep('auth')}
           />
         )
       case 'auth':
@@ -76,8 +74,7 @@ function CustomerApp() {
       default:
         return (
           <SplashScreen
-            onFindJob={() => goToStep('auth')}
-            onCreateAlert={() => goToStep('auth')}
+            onComplete={() => goToStep('auth')}
           />
         )
     }
