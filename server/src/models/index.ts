@@ -1,5 +1,10 @@
-export { default as User, IUser } from './User.js';
-export { default as Job, IJob } from './Job.js';
-export { default as Application, IApplication } from './Application.js';
-export { default as Subscription, ISubscription } from './Subscription.js';
-export { Notification, INotification } from './Notification.js';
+export { default as User } from './User.js';
+export type { IUser } from './User.js';
+export { default as Job } from './Job.js';
+export type { IJob } from './Job.js';
+export { default as Application } from './Application.js';
+export type { IApplication } from './Application.js';
+export { default as Subscription } from './Subscription.js';
+export type { ISubscription } from './Subscription.js';
+export { Notification } from './Notification.js';
+export type { INotification } from './Notification.js';

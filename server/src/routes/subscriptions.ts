@@ -43,7 +43,8 @@ router.get('/plans', (req: Request, res: Response) => {
  * Get specific plan details
  */
 router.get('/plans/:planId', (req: Request, res: Response) => {
-  const plan = getPlanById(req.params.planId);
+  const planId = Array.isArray(req.params.planId) ? req.params.planId[0] : req.params.planId;
+  const plan = getPlanById(planId);
   
   if (!plan) {
     throw new ApiError(404, 'Plan not found');
@@ -148,7 +149,15 @@ router.post('/subscribe', authenticate, [
   
   // Update user
   user.subscriptionId = subscription._id as typeof user.subscriptionId;
-  user.subscriptionStatus = subscription.status;
+  // Map subscription status to user subscription status (only valid values)
+  const statusMap: Record<string, 'pending' | 'active' | 'expired' | 'none'> = {
+    'pending': 'pending',
+    'active': 'active',
+    'expired': 'expired',
+    'rejected': 'none',
+    'cancelled': 'none'
+  };
+  user.subscriptionStatus = statusMap[subscription.status] || 'none';
   await user.save();
   
   res.status(201).json({

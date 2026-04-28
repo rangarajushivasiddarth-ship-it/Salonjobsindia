@@ -392,7 +392,7 @@ router.put('/:id', authenticate, requireOwner, [
   
   for (const field of allowedUpdates) {
     if (req.body[field] !== undefined) {
-      (job as Record<string, unknown>)[field] = req.body[field];
+      (job as unknown as Record<string, unknown>)[field] = req.body[field];
     }
   }
   

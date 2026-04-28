@@ -208,7 +208,7 @@ userSchema.index({ phone: 1 });
 userSchema.index({ role: 1, isActive: 1 });
 
 // Hash password before saving (for admins)
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function(this: IUser, next: (err?: Error) => void) {
   if (!this.isModified('password') || !this.password) {
     return next();
   }

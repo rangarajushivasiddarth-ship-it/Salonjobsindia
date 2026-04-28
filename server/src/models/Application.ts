@@ -101,7 +101,7 @@ applicationSchema.index({ ownerId: 1, status: 1, appliedAt: -1 });
 applicationSchema.index({ jobId: 1, status: 1 });
 
 // Middleware to add status to history on status change
-applicationSchema.pre('save', function(next) {
+applicationSchema.pre('save', function(this: IApplication, next: (err?: Error) => void) {
   if (this.isModified('status')) {
     this.statusHistory.push({
       status: this.status,
