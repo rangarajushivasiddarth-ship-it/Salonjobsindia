@@ -237,22 +237,28 @@ export function ProfileDashboard() {
         {activeTab === 'saved' && (
           <div className="space-y-3 animate-slide-up">
             {savedJobs.length > 0 ? (
-              savedJobs.map((job) => (
-                <div key={job.id} className="p-4 glass-card rounded-xl">
+              savedJobs.map((jobId) => (
+                <div key={jobId} className="p-4 glass-card rounded-xl">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
                       <Building2 className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <h4 className="font-semibold">{job.salonName}</h4>
+                      <h4 className="font-semibold">Saved Job</h4>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {job.location.area}
+                        <Heart className="w-3 h-3 fill-accent text-accent" />
+                        Job ID: {jobId}
                       </p>
                     </div>
                   </div>
-                  <p className="text-primary font-medium">{job.role}</p>
-                  <p className="text-sm text-muted-foreground">{job.salary}</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full mt-2"
+                    onClick={() => goToStep('results')}
+                  >
+                    View in Jobs
+                  </Button>
                 </div>
               ))
             ) : (

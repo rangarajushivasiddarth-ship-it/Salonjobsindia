@@ -13,66 +13,81 @@ const MOCK_JOBS: Job[] = [
     id: '1',
     salonId: 's1',
     salonName: 'Glamour Studio',
+    salonMobile: '9876543210',
     role: 'Senior Hair Stylist',
     salary: '₹25,000 - ₹35,000',
+    salaryType: 'monthly',
     experience: '2-5 years',
-    location: { lat: 19.076, lng: 72.877, address: 'Bandra West', area: 'Bandra' },
+    location: { lat: 19.076, lng: 72.877, address: 'Bandra West', area: 'Bandra', city: 'Mumbai' },
     contact: '+91 98765 43210',
     description: 'Looking for an experienced hair stylist with expertise in coloring and styling.',
     createdAt: new Date(),
     isActive: true,
+    status: 'live',
   },
   {
     id: '2',
     salonId: 's2',
     salonName: 'Style Haven',
+    salonMobile: '9876543211',
     role: 'Makeup Artist',
     salary: '₹20,000 - ₹30,000',
+    salaryType: 'monthly',
     experience: '1-3 years',
-    location: { lat: 19.089, lng: 72.865, address: 'Andheri West', area: 'Andheri' },
+    location: { lat: 19.089, lng: 72.865, address: 'Andheri West', area: 'Andheri', city: 'Mumbai' },
     contact: '+91 98765 43211',
     description: 'Seeking creative makeup artist for bridal and party makeup.',
     createdAt: new Date(),
     isActive: true,
+    status: 'live',
   },
   {
     id: '3',
     salonId: 's3',
     salonName: 'Beauty Bliss',
+    salonMobile: '9876543212',
     role: 'Nail Technician',
     salary: '₹15,000 - ₹22,000',
+    salaryType: 'monthly',
     experience: 'Fresher welcome',
-    location: { lat: 19.054, lng: 72.840, address: 'Juhu', area: 'Juhu' },
+    location: { lat: 19.054, lng: 72.840, address: 'Juhu', area: 'Juhu', city: 'Mumbai' },
     contact: '+91 98765 43212',
     description: 'Looking for nail technicians with knowledge of latest nail art trends.',
     createdAt: new Date(),
     isActive: true,
+    status: 'live',
   },
   {
     id: '4',
     salonId: 's4',
     salonName: 'Chic Cuts',
+    salonMobile: '9876543213',
     role: 'Beautician',
     salary: '₹18,000 - ₹25,000',
+    salaryType: 'monthly',
     experience: '1-2 years',
-    location: { lat: 19.117, lng: 72.906, address: 'Powai', area: 'Powai' },
+    location: { lat: 19.117, lng: 72.906, address: 'Powai', area: 'Powai', city: 'Mumbai' },
     contact: '+91 98765 43213',
     description: 'Full-time beautician needed for facial, waxing, and threading services.',
     createdAt: new Date(),
     isActive: true,
+    status: 'live',
   },
   {
     id: '5',
     salonId: 's5',
     salonName: 'Luxe Salon',
+    salonMobile: '9876543214',
     role: 'Salon Manager',
     salary: '₹40,000 - ₹55,000',
+    salaryType: 'monthly',
     experience: '5+ years',
-    location: { lat: 19.023, lng: 72.855, address: 'Worli', area: 'Worli' },
+    location: { lat: 19.023, lng: 72.855, address: 'Worli', area: 'Worli', city: 'Mumbai' },
     contact: '+91 98765 43214',
     description: 'Experienced salon manager to oversee daily operations and staff.',
     createdAt: new Date(),
     isActive: true,
+    status: 'live',
   },
 ]
 
@@ -87,7 +102,7 @@ export function JobResults() {
     job.location.area.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const isJobSaved = (jobId: string) => savedJobs.some(j => j.id === jobId)
+  const isJobSaved = (jobId: string) => savedJobs.includes(jobId)
   const isJobApplied = (jobId: string) => appliedJobs.includes(jobId)
 
   const getDistance = () => {
@@ -167,7 +182,7 @@ export function JobResults() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    isJobSaved(job.id) ? unsaveJob(job.id) : saveJob(job)
+                    isJobSaved(job.id) ? unsaveJob(job.id) : saveJob(job.id)
                   }}
                   className="p-2"
                 >
@@ -249,7 +264,7 @@ export function JobResults() {
                   </p>
                 </div>
                 <button
-                  onClick={() => isJobSaved(selectedJob.id) ? unsaveJob(selectedJob.id) : saveJob(selectedJob)}
+                  onClick={() => isJobSaved(selectedJob.id) ? unsaveJob(selectedJob.id) : saveJob(selectedJob.id)}
                 >
                   {isJobSaved(selectedJob.id) ? (
                     <Heart className="w-6 h-6 text-accent fill-accent" />

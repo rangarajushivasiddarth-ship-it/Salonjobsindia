@@ -39,9 +39,16 @@ interface AdminContextType extends AdminState {
 
 const defaultStats: AdminStats = {
   totalUsers: 0,
-  activeSubscriptions: 0,
+  totalJobSeekers: 0,
+  totalSalonOwners: 0,
   totalJobs: 0,
+  activeJobs: 0,
+  totalApplications: 0,
+  pendingSubscriptions: 0,
   pendingApprovals: 0,
+  activeSubscriptions: 0,
+  totalRevenue: 0,
+  monthlyRevenue: 0,
 }
 
 const defaultSettings: AppSettings = {
@@ -49,6 +56,9 @@ const defaultSettings: AppSettings = {
   radiusKm: 20,
   paymentInstructions: 'Scan the QR code and complete payment. Upload screenshot for verification.',
   subscriptionDurationDays: 30,
+  supportEmail: 'support@fitone.com',
+  supportPhone: '+91 9876543210',
+  appVersion: '1.0.0',
 }
 
 const ADMIN_SESSION_KEY = 'fitone_admin_session'
@@ -93,10 +103,15 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       jobs: [...pendingJobs, ...allJobs] as unknown as Job[],
       users: usersFromService as unknown as User[],
       stats: {
+        ...prev.stats,
         totalUsers: dashboardStats.totalUsers,
+        totalJobSeekers: dashboardStats.totalJobSeekers || 0,
+        totalSalonOwners: dashboardStats.totalSalonOwners || 0,
         activeSubscriptions: dashboardStats.activeSubscriptions,
         totalJobs: dashboardStats.totalJobs,
-        pendingApprovals: mergedPending.length + dashboardStats.pendingJobApprovals,
+        activeJobs: dashboardStats.activeJobs || 0,
+        pendingApprovals: mergedPending.length + (dashboardStats.pendingJobApprovals || 0),
+        pendingSubscriptions: mergedPending.length,
       },
       lastSyncTime: new Date(),
     }))

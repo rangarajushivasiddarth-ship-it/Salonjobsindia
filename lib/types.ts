@@ -43,14 +43,18 @@ export interface Resume {
     lng: number
     address: string
   }
-  passportPhoto?: string
+  passportPhoto?: {
+    url?: string
+    uploaded: boolean
+  }
   identityProof?: {
     type: 'Aadhar Card' | 'PAN Card' | 'Driving License' | 'Other'
     documentUrl?: string
+    uploaded: boolean
     verified: boolean
   }
   videoIntro?: string
-  isActive: boolean
+  isActive?: boolean
   createdAt: Date
   updatedAt: Date
 }
@@ -490,12 +494,14 @@ export interface Application {
 // ==========================================
 
 export interface AdminStats {
+  totalUsers: number
   totalJobSeekers: number
   totalSalonOwners: number
   totalJobs: number
   activeJobs: number
   totalApplications: number
   pendingSubscriptions: number
+  pendingApprovals: number
   activeSubscriptions: number
   totalRevenue: number
   monthlyRevenue: number
