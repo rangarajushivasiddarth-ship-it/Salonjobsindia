@@ -77,7 +77,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     const allJobs = JobService.getLiveJobs()
     
     // Also get from data-store for customer app subscriptions
-    const pendingFromDataStore = getAllSubscriptions().filter(s => s.status === 'pending')
+    const allFromDataStore = getAllSubscriptions()
+    const pendingFromDataStore = allFromDataStore.filter(s => s.status === 'pending')
+    
+    
     
     // Merge pending subscriptions (use data-store as primary since that's what customer app uses)
     const mergedPending = pendingFromDataStore.length > 0 
@@ -120,22 +123,38 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Real-time data sync
+  // Real-time data sync with cross-tab support
   useEffect(() => {
     if (state.isAuthenticated) {
       // Initial load
       loadData()
       
-      // Poll for updates every 3 seconds for real-time feel
-      const interval = setInterval(loadData, 3000)
+      // Poll for updates every 2 seconds for real-time feel
+      const interval = setInterval(loadData, 2000)
       
-      // Subscribe to data changes
+      // Listen for storage changes from other tabs (customer app)
+      const handleStorageChange = (event: StorageEvent) => {
+        if (event.key === 'fitone_subscriptions' || 
+            event.key === 'fitone_users' || 
+            event.key === 'fitone_jobs' ||
+            event.key === 'fitonze_subscriptions' ||
+            event.key === 'fitone_sync_trigger') {
+          // Immediately reload data when customer app makes changes
+          
+          loadData()
+        }
+      }
+      
+      window.addEventListener('storage', handleStorageChange)
+      
+      // Subscribe to data changes within same tab
       const unsubscribe = SyncService.subscribe('*', () => {
         loadData()
       })
       
       return () => {
         clearInterval(interval)
+        window.removeEventListener('storage', handleStorageChange)
         unsubscribe()
       }
     }

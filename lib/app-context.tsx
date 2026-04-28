@@ -109,7 +109,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return unsubscribe
   }, [state.user?.id])
   
-  // Poll for subscription approval (every 5 seconds)
+  // Poll for subscription approval with cross-tab sync
   useEffect(() => {
     if (!state.user?.id || state.user.isSubscribed) return
     
@@ -138,8 +138,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     }
     
-    const interval = setInterval(checkApproval, 5000)
-    return () => clearInterval(interval)
+    // Check immediately and poll every 3 seconds
+    checkApproval()
+    const interval = setInterval(checkApproval, 3000)
+    
+    // Listen for storage changes from admin tab
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'fitone_subscriptions' || event.key === 'fitone_sync_trigger') {
+        checkApproval()
+      }
+    }
+    
+    window.addEventListener('storage', handleStorageChange)
+    
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('storage', handleStorageChange)
+    }
   }, [state.user?.id, state.user?.isSubscribed])
 
   const signIn = useCallback(async (email: string, password: string, phone: string): Promise<{ success: boolean; error?: string }> => {

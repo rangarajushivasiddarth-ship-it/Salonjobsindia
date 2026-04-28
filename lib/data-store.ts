@@ -9,12 +9,18 @@ const USERS_KEY = 'fitone_users'
 const MESSAGES_KEY = 'fitone_messages'
 const NOTIFICATIONS_KEY = 'fitone_notifications'
 
-// Helper to dispatch sync events
+// Helper to dispatch sync events and trigger cross-tab communication
 function dispatchDataUpdate(key: string) {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('fitone_data_updated', { detail: { key } }))
     // Also dispatch legacy event for backward compatibility
     window.dispatchEvent(new CustomEvent('fitonze_data_update', { detail: { type: key.replace('fitone_', '') } }))
+    
+    // Force trigger storage event for cross-tab sync by writing a sync timestamp
+    // This ensures other tabs (like admin) get notified immediately
+    const syncKey = 'fitone_sync_trigger'
+    const timestamp = Date.now().toString()
+    localStorage.setItem(syncKey, timestamp)
   }
 }
 
@@ -165,7 +171,7 @@ export function saveSubscription(subscription: Subscription): void {
   
   localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subscriptions))
   
-  // Dispatch event for real-time updates
+  // Dispatch event for real-time updates (triggers cross-tab sync)
   dispatchDataUpdate(SUBSCRIPTIONS_KEY)
 }
 
@@ -193,7 +199,7 @@ export function approveSubscription(subscriptionId: string): Subscription | null
       isRead: false,
     })
     
-    // Dispatch event for real-time updates
+    // Dispatch event for real-time updates (triggers cross-tab sync)
     dispatchDataUpdate(SUBSCRIPTIONS_KEY)
     
     return subscription
