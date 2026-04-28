@@ -344,7 +344,7 @@ export function ResumeBuilder() {
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
-                    placeholder="Search or select a role..."
+                    placeholder="Search, select, or enter your custom role..."
                     value={formData.role}
                     onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
                     className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary"
@@ -352,9 +352,26 @@ export function ResumeBuilder() {
                 </div>
                 {errors.role && <p className="text-sm text-destructive">{errors.role}</p>}
                 
+                {/* Custom role hint */}
+                {formData.role && !BEAUTY_ROLES.some(r => r.role.toLowerCase() === formData.role.toLowerCase()) && (
+                  <div className="flex items-center gap-2 p-2 bg-accent/10 border border-accent/20 rounded-lg">
+                    <Check className="w-4 h-4 text-accent" />
+                    <span className="text-sm text-accent">
+                      Custom role: <strong>{formData.role}</strong>
+                    </span>
+                  </div>
+                )}
+                
                 {/* Category filter */}
                 <div className="flex gap-2 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-hide">
-                  {ROLE_CATEGORIES.slice(0, 6).map(category => (
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, role: '' }))}
+                    className="px-3 py-1.5 text-xs rounded-full whitespace-nowrap bg-accent/20 text-accent hover:bg-accent/30 transition-colors border border-dashed border-accent/50"
+                  >
+                    + Custom Role
+                  </button>
+                  {ROLE_CATEGORIES.slice(0, 5).map(category => (
                     <button
                       key={category}
                       type="button"
@@ -438,16 +455,22 @@ export function ResumeBuilder() {
                 {/* Calendar Input */}
                 {dobInputMode === 'calendar' && (
                   <div className="relative">
-                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
-                    <Input
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
+                    <input
                       type="date"
                       value={formData.dateOfBirth}
+                      max={new Date().toISOString().split('T')[0]}
+                      min="1950-01-01"
                       onChange={(e) => {
                         setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))
                         setManualDob(formatDateForDisplay(e.target.value))
                       }}
-                      className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary"
+                      className="w-full h-14 pl-12 pr-4 bg-secondary/50 border border-border/50 focus:border-primary rounded-md text-foreground appearance-none cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
+                      style={{ colorScheme: 'dark' }}
                     />
+                    <span className="absolute right-12 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
+                      Tap to select
+                    </span>
                   </div>
                 )}
 

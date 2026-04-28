@@ -50,6 +50,8 @@ export function AdminLogin() {
               alt="Fitonze"
               fill
               className="object-contain"
+              loading="eager"
+              priority
             />
           </div>
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>

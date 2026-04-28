@@ -278,12 +278,11 @@ export function SubscriptionScreen() {
             
             <div className="w-full aspect-square max-w-[180px] mx-auto bg-white rounded-xl flex items-center justify-center mb-4 overflow-hidden">
               <Image
-                src="/images/payment-qr.png"
+                src="/images/payment-qr.jpg"
                 alt="Payment QR Code"
                 width={180}
                 height={180}
-                style={{ width: 'auto', height: 'auto' }}
-                className="object-contain"
+                className="object-contain w-auto h-auto"
               />
             </div>
             

@@ -161,6 +161,8 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
               alt="Fitonze"
               fill
               className="object-contain"
+              loading="eager"
+              priority
             />
           </div>
         </div>

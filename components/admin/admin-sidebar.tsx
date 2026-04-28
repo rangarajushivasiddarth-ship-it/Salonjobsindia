@@ -27,6 +27,8 @@ export function AdminSidebar() {
             alt="Fitonze"
             fill
             className="object-contain"
+            loading="eager"
+            priority
           />
         </div>
         <p className="text-xs text-muted-foreground text-center mt-2">Admin Panel</p>
@@ -89,6 +91,8 @@ export function AdminSidebar() {
               alt="Fitonze"
               fill
               className="object-contain"
+              loading="eager"
+              priority
             />
           </div>
           <button
