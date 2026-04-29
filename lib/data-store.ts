@@ -267,45 +267,68 @@ export function canViewMoreShops(userId: string): { canView: boolean; remaining:
 // ============== USER SUBSCRIPTION STATUS ==============
 
 function updateUserSubscription(userId: string, isSubscribed: boolean): void {
-  if (typeof window === 'undefined') return
+  if (typeof window === 'undefined' || !userId) return
   
   try {
-    const usersStr = localStorage.getItem(USERS_KEY)
-    if (usersStr) {
-      const users = JSON.parse(usersStr)
-      
-      // Find user by ID - check both user.id and direct id
-      for (const email in users) {
-        const userData = users[email]
-        const userObj = userData?.user || userData
-        const uid = userObj?.id || userData?.id
-        
-        if (uid === userId) {
-          if (userData?.user) {
-            users[email].user.isSubscribed = isSubscribed
-          } else {
-            users[email].isSubscribed = isSubscribed
-          }
-          localStorage.setItem(USERS_KEY, JSON.stringify(users))
-          break
+    // Update current user in localStorage first (most reliable)
+    const currentUserStr = localStorage.getItem('fitone_current_user')
+    if (currentUserStr) {
+      try {
+        const currentUser = JSON.parse(currentUserStr)
+        if (currentUser?.id === userId) {
+          currentUser.isSubscribed = isSubscribed
+          localStorage.setItem('fitone_current_user', JSON.stringify(currentUser))
         }
+      } catch {
+        // Ignore parse errors for current user
       }
     }
     
-    // Also update current user in localStorage if this is them
-    const currentUserStr = localStorage.getItem('fitone_current_user')
-    if (currentUserStr) {
-      const currentUser = JSON.parse(currentUserStr)
-      if (currentUser.id === userId) {
-        currentUser.isSubscribed = isSubscribed
-        localStorage.setItem('fitone_current_user', JSON.stringify(currentUser))
+    // Also try to update in users store
+    const usersStr = localStorage.getItem(USERS_KEY)
+    if (usersStr) {
+      try {
+        const users = JSON.parse(usersStr)
+        let updated = false
+        
+        for (const email in users) {
+          if (!users[email]) continue
+          
+          const userData = users[email]
+          // Support multiple data structures
+          let uid: string | undefined
+          
+          if (typeof userData === 'object') {
+            if (userData.user && typeof userData.user === 'object') {
+              uid = userData.user.id
+            } else if (userData.id) {
+              uid = userData.id
+            }
+          }
+          
+          if (uid === userId) {
+            if (userData.user && typeof userData.user === 'object') {
+              userData.user.isSubscribed = isSubscribed
+            } else {
+              userData.isSubscribed = isSubscribed
+            }
+            updated = true
+            break
+          }
+        }
+        
+        if (updated) {
+          localStorage.setItem(USERS_KEY, JSON.stringify(users))
+        }
+      } catch {
+        // Ignore parse errors for users store
       }
     }
     
     // Trigger cross-tab sync
     dispatchDataUpdate(USERS_KEY)
   } catch (error) {
-    console.error('Failed to update user subscription:', error)
+    // Silently fail - subscription status update is not critical
   }
 }
 
