@@ -271,28 +271,39 @@ function updateUserSubscription(userId: string, isSubscribed: boolean): void {
   
   try {
     const usersStr = localStorage.getItem(USERS_KEY)
-    if (!usersStr) return
-    
-    const users = JSON.parse(usersStr)
-    
-    // Find user by ID
-    for (const email in users) {
-      if (users[email].user.id === userId) {
-        users[email].user.isSubscribed = isSubscribed
-        localStorage.setItem(USERS_KEY, JSON.stringify(users))
+    if (usersStr) {
+      const users = JSON.parse(usersStr)
+      
+      // Find user by ID - check both user.id and direct id
+      for (const email in users) {
+        const userData = users[email]
+        const userObj = userData?.user || userData
+        const uid = userObj?.id || userData?.id
         
-        // Also update USER_KEY if this is the current user
-        const currentUserStr = localStorage.getItem('fitone_current_user')
-        if (currentUserStr) {
-          const currentUser = JSON.parse(currentUserStr)
-          if (currentUser.id === userId) {
-            currentUser.isSubscribed = isSubscribed
-            localStorage.setItem('fitone_current_user', JSON.stringify(currentUser))
+        if (uid === userId) {
+          if (userData?.user) {
+            users[email].user.isSubscribed = isSubscribed
+          } else {
+            users[email].isSubscribed = isSubscribed
           }
+          localStorage.setItem(USERS_KEY, JSON.stringify(users))
+          break
         }
-        break
       }
     }
+    
+    // Also update current user in localStorage if this is them
+    const currentUserStr = localStorage.getItem('fitone_current_user')
+    if (currentUserStr) {
+      const currentUser = JSON.parse(currentUserStr)
+      if (currentUser.id === userId) {
+        currentUser.isSubscribed = isSubscribed
+        localStorage.setItem('fitone_current_user', JSON.stringify(currentUser))
+      }
+    }
+    
+    // Trigger cross-tab sync
+    dispatchDataUpdate(USERS_KEY)
   } catch (error) {
     console.error('Failed to update user subscription:', error)
   }

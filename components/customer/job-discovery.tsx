@@ -9,34 +9,6 @@ import { getAllJobs, canViewMoreShops, incrementShopsViewed, sendMessage, getSub
 import type { Job, BeautyRole } from '@/lib/types'
 import { BEAUTY_ROLES, ROLE_CATEGORIES } from '@/lib/types'
 
-// Enhanced mock salon data with jobs
-const MOCK_SALONS = [
-  { id: '1', name: 'Glamour Studio', ownerId: 'owner1', ownerPhone: '9876543210', rating: 4.8, reviewCount: 124, 
-    job: { role: 'Hair Stylist' as BeautyRole, salary: 'Rs.25,000 - Rs.35,000', experience: '2-3 years', location: { address: '123 MG Road', area: 'Koramangala', city: 'Bangalore', lat: 12.9352, lng: 77.6245 }, timing: '10 AM - 8 PM', gender: 'any' as const, accommodation: true } },
-  { id: '2', name: 'Style Haven', ownerId: 'owner2', ownerPhone: '9876543211', rating: 4.5, reviewCount: 89,
-    job: { role: 'Makeup Artist' as BeautyRole, salary: 'Rs.30,000 - Rs.45,000', experience: '3-5 years', location: { address: '456 100ft Road', area: 'Indiranagar', city: 'Bangalore', lat: 12.9716, lng: 77.6412 }, timing: '9 AM - 7 PM', gender: 'female' as const } },
-  { id: '3', name: 'Beauty Bliss Spa', ownerId: 'owner3', ownerPhone: '9876543212', rating: 4.9, reviewCount: 256,
-    job: { role: 'Spa Therapist' as BeautyRole, salary: 'Rs.20,000 - Rs.28,000', experience: '1-2 years', location: { address: '789 HSR Main', area: 'HSR Layout', city: 'Bangalore', lat: 12.9141, lng: 77.6366 }, timing: '10 AM - 9 PM', foodProvided: true } },
-  { id: '4', name: 'Chic Cuts Salon', ownerId: 'owner4', ownerPhone: '9876543213', rating: 4.3, reviewCount: 67,
-    job: { role: 'Barber' as BeautyRole, salary: 'Rs.18,000 - Rs.25,000', experience: '1+ years', location: { address: '321 ITPL Road', area: 'Whitefield', city: 'Bangalore', lat: 12.9698, lng: 77.7500 }, timing: '9 AM - 9 PM', gender: 'male' as const } },
-  { id: '5', name: 'Luxe Salon & Spa', ownerId: 'owner5', ownerPhone: '9876543214', rating: 4.7, reviewCount: 189,
-    job: { role: 'Nail Technician' as BeautyRole, salary: 'Rs.22,000 - Rs.30,000', experience: '2+ years', location: { address: '654 JP Nagar', area: 'JP Nagar', city: 'Bangalore', lat: 12.9063, lng: 77.5857 }, timing: '10 AM - 8 PM' } },
-  { id: '6', name: 'Hair Artistry', ownerId: 'owner6', ownerPhone: '9876543215', rating: 4.6, reviewCount: 145,
-    job: { role: 'Senior Hair Stylist' as BeautyRole, salary: 'Rs.35,000 - Rs.50,000', experience: '5+ years', location: { address: '987 Jayanagar 4th Block', area: 'Jayanagar', city: 'Bangalore', lat: 12.9250, lng: 77.5938 }, timing: '10 AM - 7 PM' } },
-  { id: '7', name: 'Elegant Touch Beauty', ownerId: 'owner7', ownerPhone: '9876543216', rating: 4.4, reviewCount: 98,
-    job: { role: 'Beautician' as BeautyRole, salary: 'Rs.20,000 - Rs.28,000', experience: '1-3 years', location: { address: '147 BTM Layout', area: 'BTM Layout', city: 'Bangalore', lat: 12.9166, lng: 77.6101 }, timing: '9 AM - 8 PM', accommodation: true } },
-  { id: '8', name: 'Modern Mane Studio', ownerId: 'owner8', ownerPhone: '9876543217', rating: 4.8, reviewCount: 167,
-    job: { role: 'Hair Colorist' as BeautyRole, salary: 'Rs.28,000 - Rs.40,000', experience: '3+ years', location: { address: '258 Marathahalli', area: 'Marathahalli', city: 'Bangalore', lat: 12.9591, lng: 77.6974 }, timing: '10 AM - 8 PM' } },
-  { id: '9', name: 'Pristine Beauty Lounge', ownerId: 'owner9', ownerPhone: '9876543218', rating: 4.5, reviewCount: 112,
-    job: { role: 'Bridal Makeup Artist' as BeautyRole, salary: 'Rs.40,000 - Rs.60,000', experience: '4+ years', location: { address: '369 Bannerghatta Road', area: 'Bannerghatta', city: 'Bangalore', lat: 12.8915, lng: 77.5965 }, timing: 'Flexible' } },
-  { id: '10', name: 'Urban Styling Hub', ownerId: 'owner10', ownerPhone: '9876543219', rating: 4.2, reviewCount: 56,
-    job: { role: 'Salon Receptionist' as BeautyRole, salary: 'Rs.15,000 - Rs.20,000', experience: 'Fresher OK', location: { address: '741 Electronic City', area: 'Electronic City', city: 'Bangalore', lat: 12.8440, lng: 77.6611 }, timing: '9 AM - 6 PM' } },
-  { id: '11', name: 'Glow Up Studio', ownerId: 'owner11', ownerPhone: '9876543220', rating: 4.6, reviewCount: 134,
-    job: { role: 'Mehendi Artist' as BeautyRole, salary: 'Rs.25,000 - Rs.35,000', experience: '2+ years', location: { address: '852 Malleshwaram', area: 'Malleshwaram', city: 'Bangalore', lat: 13.0035, lng: 77.5644 }, timing: 'On-demand', gender: 'female' as const } },
-  { id: '12', name: 'The Lash Bar', ownerId: 'owner12', ownerPhone: '9876543221', rating: 4.9, reviewCount: 201,
-    job: { role: 'Lash Technician' as BeautyRole, salary: 'Rs.30,000 - Rs.45,000', experience: '2-4 years', location: { address: '963 Yelahanka', area: 'Yelahanka', city: 'Bangalore', lat: 13.1007, lng: 77.5963 }, timing: '10 AM - 7 PM' } },
-]
-
 interface SalonWithDetails {
   id: string
   name: string
@@ -106,55 +78,35 @@ export function JobDiscovery() {
   useEffect(() => {
     if (!user?.id) return
     
-    const customJobs = getAllJobs()
+    const realJobs = getAllJobs().filter(job => job.isActive && job.status === 'live')
     const subscription = getSubscriptionByUserId(user.id)
     
-    // Combine mock salons with custom jobs, add distance
-    let allSalons: SalonWithDetails[] = MOCK_SALONS.map(salon => {
-      const customJob = customJobs.find(j => j.salonId === salon.id)
+    // Convert real jobs to salon format with distance calculation
+    const allSalons: SalonWithDetails[] = realJobs.map(job => {
       let distance: number | undefined
-      
-      if (userLocation && salon.job?.location) {
+      if (userLocation && job.location) {
         distance = calculateDistance(
           userLocation.lat, userLocation.lng,
-          salon.job.location.lat, salon.job.location.lng
+          job.location.lat, job.location.lng
         )
       }
       
-      return { 
-        ...salon, 
-        job: customJob ? { ...salon.job, ...customJob } : salon.job,
-        distance 
-      }
-    })
-    
-    // Add any custom jobs that don't match mock salons
-    customJobs.forEach(job => {
-      if (!allSalons.find(s => s.id === job.salonId)) {
-        let distance: number | undefined
-        if (userLocation && job.location) {
-          distance = calculateDistance(
-            userLocation.lat, userLocation.lng,
-            job.location.lat, job.location.lng
-          )
-        }
-        allSalons.push({
-          id: job.salonId,
-          name: job.salonName,
-          ownerId: job.salonId,
-          ownerPhone: job.contact || '',
-          job: {
-            role: job.role as BeautyRole,
-            salary: job.salary,
-            experience: job.experience,
-            location: job.location as any,
-            timing: job.timing,
-            gender: job.gender,
-            accommodation: job.accommodation,
-            foodProvided: job.foodProvided,
-          },
-          distance
-        })
+      return {
+        id: job.salonId || job.id,
+        name: job.salonName,
+        ownerId: job.salonId || job.id,
+        ownerPhone: job.salonMobile || job.contact || '',
+        job: {
+          role: job.role as BeautyRole,
+          salary: job.salary,
+          experience: job.experience,
+          location: job.location as { address: string; area: string; city: string; lat: number; lng: number },
+          timing: job.timing,
+          gender: job.gender,
+          accommodation: job.accommodation,
+          foodProvided: job.foodProvided,
+        },
+        distance
       }
     })
     
