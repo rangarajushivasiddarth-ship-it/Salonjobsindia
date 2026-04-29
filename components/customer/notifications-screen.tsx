@@ -17,53 +17,9 @@ interface Notification {
   createdAt?: Date
 }
 
-// Mock notifications
-const MOCK_NOTIFICATIONS: Notification[] = [
-  {
-    id: '1',
-    type: 'job',
-    title: 'New Job Match',
-    message: 'A salon near you is hiring for Hair Stylist position',
-    timestamp: new Date(Date.now() - 30 * 60 * 1000),
-    isRead: false,
-  },
-  {
-    id: '2',
-    type: 'message',
-    title: 'New Message',
-    message: 'Glamour Studio sent you a message about your application',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    isRead: false,
-  },
-  {
-    id: '3',
-    type: 'subscription',
-    title: 'Subscription Approved',
-    message: 'Your premium subscription has been activated. Enjoy unlimited access!',
-    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    isRead: true,
-  },
-  {
-    id: '4',
-    type: 'job',
-    title: 'Application Viewed',
-    message: 'Style Haven viewed your job application',
-    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    isRead: true,
-  },
-  {
-    id: '5',
-    type: 'system',
-    title: 'Complete Your Profile',
-    message: 'Add more skills to get better job matches',
-    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-    isRead: true,
-  },
-]
-
 export function NotificationsScreen() {
   const { goToStep, user } = useApp()
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS)
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
   
   // Load notifications from localStorage (for payment notifications)
@@ -75,7 +31,31 @@ export function NotificationsScreen() {
           ...n,
           timestamp: new Date(n.createdAt || Date.now()),
         }))
-        setNotifications(prev => [...storedNotifications, ...prev])
+        setNotifications(storedNotifications)
+      }
+      
+      // Also check the data-store notifications
+      const dataStoreNotifications = localStorage.getItem('fitone_notifications')
+      if (dataStoreNotifications) {
+        try {
+          const allNotifications = JSON.parse(dataStoreNotifications)
+          const userNotifications = allNotifications
+            .filter((n: { userId: string }) => n.userId === user.id)
+            .map((n: Notification & { createdAt?: string }) => ({
+              ...n,
+              timestamp: new Date(n.createdAt || Date.now()),
+            }))
+          if (userNotifications.length > 0) {
+            setNotifications(prev => {
+              // Merge and dedupe by id
+              const existingIds = new Set(prev.map(p => p.id))
+              const newOnes = userNotifications.filter((n: Notification) => !existingIds.has(n.id))
+              return [...newOnes, ...prev]
+            })
+          }
+        } catch {
+          // Ignore parse errors
+        }
       }
     }
   }, [user?.id])

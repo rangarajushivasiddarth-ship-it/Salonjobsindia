@@ -40,68 +40,9 @@ interface Conversation {
   contactShared: boolean
 }
 
-// Mock conversations with contact info
-const MOCK_CONVERSATIONS: Conversation[] = [
-  {
-    id: 'c1',
-    salonName: 'Glamour Studio',
-    salonId: 's1',
-    salonPhone: '+91 98765 43210',
-    salonWhatsapp: '919876543210',
-    jobRole: 'Hair Stylist',
-    jobSalary: 'Rs.25,000 - Rs.35,000',
-    location: 'Koramangala, Bangalore',
-    lastMessage: 'Yes, we are still hiring. Here is my contact number.',
-    timestamp: new Date(Date.now() - 30 * 60 * 1000),
-    unread: 1,
-    contactShared: true,
-    messages: [
-      { id: 'm1', text: 'Hi, I saw your job posting for Hair Stylist position. I have 3 years of experience.', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), isMe: true, status: 'read', type: 'text' },
-      { id: 'm2', text: 'Hello! Thanks for reaching out. Your profile looks great!', timestamp: new Date(Date.now() - 1.5 * 60 * 60 * 1000), isMe: false, status: 'read', type: 'text' },
-      { id: 'm3', text: 'Is the position still available?', timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000), isMe: true, status: 'read', type: 'text' },
-      { id: 'm4', text: 'Yes, we are still hiring. Here is my contact number.', timestamp: new Date(Date.now() - 30 * 60 * 1000), isMe: false, status: 'read', type: 'text' },
-      { id: 'm5', text: '', timestamp: new Date(Date.now() - 29 * 60 * 1000), isMe: false, status: 'read', type: 'contact', contactInfo: { phone: '+91 98765 43210', whatsapp: '919876543210' } },
-    ],
-  },
-  {
-    id: 'c2',
-    salonName: 'Style Haven',
-    salonId: 's2',
-    salonPhone: '+91 87654 32109',
-    jobRole: 'Makeup Artist',
-    jobSalary: 'Rs.30,000 - Rs.45,000',
-    location: 'Indiranagar, Bangalore',
-    lastMessage: 'Thank you for applying! We will review your profile.',
-    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
-    unread: 0,
-    contactShared: false,
-    messages: [
-      { id: 'm5', text: 'I would like to apply for the Makeup Artist position.', timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000), isMe: true, status: 'read', type: 'text' },
-      { id: 'm6', text: 'Thank you for applying! We will review your profile.', timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000), isMe: false, status: 'read', type: 'text' },
-    ],
-  },
-  {
-    id: 'c3',
-    salonName: 'Beauty Bliss Spa',
-    salonId: 's3',
-    salonPhone: '+91 76543 21098',
-    jobRole: 'Spa Therapist',
-    jobSalary: 'Rs.20,000 - Rs.28,000',
-    location: 'HSR Layout, Bangalore',
-    lastMessage: 'We will get back to you soon.',
-    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    unread: 0,
-    contactShared: false,
-    messages: [
-      { id: 'm7', text: 'Hello, is the Spa Therapist role still open?', timestamp: new Date(Date.now() - 25 * 60 * 60 * 1000), isMe: true, status: 'read', type: 'text' },
-      { id: 'm8', text: 'We will get back to you soon.', timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), isMe: false, status: 'read', type: 'text' },
-    ],
-  },
-]
-
 export function MessagesScreen() {
   const { goToStep, user } = useApp()
-  const [conversations, setConversations] = useState(MOCK_CONVERSATIONS)
+  const [conversations, setConversations] = useState<Conversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [newMessage, setNewMessage] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
