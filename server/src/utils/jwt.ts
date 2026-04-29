@@ -37,7 +37,7 @@ export const generateToken = (
   const secret = getSecret(type);
   const expiresIn = getExpiry(type);
   
-  return jwt.sign(payload, secret, { expiresIn });
+  return jwt.sign(payload, secret, { expiresIn: expiresIn as jwt.SignOptions['expiresIn'] });
 };
 
 export const verifyToken = (token: string, type: 'access' | 'refresh' = 'access'): DecodedToken => {
