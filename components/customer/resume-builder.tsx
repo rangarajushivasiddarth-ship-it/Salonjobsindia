@@ -5,6 +5,7 @@ import { ArrowLeft, User, Briefcase, Clock, DollarSign, MapPin, Navigation, X, P
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
+import { saveJobAlert, type JobAlert } from '@/lib/data-store'
 import type { Resume } from '@/lib/types'
 import { BEAUTY_ROLES, ROLE_CATEGORIES } from '@/lib/types'
 
@@ -276,6 +277,27 @@ export function ResumeBuilder() {
       createdAt: new Date(),
       updatedAt: new Date(),
     }
+    
+    // Save to job alerts queue for admin approval
+    const jobAlert: JobAlert = {
+      id: resume.id,
+      userId: user?.id || '',
+      userName: formData.name,
+      userPhone: user?.phone || '',
+      userEmail: user?.email,
+      role: formData.role,
+      experience: formData.experience,
+      skills: formData.skills,
+      salaryExpectation: formData.salaryExpectation,
+      location: formData.location,
+      passportPhotoUrl: formData.passportPhoto.preview || undefined,
+      identityProofUrl: formData.identityProof.preview || undefined,
+      identityProofType: formData.identityProof.type,
+      status: 'pending',
+      createdAt: new Date(),
+    }
+    
+    saveJobAlert(jobAlert)
     
     setResume(resume)
     setIsLoading(false)

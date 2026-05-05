@@ -1,11 +1,23 @@
 'use client'
 
-import { Users, CreditCard, Briefcase, Clock, TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Users, CreditCard, Briefcase, Clock, TrendingUp, ArrowUpRight, ArrowDownRight, FileText } from 'lucide-react'
 import { useAdmin } from '@/lib/admin-context'
 import { AdminSidebar } from './admin-sidebar'
+import { getPendingJobAlerts, type JobAlert } from '@/lib/data-store'
 
 export function AdminDashboard() {
   const { stats, pendingPayments, users, jobs } = useAdmin()
+  const [pendingJobAlerts, setPendingJobAlerts] = useState<JobAlert[]>([])
+
+  useEffect(() => {
+    const loadAlerts = () => {
+      setPendingJobAlerts(getPendingJobAlerts())
+    }
+    loadAlerts()
+    const interval = setInterval(loadAlerts, 5000)
+    return () => clearInterval(interval)
+  }, [])
 
   const statCards = [
     {
@@ -37,8 +49,8 @@ export function AdminDashboard() {
     },
     {
       title: 'Pending Approvals',
-      value: stats.pendingApprovals.toString(),
-      change: '-3',
+      value: (stats.pendingApprovals + pendingJobAlerts.length).toString(),
+      change: pendingJobAlerts.length > 0 ? `+${pendingJobAlerts.length} alerts` : '-3',
       isPositive: false,
       icon: Clock,
       color: 'text-accent',

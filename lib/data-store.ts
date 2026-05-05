@@ -8,6 +8,7 @@ const JOBS_KEY = 'fitone_jobs'
 const USERS_KEY = 'fitone_users'
 const MESSAGES_KEY = 'fitone_messages'
 const NOTIFICATIONS_KEY = 'fitone_notifications'
+const JOB_ALERTS_KEY = 'fitone_job_alerts'
 
 // Helper to dispatch sync events and trigger cross-tab communication
 function dispatchDataUpdate(key: string) {
@@ -542,4 +543,121 @@ export function getAllUsersForAdmin(): User[] {
   } catch {
     return []
   }
+}
+
+// ============== JOB ALERTS (Job Seeker Resume/Profile Submissions) ==============
+
+export interface JobAlert {
+  id: string
+  userId: string
+  userName: string
+  userPhone: string
+  userEmail?: string
+  role: string
+  experience: string
+  skills: string[]
+  salaryExpectation: string
+  location: {
+    lat: number
+    lng: number
+    address: string
+  }
+  passportPhotoUrl?: string
+  identityProofUrl?: string
+  identityProofType?: string
+  status: 'pending' | 'approved' | 'rejected'
+  createdAt: Date
+  processedAt?: Date
+  processedBy?: string
+  rejectionReason?: string
+}
+
+export function getAllJobAlerts(): JobAlert[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const data = localStorage.getItem(JOB_ALERTS_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+export function getPendingJobAlerts(): JobAlert[] {
+  return getAllJobAlerts().filter(alert => alert.status === 'pending')
+}
+
+export function getJobAlertByUserId(userId: string): JobAlert | null {
+  const alerts = getAllJobAlerts()
+  return alerts.find(a => a.userId === userId) || null
+}
+
+export function saveJobAlert(alert: JobAlert): void {
+  if (typeof window === 'undefined') return
+  
+  const alerts = getAllJobAlerts()
+  const existingIndex = alerts.findIndex(a => a.id === alert.id)
+  
+  if (existingIndex >= 0) {
+    alerts[existingIndex] = alert
+  } else {
+    alerts.push(alert)
+  }
+  
+  localStorage.setItem(JOB_ALERTS_KEY, JSON.stringify(alerts))
+  dispatchDataUpdate(JOB_ALERTS_KEY)
+}
+
+export function approveJobAlert(alertId: string, adminId: string): JobAlert | null {
+  const alerts = getAllJobAlerts()
+  const alert = alerts.find(a => a.id === alertId)
+  
+  if (alert) {
+    alert.status = 'approved'
+    alert.processedAt = new Date()
+    alert.processedBy = adminId
+    
+    localStorage.setItem(JOB_ALERTS_KEY, JSON.stringify(alerts))
+    
+    // Create notification for the user
+    createNotification({
+      userId: alert.userId,
+      type: 'system',
+      title: 'Profile Approved!',
+      message: 'Your job seeker profile has been approved. You can now be matched with salons!',
+      isRead: false,
+    })
+    
+    dispatchDataUpdate(JOB_ALERTS_KEY)
+    return alert
+  }
+  
+  return null
+}
+
+export function rejectJobAlert(alertId: string, adminId: string, reason?: string): JobAlert | null {
+  const alerts = getAllJobAlerts()
+  const alert = alerts.find(a => a.id === alertId)
+  
+  if (alert) {
+    alert.status = 'rejected'
+    alert.processedAt = new Date()
+    alert.processedBy = adminId
+    alert.rejectionReason = reason
+    
+    localStorage.setItem(JOB_ALERTS_KEY, JSON.stringify(alerts))
+    
+    // Create notification for the user
+    createNotification({
+      userId: alert.userId,
+      type: 'system',
+      title: 'Profile Needs Updates',
+      message: reason || 'Your job seeker profile was not approved. Please update and resubmit.',
+      isRead: false,
+    })
+    
+    dispatchDataUpdate(JOB_ALERTS_KEY)
+    return alert
+  }
+  
+  return null
 }
