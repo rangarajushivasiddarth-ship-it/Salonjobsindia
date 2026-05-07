@@ -80,7 +80,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             currentStep: currentUser.role ? 
               (currentUser.role === 'job_seeker' ? 
                 (currentUser.isSubscribed ? 'results' : 'discovery') 
-                : 'owner-panel') 
+                : 'owner-panel') // handles both 'salon_owner' and 'employer'
               : 'role',
           }))
           return
@@ -129,7 +129,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               ...prev,
               user: prev.user ? { ...prev.user, isSubscribed: true } : prev.user,
               subscription: userSub as Subscription,
-              currentStep: prev.user?.role === 'salon_owner' ? 'owner-panel' : 'results',
+              currentStep: (prev.user?.role === 'salon_owner' || prev.user?.role === 'employer') ? 'owner-panel' : 'results',
             }))
           }
         }

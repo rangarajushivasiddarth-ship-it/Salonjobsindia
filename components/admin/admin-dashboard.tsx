@@ -191,13 +191,13 @@ export function AdminDashboard() {
             <div className="flex items-center gap-4">
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Salon Owners</span>
-                  <span className="font-semibold">{users.filter(u => u.role === 'salon_owner').length}</span>
+                  <span className="text-sm text-muted-foreground">Employers</span>
+                  <span className="font-semibold">{users.filter(u => u.role === 'salon_owner' || u.role === 'employer').length}</span>
                 </div>
                 <div className="h-3 bg-secondary/50 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-accent rounded-full transition-all duration-500"
-                    style={{ width: `${(users.filter(u => u.role === 'salon_owner').length / users.length) * 100}%` }}
+                    style={{ width: `${(users.filter(u => u.role === 'salon_owner' || u.role === 'employer').length / Math.max(users.length, 1)) * 100}%` }}
                   />
                 </div>
               </div>

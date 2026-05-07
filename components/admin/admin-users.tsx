@@ -8,7 +8,7 @@ import { useAdmin } from '@/lib/admin-context'
 import { AdminSidebar } from './admin-sidebar'
 import { getPendingJobAlerts, approveJobAlert, rejectJobAlert, type JobAlert } from '@/lib/data-store'
 
-type FilterType = 'all' | 'job_seeker' | 'salon_owner'
+type FilterType = 'all' | 'job_seeker' | 'employer'
 type TabType = 'users' | 'job_alerts'
 
 export function AdminUsers() {
@@ -34,10 +34,13 @@ export function AdminUsers() {
     return () => clearInterval(interval)
   }, [])
 
-  const filteredUsers = users.filter(user => {
+const filteredUsers = users.filter(user => {
     const matchesSearch = user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.phone.includes(searchQuery)
-    const matchesFilter = filter === 'all' || user.role === filter
+      user.phone.includes(searchQuery)
+    // Handle employer filter to match both 'employer' and 'salon_owner' roles
+    const matchesFilter = filter === 'all' || 
+      user.role === filter || 
+      (filter === 'employer' && (user.role === 'salon_owner' || user.role === 'employer'))
     return matchesSearch && matchesFilter
   })
 
@@ -129,7 +132,7 @@ export function AdminUsers() {
           
           {/* Filter Buttons */}
           <div className="flex gap-2">
-            {(['all', 'job_seeker', 'salon_owner'] as FilterType[]).map((f) => (
+            {(['all', 'job_seeker', 'employer'] as FilterType[]).map((f) => (
               <Button
                 key={f}
                 variant={filter === f ? 'default' : 'outline'}
@@ -172,8 +175,8 @@ export function AdminUsers() {
                 <Building2 className="w-5 h-5 text-accent" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{users.filter(u => u.role === 'salon_owner').length}</p>
-                <p className="text-xs text-muted-foreground">Salon Owners</p>
+                <p className="text-2xl font-bold">{users.filter(u => u.role === 'salon_owner' || u.role === 'employer').length}</p>
+                <p className="text-xs text-muted-foreground">Employers</p>
               </div>
             </div>
           </div>

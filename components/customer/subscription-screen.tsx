@@ -11,7 +11,7 @@ import type { Subscription, JobSeekerPlanType } from '@/lib/types'
 
 export function SubscriptionScreen() {
   const { user, setSubscription, goToStep } = useApp()
-  const isOwner = user?.role === 'salon_owner'
+  const isOwner = user?.role === 'salon_owner' || user?.role === 'employer'
   
   const [selectedPlan, setSelectedPlan] = useState<string>(isOwner ? 'single_post' : 'premium')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
@@ -98,7 +98,7 @@ export function SubscriptionScreen() {
     // Also save to data-service for admin sync
     await SubscriptionService.create({
       userId: user.id,
-      userType: user.role as 'job_seeker' | 'salon_owner',
+      userType: user.role as 'job_seeker' | 'salon_owner' | 'employer',
       plan: selectedPlanDetails.name,
       amount: selectedPlanDetails.price,
       status: 'pending',
@@ -190,7 +190,7 @@ export function SubscriptionScreen() {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div>
-          <h1 className="font-semibold">{isOwner ? 'Post a Job' : 'Unlock Salons'}</h1>
+          <h1 className="font-semibold">{isOwner ? 'Post a Job' : 'Unlock Jobs'}</h1>
           <p className="text-xs text-muted-foreground">Choose your plan</p>
         </div>
       </header>
@@ -204,7 +204,7 @@ export function SubscriptionScreen() {
               {isOwner ? (
                 <>
                   <Building2 className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium">Salon Owner Plans</span>
+                  <span className="text-sm font-medium">Employer Plans</span>
                 </>
               ) : (
                 <>

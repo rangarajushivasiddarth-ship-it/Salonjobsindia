@@ -22,7 +22,7 @@ export interface User {
   email: string
   phone: string
   password?: string // Only stored locally, hashed in production
-  role: 'job_seeker' | 'salon_owner' | 'admin'
+  role: 'job_seeker' | 'salon_owner' | 'employer' | 'admin'
   isSubscribed: boolean
   subscriptionPlan?: string
   subscriptionExpiry?: string
@@ -99,7 +99,7 @@ export interface Job {
 export interface Subscription {
   id: string
   userId: string
-  userType: 'job_seeker' | 'salon_owner'
+  userType: 'job_seeker' | 'salon_owner' | 'employer'
   plan: string
   amount: number
   status: 'pending' | 'approved' | 'rejected' | 'expired'
@@ -296,7 +296,7 @@ export const UserService = {
   getStats: () => {
     const users = getFromStorage<User>(STORAGE_KEYS.USERS)
     const jobSeekers = users.filter(u => u.role === 'job_seeker')
-    const salonOwners = users.filter(u => u.role === 'salon_owner')
+    const salonOwners = users.filter(u => u.role === 'salon_owner' || u.role === 'employer')
     const subscribedUsers = users.filter(u => u.isSubscribed)
     
     return {
@@ -647,7 +647,7 @@ export const AdminService = {
     return {
       totalUsers: users.length,
       jobSeekers: users.filter(u => u.role === 'job_seeker').length,
-      salonOwners: users.filter(u => u.role === 'salon_owner').length,
+      salonOwners: users.filter(u => u.role === 'salon_owner' || u.role === 'employer').length,
       totalJobs: jobs.length,
       liveJobs: jobs.filter(j => j.status === 'live').length,
       pendingJobApprovals: jobs.filter(j => j.status === 'pending_approval').length,

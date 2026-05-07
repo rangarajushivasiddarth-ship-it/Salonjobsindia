@@ -19,7 +19,7 @@ interface BottomNavProps {
 export function BottomNav({ unreadMessages = 0, unreadNotifications = 0 }: BottomNavProps) {
   const { currentStep, goToStep, user } = useApp()
   
-  const isOwner = user?.role === 'salon_owner'
+  const isOwner = user?.role === 'salon_owner' || user?.role === 'employer'
   
   // Different nav items for job seekers vs salon owners
   const jobSeekerNav: NavItem[] = [

@@ -2,8 +2,8 @@
 // FITONE - Complete Type Definitions
 // ==========================================
 
-// User Types
-export type UserRole = 'job_seeker' | 'salon_owner'
+// User Types (employer replaces salon_owner, keeping both for backward compatibility)
+export type UserRole = 'job_seeker' | 'salon_owner' | 'employer'
 
 export interface User {
   id: string

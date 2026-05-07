@@ -17,15 +17,15 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
   const roles = [
     {
       id: 'job_seeker' as UserRole,
-      title: 'Job Seeker',
-      description: 'Looking for salon opportunities in your area',
+      title: 'Apply for Job',
+      description: 'Looking for job opportunities in your area',
       icon: Briefcase,
-      features: ['Create your professional resume', 'Discover nearby salons', 'Apply to job openings'],
+      features: ['Create your professional profile', 'Discover nearby opportunities', 'Apply to job openings'],
     },
     {
-      id: 'salon_owner' as UserRole,
-      title: 'Salon Owner',
-      description: 'Find talented professionals for your salon',
+      id: 'employer' as UserRole,
+      title: 'Create Job',
+      description: 'Find talented professionals for your business',
       icon: Building2,
       features: ['Post job openings', 'Review applications', 'Connect with talent'],
     },
