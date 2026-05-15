@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
 import { JOB_SEEKER_PLANS, SALON_OWNER_PLANS, saveSubscription, getSubscriptionByUserId } from '@/lib/data-store'
 import { SubscriptionService } from '@/lib/data-service'
+import { submitSubscriptionPayment, useApprovalStatus } from '@/lib/hooks/use-realtime-sync'
 import type { Subscription, JobSeekerPlanType } from '@/lib/types'
 
 export function SubscriptionScreen() {
@@ -22,6 +23,9 @@ export function SubscriptionScreen() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const plans = isOwner ? SALON_OWNER_PLANS : JOB_SEEKER_PLANS
+  
+  // Real-time approval status check (polls cloud storage)
+  const { isApproved: cloudApproved, approvalData } = useApprovalStatus(user?.id, 2000)
 
   // Check for existing pending subscription and poll for approval
   useEffect(() => {
@@ -63,8 +67,6 @@ export function SubscriptionScreen() {
     
     setIsSubmitting(true)
     
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
     const validityDays = isOwner 
       ? (selectedPlanDetails as typeof SALON_OWNER_PLANS[0]).validityDays 
       : 30
@@ -92,10 +94,32 @@ export function SubscriptionScreen() {
       expiresAt: expiresAt,
     }
     
+    // Save locally
     saveSubscription(subscription)
     setSubscription(subscription)
     
-    // Also save to data-service for admin sync
+    // IMPORTANT: Submit to cloud sync API for cross-device real-time sync
+    console.log('[Subscription] Submitting to cloud sync...')
+    const cloudResult = await submitSubscriptionPayment({
+      userId: user.id,
+      userName: user.name || user.email,
+      userPhone: user.phone,
+      userEmail: user.email,
+      userRole: user.role || 'job_seeker',
+      planId: selectedPlan,
+      planName: selectedPlanDetails.name,
+      planPrice: selectedPlanDetails.price,
+      planDuration: validityDays,
+      screenshotUrl: previewUrl || undefined,
+    })
+    
+    if (cloudResult.success) {
+      console.log('[Subscription] Successfully submitted to cloud!')
+    } else {
+      console.error('[Subscription] Cloud sync failed:', cloudResult.error)
+    }
+    
+    // Also save to data-service for local admin sync fallback
     await SubscriptionService.create({
       userId: user.id,
       userType: user.role as 'job_seeker' | 'salon_owner' | 'employer',
@@ -125,8 +149,64 @@ export function SubscriptionScreen() {
     return 'from-emerald-500/20 to-green-500/20 border-emerald-500/50'
   }
 
+  // Check if approved via cloud
+  useEffect(() => {
+    if (cloudApproved && approvalData) {
+      console.log('[Subscription] APPROVED via cloud sync!', approvalData)
+      // Update local state
+      if (user) {
+        const approvedSub: Subscription = {
+          id: (approvalData as Record<string, unknown>).pendingId as string || crypto.randomUUID(),
+          userId: user.id,
+          userName: user.name || user.email,
+          userPhone: user.phone,
+          userRole: user.role,
+          planType: selectedPlan as JobSeekerPlanType,
+          planName: (approvalData as Record<string, unknown>).planName as string || selectedPlanDetails.name,
+          amount: selectedPlanDetails.price,
+          screenshotUrl: previewUrl || '',
+          paymentMethod: 'upi',
+          status: 'approved',
+          createdAt: new Date(),
+          expiresAt: new Date((approvalData as Record<string, unknown>).expiresAt as string || Date.now() + 30 * 24 * 60 * 60 * 1000),
+        }
+        setSubscription(approvedSub)
+        saveSubscription(approvedSub)
+      }
+      // Redirect to main app
+      setTimeout(() => {
+        goToStep(isOwner ? 'owner-panel' : 'results')
+      }, 2000)
+    }
+  }, [cloudApproved, approvalData, user, isOwner, selectedPlan, selectedPlanDetails, previewUrl, setSubscription, goToStep])
+
   // Pending status screen
-  if (isSubmitted) {
+  if (isSubmitted || existingPending) {
+    // Show approved screen if cloud says approved
+    if (cloudApproved) {
+      return (
+        <div className="relative min-h-screen flex flex-col items-center justify-center p-6 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-green-500/10" />
+          <div className="absolute top-1/4 right-0 w-80 h-80 bg-green-500/20 rounded-full blur-3xl animate-pulse-glow" />
+          
+          <div className="relative z-10 text-center animate-scale-in max-w-sm">
+            <div className="w-24 h-24 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6 animate-bounce">
+              <Check className="w-12 h-12 text-green-500" />
+            </div>
+            <h1 className="text-2xl font-bold mb-3 text-green-400">Payment Approved!</h1>
+            <p className="text-muted-foreground mb-6">
+              Your subscription is now active. Redirecting you to the app...
+            </p>
+            
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              Redirecting...
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
     return (
       <div className="relative min-h-screen flex flex-col items-center justify-center p-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/20" />
@@ -134,12 +214,16 @@ export function SubscriptionScreen() {
         
         <div className="relative z-10 text-center animate-scale-in max-w-sm">
           <div className="w-24 h-24 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-6">
-            <Clock className="w-12 h-12 text-amber-500" />
+            <Clock className="w-12 h-12 text-amber-500 animate-pulse" />
           </div>
           <h1 className="text-2xl font-bold mb-3">Payment Under Review</h1>
           <p className="text-muted-foreground mb-2">Your payment screenshot has been submitted</p>
-          <p className="text-sm text-muted-foreground mb-6">
-            Admin will verify and approve within 2-4 hours. You&apos;ll receive a WhatsApp notification once approved.
+          <p className="text-sm text-muted-foreground mb-2">
+            Admin will verify and approve shortly.
+          </p>
+          <p className="text-xs text-green-400 mb-6 flex items-center justify-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            Live sync active - this page will update automatically
           </p>
           
           <div className="p-4 glass-card rounded-xl mb-6">

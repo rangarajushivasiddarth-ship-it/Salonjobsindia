@@ -5,6 +5,7 @@ import { ArrowLeft, Building2, Briefcase, MapPin, Navigation, FileText, Check, X
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
+import { submitJobPayment, useApprovalStatus } from '@/lib/hooks/use-realtime-sync'
 import Image from 'next/image'
 
 const ROLE_OPTIONS = [
@@ -217,7 +218,7 @@ export function CreateJob() {
     jobs.push(jobDraft)
     localStorage.setItem(`fitone_pending_jobs_${user?.id}`, JSON.stringify(jobs))
     
-    // Also save to admin job payments queue
+    // Also save to admin job payments queue (local fallback)
     const adminPayments = localStorage.getItem('fitone_admin_job_payments')
     const payments = adminPayments ? JSON.parse(adminPayments) : []
     payments.push({
@@ -235,6 +236,33 @@ export function CreateJob() {
       submittedAt: new Date(),
     })
     localStorage.setItem('fitone_admin_job_payments', JSON.stringify(payments))
+    
+    // IMPORTANT: Submit to cloud sync API for cross-device real-time sync
+    console.log('[CreateJob] Submitting to cloud sync...')
+    const cloudResult = await submitJobPayment({
+      salonId: user?.id || '',
+      salonName: formData.salonName,
+      ownerName: user?.name || '',
+      ownerPhone: user?.phone || '',
+      ownerEmail: user?.email,
+      jobTitle: formData.role || formData.customRole || 'Job Posting',
+      jobDetails: {
+        ...formData,
+        salary: formData.salary,
+        experience: formData.experience,
+        location: formData.location,
+      },
+      planId: 'single_job_post',
+      planName: 'Job Posting',
+      planPrice: JOB_POST_PRICE,
+      screenshotUrl: paymentScreenshot,
+    })
+    
+    if (cloudResult.success) {
+      console.log('[CreateJob] Successfully submitted to cloud!')
+    } else {
+      console.error('[CreateJob] Cloud sync failed:', cloudResult.error)
+    }
     
     setSavedJob(jobDraft)
     setIsLoading(false)
