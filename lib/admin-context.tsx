@@ -56,12 +56,12 @@ const defaultSettings: AppSettings = {
   radiusKm: 20,
   paymentInstructions: 'Scan the QR code and complete payment. Upload screenshot for verification.',
   subscriptionDurationDays: 30,
-  supportEmail: 'support@fitone.com',
-  supportPhone: '+91 9876543210',
+  supportEmail: 'support@salonjobsindia.com',
+  supportPhone: '+91 9100609609',
   appVersion: '1.0.0',
 }
 
-const ADMIN_SESSION_KEY = 'fitone_admin_session'
+const ADMIN_SESSION_KEY = 'salonjobsindia_admin_session'
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined)
 
@@ -149,11 +149,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       
       // Listen for storage changes from other tabs (customer app)
       const handleStorageChange = (event: StorageEvent) => {
-        if (event.key === 'fitone_subscriptions' || 
-            event.key === 'fitone_users' || 
-            event.key === 'fitone_jobs' ||
-            event.key === 'fitonze_subscriptions' ||
-            event.key === 'fitone_sync_trigger') {
+if (event.key === 'salonjobsindia_subscriptions' ||
+        event.key === 'salonjobsindia_users' ||
+        event.key === 'salonjobsindia_jobs' ||
+        event.key === 'salonjobsindia_sync_trigger') {
           // Immediately reload data when customer app makes changes
           
           loadData()
@@ -179,7 +178,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     await new Promise(resolve => setTimeout(resolve, 500))
     
     // Admin credentials (in production, this would be a real auth check)
-    if (email === 'admin@fitonze.com' && password === 'admin123') {
+    if (email === 'admin@salonjobsindia.com' && password === 'admin123') {
       // Save session with 24-hour expiry
       const session = {
         isAuthenticated: true,
@@ -291,7 +290,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       settings: { ...prev.settings, ...newSettings },
     }))
     // Save settings to localStorage
-    localStorage.setItem('fitone_admin_settings', JSON.stringify({ ...state.settings, ...newSettings }))
+    localStorage.setItem('salonjobsindia_admin_settings', JSON.stringify({ ...state.settings, ...newSettings }))
   }, [state.settings])
 
   return (

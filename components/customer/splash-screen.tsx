@@ -8,51 +8,91 @@ interface SplashScreenProps {
 }
 
 export function SplashScreen({ onComplete }: SplashScreenProps) {
-  const [isVisible, setIsVisible] = useState(false)
+  const [phase, setPhase] = useState<'initial' | 'logo' | 'scale' | 'exit'>('initial')
 
   useEffect(() => {
-    // After 1 second, fade in the logo with golden glow
-    const fadeInTimer = setTimeout(() => {
-      setIsVisible(true)
-    }, 1000)
+    // Phase 1: After 500ms, fade in the logo
+    const logoTimer = setTimeout(() => {
+      setPhase('logo')
+    }, 500)
 
-    // After 4 seconds total (1s delay + 2s fade + 1s hold), transition to app
-    const transitionTimer = setTimeout(() => {
+    // Phase 2: After 2s, add scale animation
+    const scaleTimer = setTimeout(() => {
+      setPhase('scale')
+    }, 2000)
+
+    // Phase 3: After 3.5s, start exit transition
+    const exitTimer = setTimeout(() => {
+      setPhase('exit')
+    }, 3500)
+
+    // Phase 4: After 4s, complete and go to homepage
+    const completeTimer = setTimeout(() => {
       onComplete()
     }, 4000)
 
     return () => {
-      clearTimeout(fadeInTimer)
-      clearTimeout(transitionTimer)
+      clearTimeout(logoTimer)
+      clearTimeout(scaleTimer)
+      clearTimeout(exitTimer)
+      clearTimeout(completeTimer)
     }
   }, [onComplete])
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black overflow-hidden">
-      {/* Logo with fade-in and golden glow animation */}
+    <div 
+      className={`fixed inset-0 flex flex-col items-center justify-center bg-black overflow-hidden transition-opacity duration-500 ${
+        phase === 'exit' ? 'opacity-0' : 'opacity-100'
+      }`}
+    >
+      {/* Logo with premium animation */}
       <div
-        className={`relative transition-all duration-[2000ms] ease-in-out ${
-          isVisible 
-            ? 'opacity-100' 
-            : 'opacity-0'
+        className={`relative transition-all duration-1000 ease-out ${
+          phase === 'initial' 
+            ? 'opacity-0 scale-90' 
+            : phase === 'scale' || phase === 'exit'
+            ? 'opacity-100 scale-105' 
+            : 'opacity-100 scale-100'
         }`}
         style={{
-          filter: isVisible 
-            ? 'drop-shadow(0 0 25px rgba(212, 175, 55, 0.7))' 
-            : 'drop-shadow(0 0 0px rgba(212, 175, 55, 0))',
+          filter: phase !== 'initial' 
+            ? 'drop-shadow(0 0 30px rgba(212, 175, 55, 0.5)) drop-shadow(0 0 60px rgba(212, 175, 55, 0.3))' 
+            : 'none',
           transform: 'translateZ(0)',
-          willChange: 'opacity, filter',
+          willChange: 'opacity, filter, transform',
         }}
       >
         <Image
-          src="/images/fitone-logo.png"
-          alt="FITONE - Born to Shine"
-          width={340}
-          height={140}
-          className="max-w-[80vw] max-h-[80vh] object-contain"
+          src="/images/logo.png"
+          alt="Salon Jobs India"
+          width={320}
+          height={320}
+          className="max-w-[80vw] max-h-[60vh] object-contain"
           style={{ width: 'auto', height: 'auto' }}
           priority
         />
+      </div>
+      
+      {/* Subtitle with fade-in */}
+      <div 
+        className={`mt-6 text-center transition-all duration-700 delay-300 ${
+          phase === 'initial' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
+        }`}
+      >
+        <p className="text-sm text-muted-foreground tracking-wider">
+          Powered by <span className="text-amber-400 font-medium">Fitonze Private Limited</span>
+        </p>
+      </div>
+
+      {/* Loading dots */}
+      <div 
+        className={`flex items-center gap-2 mt-8 transition-opacity duration-500 ${
+          phase === 'initial' || phase === 'exit' ? 'opacity-0' : 'opacity-100'
+        }`}
+      >
+        <div className="w-2 h-2 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+        <div className="w-2 h-2 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+        <div className="w-2 h-2 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: '300ms' }} />
       </div>
     </div>
   )

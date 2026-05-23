@@ -9,8 +9,8 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Fitonze\u00AE - Find Your Perfect Salon Career',
-  description: 'Hyper-local salon job marketplace connecting job seekers with salon owners. Discover opportunities within 20km of your location.',
+  title: 'Salon Jobs India - Find Your Perfect Salon Career',
+  description: 'India\'s premier salon job marketplace connecting job seekers with salon owners. Powered by Fitonze Private Limited.',
   generator: 'v0.app',
   icons: {
     icon: [

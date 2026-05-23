@@ -39,7 +39,7 @@ export function SettingsScreen() {
     })
     
     // Update in registered users storage
-    const registeredUsersStr = localStorage.getItem('fitonze_registered_users')
+    const registeredUsersStr = localStorage.getItem('salonjobsindia_registered_users')
     if (registeredUsersStr && user?.email) {
       const registeredUsers = JSON.parse(registeredUsersStr)
       const emailKey = user.email.toLowerCase()
@@ -49,15 +49,15 @@ export function SettingsScreen() {
           name: editForm.name,
           phone: editForm.phone,
         }
-        localStorage.setItem('fitonze_registered_users', JSON.stringify(registeredUsers))
+        localStorage.setItem('salonjobsindia_registered_users', JSON.stringify(registeredUsers))
       }
     }
     
     // Update current user in storage
-    const currentUser = localStorage.getItem('fitonze_user')
+    const currentUser = localStorage.getItem('salonjobsindia_user')
     if (currentUser) {
       const parsed = JSON.parse(currentUser)
-      localStorage.setItem('fitonze_user', JSON.stringify({
+      localStorage.setItem('salonjobsindia_user', JSON.stringify({
         ...parsed,
         name: editForm.name,
         phone: editForm.phone,
@@ -399,7 +399,10 @@ export function SettingsScreen() {
         
         {/* App Version */}
         <p className="text-center text-xs text-muted-foreground mt-8">
-          FITONE v1.0.0
+          Salon Jobs India v1.0.0
+        </p>
+        <p className="text-center text-xs text-muted-foreground mt-1">
+          Powered by Fitonze Private Limited
         </p>
       </div>
     </div>

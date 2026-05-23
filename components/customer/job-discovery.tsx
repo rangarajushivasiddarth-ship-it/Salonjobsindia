@@ -186,7 +186,7 @@ export function JobDiscovery() {
       const newUnlocked = new Set(unlockedSalons)
       newUnlocked.add(salon.id)
       setUnlockedSalons(newUnlocked)
-      localStorage.setItem(`fitonze_unlocked_${user?.id}`, JSON.stringify([...newUnlocked]))
+      localStorage.setItem(`salonjobsindia_unlocked_${user?.id}`, JSON.stringify([...newUnlocked]))
       
       const newStats = canViewMoreShops(user?.id || '')
       setViewStats({ remaining: newStats.remaining, total: newStats.total })

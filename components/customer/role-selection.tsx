@@ -54,10 +54,10 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
       <div className="relative z-10 flex-1 flex flex-col px-6 pb-8">
         {/* Logo */}
         <div className="flex items-center justify-center mb-6 animate-scale-in">
-          <div className="relative w-40 h-16">
+          <div className="relative w-36 h-36">
             <Image
-              src="/images/fitone-logo.png"
-              alt="FITONE"
+              src="/images/logo.png"
+              alt="Salon Jobs India"
               fill
               className="object-contain"
             />
@@ -70,7 +70,7 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
             Choose Your Role
           </h1>
           <p className="text-muted-foreground animate-slide-up" style={{ animationDelay: '100ms' }}>
-            Select how you want to use Fitonze
+            Select how you want to use Salon Jobs India
           </p>
         </div>
         

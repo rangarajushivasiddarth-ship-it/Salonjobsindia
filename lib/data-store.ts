@@ -3,23 +3,21 @@
 import type { Subscription, Job, User, JobSeekerPlan } from './types'
 
 // Storage keys - unified with data-service for consistency
-const SUBSCRIPTIONS_KEY = 'fitone_subscriptions'
-const JOBS_KEY = 'fitone_jobs'
-const USERS_KEY = 'fitone_users'
-const MESSAGES_KEY = 'fitone_messages'
-const NOTIFICATIONS_KEY = 'fitone_notifications'
-const JOB_ALERTS_KEY = 'fitone_job_alerts'
+const SUBSCRIPTIONS_KEY = 'salonjobsindia_subscriptions'
+const JOBS_KEY = 'salonjobsindia_jobs'
+const USERS_KEY = 'salonjobsindia_users'
+const MESSAGES_KEY = 'salonjobsindia_messages'
+const NOTIFICATIONS_KEY = 'salonjobsindia_notifications'
+const JOB_ALERTS_KEY = 'salonjobsindia_job_alerts'
 
 // Helper to dispatch sync events and trigger cross-tab communication
 function dispatchDataUpdate(key: string) {
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('fitone_data_updated', { detail: { key } }))
-    // Also dispatch legacy event for backward compatibility
-    window.dispatchEvent(new CustomEvent('fitonze_data_update', { detail: { type: key.replace('fitone_', '') } }))
+    window.dispatchEvent(new CustomEvent('salonjobsindia_data_updated', { detail: { key } }))
     
     // Force trigger storage event for cross-tab sync by writing a sync timestamp
     // This ensures other tabs (like admin) get notified immediately
-    const syncKey = 'fitone_sync_trigger'
+    const syncKey = 'salonjobsindia_sync_trigger'
     const timestamp = Date.now().toString()
     localStorage.setItem(syncKey, timestamp)
   }

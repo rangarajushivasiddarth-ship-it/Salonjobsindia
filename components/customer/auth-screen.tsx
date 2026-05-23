@@ -155,10 +155,10 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 pb-8 overflow-y-auto">
         {/* Logo */}
         <div className="mb-6 animate-scale-in">
-          <div className="relative w-48 h-20">
+          <div className="relative w-40 h-40">
             <Image
-              src="/images/fitonze-logo.png"
-              alt="Fitonze"
+              src="/images/logo.png"
+              alt="Salon Jobs India"
               fill
               className="object-contain"
               loading="eager"
@@ -174,7 +174,7 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
         <p className="text-muted-foreground mb-6 animate-slide-up text-center" style={{ animationDelay: '100ms' }}>
           {mode === 'signin' 
             ? 'Sign in to continue your journey' 
-            : 'Join Fitonze to discover opportunities'}
+            : 'Join Salon Jobs India to discover opportunities'}
         </p>
         
         {/* API Error */}

@@ -1,18 +1,18 @@
-// Unified Data Service for FITONE App
+// Unified Data Service for Salon Jobs India App
 // Handles data persistence with localStorage (offline) and API (online with MongoDB)
 
 const STORAGE_KEYS = {
-  USERS: 'fitone_users',
-  JOB_SEEKERS: 'fitone_job_seekers',
-  SALON_OWNERS: 'fitone_salon_owners',
-  JOBS: 'fitone_jobs',
-  APPLICATIONS: 'fitone_applications',
-  SUBSCRIPTIONS: 'fitone_subscriptions',
-  PAYMENTS: 'fitone_payments',
-  CONVERSATIONS: 'fitone_conversations',
-  NOTIFICATIONS: 'fitone_notifications',
-  CURRENT_USER: 'fitone_current_user',
-  AUTH_TOKEN: 'fitone_auth_token',
+  USERS: 'salonjobsindia_users',
+  JOB_SEEKERS: 'salonjobsindia_job_seekers',
+  SALON_OWNERS: 'salonjobsindia_salon_owners',
+  JOBS: 'salonjobsindia_jobs',
+  APPLICATIONS: 'salonjobsindia_applications',
+  SUBSCRIPTIONS: 'salonjobsindia_subscriptions',
+  PAYMENTS: 'salonjobsindia_payments',
+  CONVERSATIONS: 'salonjobsindia_conversations',
+  NOTIFICATIONS: 'salonjobsindia_notifications',
+  CURRENT_USER: 'salonjobsindia_current_user',
+  AUTH_TOKEN: 'salonjobsindia_auth_token',
 }
 
 // Types

@@ -44,10 +44,10 @@ export function AdminLogin() {
       <div className="relative z-10 w-full max-w-md px-6">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8 animate-scale-in">
-          <div className="relative w-56 h-24 mb-4">
+          <div className="relative w-48 h-48 mb-4">
             <Image
-              src="/images/fitonze-logo.png"
-              alt="Fitonze"
+              src="/images/logo.png"
+              alt="Salon Jobs India"
               fill
               className="object-contain"
               loading="eager"
@@ -55,7 +55,7 @@ export function AdminLogin() {
             />
           </div>
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Fitonze<sup className="text-[8px]">&reg;</sup> Management</p>
+          <p className="text-muted-foreground text-sm">Powered by Fitonze Private Limited</p>
         </div>
         
         {/* Login Form */}
@@ -116,7 +116,7 @@ export function AdminLogin() {
         {/* Demo Credentials */}
         <div className="mt-6 p-4 glass-card rounded-xl text-center animate-slide-up" style={{ animationDelay: '200ms' }}>
           <p className="text-sm text-muted-foreground mb-2">Demo credentials:</p>
-          <p className="text-xs font-mono text-primary">admin@fitonze.com / admin123</p>
+          <p className="text-xs font-mono text-primary">admin@salonjobsindia.com / admin123</p>
         </div>
       </div>
     </div>

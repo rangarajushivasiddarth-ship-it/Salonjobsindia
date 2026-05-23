@@ -35,8 +35,8 @@ interface AppContextType extends AppState {
 const AppContext = createContext<AppContextType | undefined>(undefined)
 
 // Storage keys for session data
-const SAVED_JOBS_KEY = 'fitone_saved_jobs'
-const APPLIED_JOBS_KEY = 'fitone_applied_jobs'
+const SAVED_JOBS_KEY = 'salonjobsindia_saved_jobs'
+const APPLIED_JOBS_KEY = 'salonjobsindia_applied_jobs'
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>({

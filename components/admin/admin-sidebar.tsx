@@ -21,10 +21,10 @@ export function AdminSidebar() {
     <>
       {/* Logo */}
       <div className="p-4 border-b border-border/50">
-        <div className="relative w-36 h-14 mx-auto">
+        <div className="relative w-32 h-32 mx-auto">
           <Image
-            src="/images/fitonze-logo.png"
-            alt="Fitonze"
+            src="/images/logo.png"
+            alt="Salon Jobs India"
             fill
             className="object-contain"
             loading="eager"
@@ -85,10 +85,10 @@ export function AdminSidebar() {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 p-4 glass">
         <div className="flex items-center justify-between">
-          <div className="relative w-28 h-10">
+          <div className="relative w-24 h-24">
             <Image
-              src="/images/fitonze-logo.png"
-              alt="Fitonze"
+              src="/images/logo.png"
+              alt="Salon Jobs India"
               fill
               className="object-contain"
               loading="eager"
