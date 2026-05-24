@@ -73,11 +73,11 @@ export function TrainingScreen() {
             </div>
           </div>
           
-          {/* FITONE Logo */}
-          <div className="relative w-20 h-8">
+          {/* Salon Jobs India Logo */}
+          <div className="relative w-16 h-16">
             <Image
-              src="/images/fitone-logo.png"
-              alt="FITONE"
+              src="/images/logo.png"
+              alt="Salon Jobs India"
               fill
               className="object-contain"
             />
