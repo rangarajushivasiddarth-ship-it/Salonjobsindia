@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { ArrowLeft, User, Crown, Calendar, Heart, Briefcase, LogOut, ChevronRight, MapPin, Building2, Settings, Bell, Shield, TrendingUp, Eye, Clock, Download, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
-import { jsPDF } from 'jspdf'
 
 type TabType = 'overview' | 'saved' | 'applied'
 
@@ -19,7 +18,7 @@ export function ProfileDashboard() {
     ? Math.max(0, Math.ceil((new Date(expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : (user?.isSubscribed ? 30 : 0) // Default to 30 days if subscribed but no expiry set
 
-  // Download resume as PDF
+  // Download resume as PDF - dynamically import jsPDF to avoid SSR issues
   const downloadResume = async () => {
     if (!resume) {
       alert('Please complete your resume first!')
@@ -29,6 +28,8 @@ export function ProfileDashboard() {
     setIsDownloading(true)
     
     try {
+      // Dynamic import to avoid SSR issues with jsPDF
+      const { jsPDF } = await import('jspdf')
       const doc = new jsPDF()
       const pageWidth = doc.internal.pageSize.getWidth()
       let yPos = 20
