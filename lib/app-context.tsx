@@ -13,7 +13,7 @@ interface AppState {
   isAuthenticated: boolean
   isLoading: boolean
   unreadNotifications: number
-  currentStep: 'splash' | 'auth' | 'role' | 'resume' | 'discovery' | 'subscription' | 'results' | 'profile' | 'create-job' | 'owner-panel' | 'messages' | 'notifications' | 'settings' | 'training'
+  currentStep: 'splash' | 'auth' | 'role' | 'resume' | 'discovery' | 'subscription' | 'results' | 'profile' | 'create-job' | 'owner-panel' | 'messages' | 'notifications' | 'settings' | 'about'
 }
 
 interface AppContextType extends AppState {

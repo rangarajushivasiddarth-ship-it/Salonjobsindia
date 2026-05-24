@@ -14,7 +14,7 @@ export function SubscriptionScreen() {
   const { user, setSubscription, goToStep } = useApp()
   const isOwner = user?.role === 'salon_owner' || user?.role === 'employer'
   
-  const [selectedPlan, setSelectedPlan] = useState<string>(isOwner ? 'single_post' : 'premium')
+  const [selectedPlan, setSelectedPlan] = useState<string>(isOwner ? 'single_post' : 'unlimited')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)

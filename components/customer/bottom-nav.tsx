@@ -1,13 +1,13 @@
 'use client'
 
-import { Home, Search, MessageCircle, Bell, User, Briefcase, Building2, GraduationCap } from 'lucide-react'
+import { Home, Search, MessageCircle, Bell, User, Briefcase, Building2, Info } from 'lucide-react'
 import { useApp } from '@/lib/app-context'
 
 type NavItem = {
   id: string
   label: string
   icon: typeof Home
-  step: 'discovery' | 'results' | 'messages' | 'notifications' | 'profile' | 'owner-panel' | 'create-job' | 'training'
+  step: 'discovery' | 'results' | 'messages' | 'notifications' | 'profile' | 'owner-panel' | 'create-job' | 'about'
   badge?: number
 }
 
@@ -24,7 +24,7 @@ export function BottomNav({ unreadMessages = 0, unreadNotifications = 0 }: Botto
   // Different nav items for job seekers vs salon owners
   const jobSeekerNav: NavItem[] = [
     { id: 'home', label: 'Jobs', icon: Home, step: user?.isSubscribed ? 'results' : 'discovery' },
-    { id: 'training', label: 'Training', icon: GraduationCap, step: 'training' },
+    { id: 'about', label: 'About Us', icon: Info, step: 'about' },
     { id: 'messages', label: 'Chats', icon: MessageCircle, step: 'messages', badge: unreadMessages },
     { id: 'notifications', label: 'Alerts', icon: Bell, step: 'notifications', badge: unreadNotifications },
     { id: 'profile', label: 'Profile', icon: User, step: 'profile' },
@@ -33,8 +33,8 @@ export function BottomNav({ unreadMessages = 0, unreadNotifications = 0 }: Botto
   const salonOwnerNav: NavItem[] = [
     { id: 'home', label: 'Dashboard', icon: Building2, step: 'owner-panel' },
     { id: 'post', label: 'Post Job', icon: Briefcase, step: 'create-job' },
+    { id: 'about', label: 'About Us', icon: Info, step: 'about' },
     { id: 'messages', label: 'Chats', icon: MessageCircle, step: 'messages', badge: unreadMessages },
-    { id: 'notifications', label: 'Alerts', icon: Bell, step: 'notifications', badge: unreadNotifications },
     { id: 'profile', label: 'Profile', icon: User, step: 'profile' },
   ]
   
@@ -50,8 +50,8 @@ export function BottomNav({ unreadMessages = 0, unreadNotifications = 0 }: Botto
     if (item.id === 'post') {
       return currentStep === 'create-job'
     }
-    if (item.id === 'training') {
-      return currentStep === 'training'
+    if (item.id === 'about') {
+      return currentStep === 'about'
     }
     return currentStep === item.step
   }

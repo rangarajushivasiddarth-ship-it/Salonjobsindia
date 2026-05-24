@@ -166,33 +166,8 @@ export function JobDiscovery() {
   const isApproved = subscription?.status === 'approved'
 
   const handleSalonClick = (salon: SalonWithDetails) => {
-    if (!isApproved) {
-      setShowUnlockPrompt(true)
-      return
-    }
-    
-    if (unlockedSalons.has(salon.id)) {
-      setSelectedSalon({ ...salon, isUnlocked: true })
-      return
-    }
-    
-    const stats = canViewMoreShops(user?.id || '')
-    if (!stats.canView) {
-      setShowLimitReached(true)
-      return
-    }
-    
-    if (incrementShopsViewed(user?.id || '')) {
-      const newUnlocked = new Set(unlockedSalons)
-      newUnlocked.add(salon.id)
-      setUnlockedSalons(newUnlocked)
-      localStorage.setItem(`salonjobsindia_unlocked_${user?.id}`, JSON.stringify([...newUnlocked]))
-      
-      const newStats = canViewMoreShops(user?.id || '')
-      setViewStats({ remaining: newStats.remaining, total: newStats.total })
-      
-      setSelectedSalon({ ...salon, isUnlocked: true })
-    }
+    // All users can view salon details, but phone numbers are blurred for non-subscribers
+    setSelectedSalon({ ...salon, isUnlocked: isApproved })
   }
 
   const handleSendMessage = () => {
@@ -421,29 +396,25 @@ export function JobDiscovery() {
                           {salon.rating}
                         </span>
                       )}
-                      {isUnlocked && salon.distance !== undefined && (
+                      {salon.distance !== undefined && (
                         <span className="flex items-center gap-1">
                           <MapPin className="w-3 h-3" />
                           {salon.distance.toFixed(1)} km
                         </span>
                       )}
-                      {!isUnlocked && (
-                        <span className="blur-sm select-none">
-                          <MapPin className="w-3 h-3 inline" /> Location hidden
-                        </span>
-                      )}
+                      {/* Show phone status */}
+                      <span className={`flex items-center gap-1 ${isApproved ? 'text-green-500' : 'text-muted-foreground'}`}>
+                        <Phone className="w-3 h-3" />
+                        {isApproved ? 'Contact visible' : <span className="blur-sm">Phone hidden</span>}
+                      </span>
                     </div>
                     
                     {/* Tags */}
                     <div className="flex items-center gap-2 mt-3 flex-wrap">
                       {salon.job && (
                         <>
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            isUnlocked 
-                              ? 'bg-green-500/20 text-green-500' 
-                              : 'bg-secondary/50 text-muted-foreground'
-                          }`}>
-                            {isUnlocked ? salon.job.salary : <span className="blur-sm">Salary hidden</span>}
+                          <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-500">
+                            {salon.job.salary}
                           </span>
                           <span className="px-2 py-1 text-xs rounded-full bg-secondary/50 text-muted-foreground">
                             {salon.job.experience}
@@ -553,7 +524,7 @@ export function JobDiscovery() {
       )}
       
       {/* Salon Details Modal */}
-      {selectedSalon?.isUnlocked && (
+      {selectedSalon && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/80 backdrop-blur-sm">
           <div className="w-full max-w-md p-6 glass-card rounded-t-3xl animate-slide-up max-h-[85vh] overflow-y-auto">
             <button
@@ -645,37 +616,62 @@ export function JobDiscovery() {
                   )}
                 </div>
                 
-                {/* Contact */}
-                <div className="p-3 bg-primary/10 rounded-xl border border-primary/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Phone className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium">Contact Number</span>
+                {/* Contact - Blurred for non-subscribers */}
+                {isApproved ? (
+                  <div className="p-3 bg-primary/10 rounded-xl border border-primary/30">
+                    <div className="flex items-center gap-2 text-primary mb-1">
+                      <Phone className="w-4 h-4" />
+                      <span className="text-xs font-medium">Contact Number</span>
+                    </div>
+                    <p className="font-bold text-lg">{selectedSalon.ownerPhone || 'Not provided'}</p>
                   </div>
-                  <p className="font-bold text-lg">+91 {selectedSalon.ownerPhone}</p>
-                </div>
+                ) : (
+                  <div className="p-3 bg-secondary/30 rounded-xl border border-border/50">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                      <Lock className="w-4 h-4" />
+                      <span className="text-xs font-medium">Contact Number</span>
+                    </div>
+                    <p className="font-bold text-lg blur-md select-none">+91 98765 43210</p>
+                    <p className="text-xs text-accent mt-2">Subscribe for Rs.99 to unlock contact</p>
+                  </div>
+                )}
               </div>
             )}
             
-            {/* Action Buttons */}
+            {/* Actions */}
             <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  const phone = selectedSalon.ownerPhone.replace(/\D/g, '')
-                  window.open(`tel:+91${phone}`, '_self')
-                }}
-                className="flex-1 h-12"
-              >
-                <Phone className="w-5 h-5 mr-2" />
-                Call
-              </Button>
-              <Button
-                onClick={() => setShowMessageModal(true)}
-                className="flex-1 h-12 bg-primary hover:bg-primary/90"
-              >
-                <MessageCircle className="w-5 h-5 mr-2" />
-                WhatsApp
-              </Button>
+              {isApproved ? (
+                <>
+                  <Button
+                    variant="outline"
+                    className="flex-1 h-12"
+                    onClick={() => {
+                      const phone = selectedSalon.ownerPhone?.replace(/\D/g, '')
+                      if (phone) {
+                        window.open(`tel:+91${phone}`, '_blank')
+                      }
+                    }}
+                  >
+                    <Phone className="w-4 h-4 mr-2" />
+                    Call
+                  </Button>
+                  <Button
+                    className="flex-1 h-12 bg-green-600 hover:bg-green-700"
+                    onClick={() => setShowMessageModal(true)}
+                  >
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    WhatsApp
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  className="w-full h-12 bg-primary hover:bg-primary/90"
+                  onClick={() => { setSelectedSalon(null); goToStep('subscription') }}
+                >
+                  <Crown className="w-4 h-4 mr-2" />
+                  Subscribe for Rs.99 to Contact
+                </Button>
+              )}
             </div>
           </div>
         </div>

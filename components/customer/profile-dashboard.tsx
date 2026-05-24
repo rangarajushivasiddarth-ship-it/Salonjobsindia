@@ -1,21 +1,143 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, User, Crown, Calendar, Heart, Briefcase, LogOut, ChevronRight, MapPin, Building2, Settings, Bell, Shield, TrendingUp, Eye, Clock } from 'lucide-react'
+import { ArrowLeft, User, Crown, Calendar, Heart, Briefcase, LogOut, ChevronRight, MapPin, Building2, Settings, Bell, Shield, TrendingUp, Eye, Clock, Download, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
+import { jsPDF } from 'jspdf'
 
 type TabType = 'overview' | 'saved' | 'applied'
 
 export function ProfileDashboard() {
-  const { user, subscription, savedJobs, appliedJobs, goToStep, logout } = useApp()
+  const { user, subscription, savedJobs, appliedJobs, goToStep, logout, resume } = useApp()
   const [activeTab, setActiveTab] = useState<TabType>('overview')
+  const [isDownloading, setIsDownloading] = useState(false)
 
   // Calculate days remaining from subscription or user's subscription expiry
   const expiryDate = subscription?.expiresAt || user?.subscriptionExpiry
   const daysRemaining = expiryDate
     ? Math.max(0, Math.ceil((new Date(expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : (user?.isSubscribed ? 30 : 0) // Default to 30 days if subscribed but no expiry set
+
+  // Download resume as PDF
+  const downloadResume = async () => {
+    if (!resume) {
+      alert('Please complete your resume first!')
+      return
+    }
+    
+    setIsDownloading(true)
+    
+    try {
+      const doc = new jsPDF()
+      const pageWidth = doc.internal.pageSize.getWidth()
+      let yPos = 20
+      
+      // Title - Name
+      doc.setFontSize(24)
+      doc.setFont('helvetica', 'bold')
+      doc.text(resume.name || user?.name || 'Name Not Provided', pageWidth / 2, yPos, { align: 'center' })
+      yPos += 10
+      
+      // Role
+      doc.setFontSize(14)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(100, 100, 100)
+      doc.text(resume.role || 'Beauty Professional', pageWidth / 2, yPos, { align: 'center' })
+      yPos += 15
+      
+      // Contact Info
+      doc.setFontSize(10)
+      doc.setTextColor(60, 60, 60)
+      const contactInfo = [
+        user?.phone || '',
+        user?.email || '',
+        resume.location?.address || ''
+      ].filter(Boolean).join(' | ')
+      doc.text(contactInfo, pageWidth / 2, yPos, { align: 'center' })
+      yPos += 15
+      
+      // Divider
+      doc.setDrawColor(200, 200, 200)
+      doc.line(20, yPos, pageWidth - 20, yPos)
+      yPos += 10
+      
+      // Experience
+      doc.setTextColor(0, 0, 0)
+      doc.setFontSize(12)
+      doc.setFont('helvetica', 'bold')
+      doc.text('EXPERIENCE', 20, yPos)
+      yPos += 8
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(10)
+      doc.text(`${resume.experience || '0'} years of experience in the beauty industry`, 20, yPos)
+      yPos += 15
+      
+      // Skills
+      if (resume.skills && resume.skills.length > 0) {
+        doc.setFontSize(12)
+        doc.setFont('helvetica', 'bold')
+        doc.text('SKILLS', 20, yPos)
+        yPos += 8
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(10)
+        const skillsText = resume.skills.join(', ')
+        const splitSkills = doc.splitTextToSize(skillsText, pageWidth - 40)
+        doc.text(splitSkills, 20, yPos)
+        yPos += splitSkills.length * 5 + 15
+      }
+      
+      // Salary Expectation
+      if (resume.salaryExpectation) {
+        doc.setFontSize(12)
+        doc.setFont('helvetica', 'bold')
+        doc.text('SALARY EXPECTATION', 20, yPos)
+        yPos += 8
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(10)
+        doc.text(resume.salaryExpectation, 20, yPos)
+        yPos += 15
+      }
+      
+      // Date of Birth
+      if (resume.dateOfBirth) {
+        doc.setFontSize(12)
+        doc.setFont('helvetica', 'bold')
+        doc.text('DATE OF BIRTH', 20, yPos)
+        yPos += 8
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(10)
+        doc.text(resume.dateOfBirth, 20, yPos)
+        yPos += 15
+      }
+      
+      // Location
+      if (resume.location?.address) {
+        doc.setFontSize(12)
+        doc.setFont('helvetica', 'bold')
+        doc.text('LOCATION', 20, yPos)
+        yPos += 8
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(10)
+        doc.text(resume.location.address, 20, yPos)
+        yPos += 15
+      }
+      
+      // Footer
+      doc.setFontSize(8)
+      doc.setTextColor(150, 150, 150)
+      doc.text('Generated via Salon Jobs India - www.salonjobsindia.com', pageWidth / 2, 285, { align: 'center' })
+      
+      // Save the PDF
+      const fileName = `${(resume.name || user?.name || 'resume').replace(/\s+/g, '_')}_Resume.pdf`
+      doc.save(fileName)
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      alert('Error generating PDF. Please try again.')
+    } finally {
+      setIsDownloading(false)
+    }
+  }
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: User },
@@ -91,6 +213,34 @@ export function ProfileDashboard() {
           )}
         </div>
       </div>
+      
+      {/* Download Resume Button - Only for job seekers */}
+      {user?.role === 'job_seeker' && (
+        <div className="relative z-10 px-4 mb-4">
+          <Button
+            onClick={downloadResume}
+            disabled={isDownloading || !resume}
+            className="w-full h-12 bg-green-600 hover:bg-green-700 text-white"
+          >
+            {isDownloading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                Generating PDF...
+              </>
+            ) : (
+              <>
+                <Download className="w-5 h-5 mr-2" />
+                Download Resume (PDF)
+              </>
+            )}
+          </Button>
+          {!resume && (
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Complete your profile to download resume
+            </p>
+          )}
+        </div>
+      )}
       
       {/* Tabs */}
       <div className="relative z-10 px-4 mb-4">

@@ -60,7 +60,7 @@ export interface Resume {
 }
 
 // Job Seeker Subscription Plans
-export type JobSeekerPlanType = 'gold' | 'premium' | 'ultra_premium'
+export type JobSeekerPlanType = 'gold' | 'premium' | 'ultra_premium' | 'unlimited'
 
 export interface JobSeekerPlan {
   id: JobSeekerPlanType

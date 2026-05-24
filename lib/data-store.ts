@@ -23,50 +23,23 @@ function dispatchDataUpdate(key: string) {
   }
 }
 
-// Job Seeker Plans - Gold, Premium, Ultra Premium
+// Job Seeker Plans - Single Rs.99 plan for unlimited access
 export const JOB_SEEKER_PLANS: JobSeekerPlan[] = [
   {
-    id: 'gold',
-    name: 'Gold',
-    shopLimit: 10,
+    id: 'unlimited',
+    name: 'Premium Access',
+    shopLimit: 'unlimited',
     price: 99,
     features: [
-      'View up to 10 salon profiles',
-      'Apply to jobs',
-      'Basic chat support',
-      'Email notifications'
-    ],
-    color: '#FFD700',
-  },
-  {
-    id: 'premium',
-    name: 'Premium',
-    shopLimit: 15,
-    price: 199,
-    features: [
-      'View up to 15 salon profiles',
-      'Priority applications',
-      'Full chat access',
-      'Push notifications',
-      'Profile boost'
+      'View all salon job listings',
+      'Unlock salon phone numbers',
+      'Apply to unlimited jobs',
+      'Chat with salon owners',
+      'Priority support',
+      'Valid for 30 days'
     ],
     recommended: true,
-    color: '#C0C0C0',
-  },
-  {
-    id: 'ultra_premium',
-    name: 'Ultra Premium',
-    shopLimit: 'unlimited',
-    price: 349,
-    features: [
-      'View unlimited salon profiles',
-      'Top priority applications',
-      'Direct call access to owners',
-      'Verified badge',
-      'Featured profile',
-      'Dedicated support'
-    ],
-    color: '#B76E79',
+    color: '#FFD700',
   },
 ]
 

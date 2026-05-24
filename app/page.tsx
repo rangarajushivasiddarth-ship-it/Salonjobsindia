@@ -14,7 +14,7 @@ import { OwnerPanel } from '@/components/customer/owner-panel'
 import { MessagesScreen } from '@/components/customer/messages-screen'
 import { NotificationsScreen } from '@/components/customer/notifications-screen'
 import { SettingsScreen } from '@/components/customer/settings-screen'
-import { TrainingScreen } from '@/components/customer/training-screen'
+import { AboutUsScreen } from '@/components/customer/about-us-screen'
 import { BottomNav } from '@/components/customer/bottom-nav'
 
 function CustomerApp() {
@@ -72,8 +72,8 @@ function CustomerApp() {
         return <NotificationsScreen />
       case 'settings':
         return <SettingsScreen />
-      case 'training':
-        return <TrainingScreen />
+      case 'about':
+        return <AboutUsScreen />
       default:
         return (
           <SplashScreen
@@ -84,7 +84,7 @@ function CustomerApp() {
   }
 
   // Show bottom nav only on main app screens (not auth flow)
-  const showBottomNav = ['discovery', 'results', 'messages', 'notifications', 'profile', 'owner-panel', 'create-job', 'training'].includes(currentStep)
+  const showBottomNav = ['discovery', 'results', 'messages', 'notifications', 'profile', 'owner-panel', 'create-job', 'about'].includes(currentStep)
   
   return (
     <>
