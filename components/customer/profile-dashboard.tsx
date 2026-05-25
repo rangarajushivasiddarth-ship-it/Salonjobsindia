@@ -18,8 +18,8 @@ export function ProfileDashboard() {
     ? Math.max(0, Math.ceil((new Date(expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : (user?.isSubscribed ? 30 : 0) // Default to 30 days if subscribed but no expiry set
 
-  // Download resume as PDF - dynamically import jsPDF to avoid SSR issues
-  const downloadResume = async () => {
+  // Download resume as PDF using browser print functionality
+  const downloadResume = () => {
     if (!resume) {
       alert('Please complete your resume first!')
       return
@@ -28,115 +28,131 @@ export function ProfileDashboard() {
     setIsDownloading(true)
     
     try {
-      // Dynamic import to avoid SSR issues - use ES module build
-      const jsPDFModule = await import('jspdf')
-      const { jsPDF } = jsPDFModule
-      const doc = new jsPDF()
-      const pageWidth = doc.internal.pageSize.getWidth()
-      let yPos = 20
+      // Create a printable HTML document
+      const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>${resume.name || user?.name || 'Resume'} - Resume</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              padding: 40px;
+              max-width: 800px;
+              margin: 0 auto;
+              color: #333;
+            }
+            .header { text-align: center; margin-bottom: 30px; }
+            .name { font-size: 28px; font-weight: bold; color: #1a1a1a; margin-bottom: 8px; }
+            .role { font-size: 16px; color: #666; margin-bottom: 12px; }
+            .contact { font-size: 12px; color: #888; }
+            .divider { border-top: 2px solid #e0e0e0; margin: 20px 0; }
+            .section { margin-bottom: 24px; }
+            .section-title { 
+              font-size: 14px; 
+              font-weight: bold; 
+              color: #1a1a1a; 
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              margin-bottom: 8px;
+              border-bottom: 1px solid #ddd;
+              padding-bottom: 4px;
+            }
+            .section-content { font-size: 13px; line-height: 1.6; color: #444; }
+            .skills-list { display: flex; flex-wrap: wrap; gap: 8px; }
+            .skill-tag { 
+              background: #f0f0f0; 
+              padding: 4px 12px; 
+              border-radius: 16px; 
+              font-size: 12px;
+            }
+            .footer { 
+              text-align: center; 
+              font-size: 10px; 
+              color: #999; 
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 1px solid #eee;
+            }
+            @media print {
+              body { padding: 20px; }
+              @page { margin: 0.5in; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="name">${resume.name || user?.name || 'Name Not Provided'}</div>
+            <div class="role">${resume.role || 'Beauty Professional'}</div>
+            <div class="contact">
+              ${[user?.phone, user?.email, resume.location?.address].filter(Boolean).join(' | ')}
+            </div>
+          </div>
+          
+          <div class="divider"></div>
+          
+          <div class="section">
+            <div class="section-title">Experience</div>
+            <div class="section-content">${resume.experience || '0'} years of experience in the beauty industry</div>
+          </div>
+          
+          ${resume.skills && resume.skills.length > 0 ? `
+          <div class="section">
+            <div class="section-title">Skills</div>
+            <div class="skills-list">
+              ${resume.skills.map((skill: string) => `<span class="skill-tag">${skill}</span>`).join('')}
+            </div>
+          </div>
+          ` : ''}
+          
+          ${resume.salaryExpectation ? `
+          <div class="section">
+            <div class="section-title">Salary Expectation</div>
+            <div class="section-content">${resume.salaryExpectation}</div>
+          </div>
+          ` : ''}
+          
+          ${resume.dateOfBirth ? `
+          <div class="section">
+            <div class="section-title">Date of Birth</div>
+            <div class="section-content">${resume.dateOfBirth}</div>
+          </div>
+          ` : ''}
+          
+          ${resume.location?.address ? `
+          <div class="section">
+            <div class="section-title">Location</div>
+            <div class="section-content">${resume.location.address}</div>
+          </div>
+          ` : ''}
+          
+          <div class="footer">
+            Generated via Salon Jobs India - www.salonjobsindia.com
+          </div>
+        </body>
+        </html>
+      `
       
-      // Title - Name
-      doc.setFontSize(24)
-      doc.setFont('helvetica', 'bold')
-      doc.text(resume.name || user?.name || 'Name Not Provided', pageWidth / 2, yPos, { align: 'center' })
-      yPos += 10
-      
-      // Role
-      doc.setFontSize(14)
-      doc.setFont('helvetica', 'normal')
-      doc.setTextColor(100, 100, 100)
-      doc.text(resume.role || 'Beauty Professional', pageWidth / 2, yPos, { align: 'center' })
-      yPos += 15
-      
-      // Contact Info
-      doc.setFontSize(10)
-      doc.setTextColor(60, 60, 60)
-      const contactInfo = [
-        user?.phone || '',
-        user?.email || '',
-        resume.location?.address || ''
-      ].filter(Boolean).join(' | ')
-      doc.text(contactInfo, pageWidth / 2, yPos, { align: 'center' })
-      yPos += 15
-      
-      // Divider
-      doc.setDrawColor(200, 200, 200)
-      doc.line(20, yPos, pageWidth - 20, yPos)
-      yPos += 10
-      
-      // Experience
-      doc.setTextColor(0, 0, 0)
-      doc.setFontSize(12)
-      doc.setFont('helvetica', 'bold')
-      doc.text('EXPERIENCE', 20, yPos)
-      yPos += 8
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(10)
-      doc.text(`${resume.experience || '0'} years of experience in the beauty industry`, 20, yPos)
-      yPos += 15
-      
-      // Skills
-      if (resume.skills && resume.skills.length > 0) {
-        doc.setFontSize(12)
-        doc.setFont('helvetica', 'bold')
-        doc.text('SKILLS', 20, yPos)
-        yPos += 8
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(10)
-        const skillsText = resume.skills.join(', ')
-        const splitSkills = doc.splitTextToSize(skillsText, pageWidth - 40)
-        doc.text(splitSkills, 20, yPos)
-        yPos += splitSkills.length * 5 + 15
+      // Open print window
+      const printWindow = window.open('', '_blank')
+      if (printWindow) {
+        printWindow.document.write(printContent)
+        printWindow.document.close()
+        printWindow.focus()
+        
+        // Wait for content to load then print
+        setTimeout(() => {
+          printWindow.print()
+          setIsDownloading(false)
+        }, 250)
+      } else {
+        alert('Please allow popups to download your resume')
+        setIsDownloading(false)
       }
-      
-      // Salary Expectation
-      if (resume.salaryExpectation) {
-        doc.setFontSize(12)
-        doc.setFont('helvetica', 'bold')
-        doc.text('SALARY EXPECTATION', 20, yPos)
-        yPos += 8
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(10)
-        doc.text(resume.salaryExpectation, 20, yPos)
-        yPos += 15
-      }
-      
-      // Date of Birth
-      if (resume.dateOfBirth) {
-        doc.setFontSize(12)
-        doc.setFont('helvetica', 'bold')
-        doc.text('DATE OF BIRTH', 20, yPos)
-        yPos += 8
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(10)
-        doc.text(resume.dateOfBirth, 20, yPos)
-        yPos += 15
-      }
-      
-      // Location
-      if (resume.location?.address) {
-        doc.setFontSize(12)
-        doc.setFont('helvetica', 'bold')
-        doc.text('LOCATION', 20, yPos)
-        yPos += 8
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(10)
-        doc.text(resume.location.address, 20, yPos)
-        yPos += 15
-      }
-      
-      // Footer
-      doc.setFontSize(8)
-      doc.setTextColor(150, 150, 150)
-      doc.text('Generated via Salon Jobs India - www.salonjobsindia.com', pageWidth / 2, 285, { align: 'center' })
-      
-      // Save the PDF
-      const fileName = `${(resume.name || user?.name || 'resume').replace(/\s+/g, '_')}_Resume.pdf`
-      doc.save(fileName)
     } catch (error) {
-      console.error('Error generating PDF:', error)
-      alert('Error generating PDF. Please try again.')
-    } finally {
+      console.error('Error generating resume:', error)
+      alert('Error generating resume. Please try again.')
       setIsDownloading(false)
     }
   }
