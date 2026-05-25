@@ -1,19 +1,22 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Upload, Check, Clock, Crown, Phone, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Upload, Check, Clock, Crown, Phone, AlertCircle, BadgeCheck, Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
 import { savePayment, getSalonProfileByOwnerId } from '@/lib/data-store'
-import type { Payment, SalonOwnerPlanType } from '@/lib/types'
+import type { Payment, SalonOwnerPlanType, PaymentType } from '@/lib/types'
 
-interface CreditPack {
+interface SelectedPack {
   id: string
   name: string
-  credits: number
+  credits?: number
   price: number
   features: string[]
   recommended?: boolean
+  type?: 'verified_badge' | 'contact_pack'
+  validityDays?: number
+  durationMonths?: number
 }
 
 // QR Code and UPI details - admin can change these
@@ -25,11 +28,14 @@ const PAYMENT_CONFIG = {
 
 export function CreditPayment() {
   const { user, goToStep } = useApp()
-  const [selectedPack, setSelectedPack] = useState<CreditPack | null>(null)
+  const [selectedPack, setSelectedPack] = useState<SelectedPack | null>(null)
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null)
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+
+  // Determine if this is a verified badge purchase
+  const isVerifiedBadge = selectedPack?.type === 'verified_badge'
 
   useEffect(() => {
     // Load selected pack from localStorage
@@ -73,13 +79,13 @@ export function CreditPayment() {
         userName: user.name || salonProfile?.ownerName,
         userPhone: user.phone || salonProfile?.mobile,
         salonName: salonProfile?.salonName,
-        type: 'contact_pack',
+        type: isVerifiedBadge ? 'verified_badge' : 'contact_pack',
         planId: selectedPack.id as SalonOwnerPlanType,
         amount: selectedPack.price,
         screenshotUrl: screenshotPreview,
         status: 'pending',
-        contactCredits: selectedPack.credits,
-        validityDays: 365, // Credits never expire
+        contactCredits: selectedPack.credits || 0,
+        validityDays: selectedPack.validityDays || 365,
         submittedAt: new Date(),
       }
 
@@ -111,14 +117,21 @@ export function CreditPayment() {
         <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5" />
         
         <div className="relative z-10 w-full max-w-sm text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/20 flex items-center justify-center">
-            <Clock className="w-10 h-10 text-primary" />
+          <div className={`w-20 h-20 mx-auto mb-6 rounded-full ${isVerifiedBadge ? 'bg-blue-500/20' : 'bg-primary/20'} flex items-center justify-center`}>
+            {isVerifiedBadge ? (
+              <BadgeCheck className="w-10 h-10 text-blue-400" />
+            ) : (
+              <Clock className="w-10 h-10 text-primary" />
+            )}
           </div>
           
           <h1 className="text-2xl font-bold mb-3">Payment Under Review</h1>
           <p className="text-muted-foreground mb-6">
-            Your payment for <span className="text-primary font-semibold">{selectedPack.credits} credits</span> is being verified. 
-            Credits will be added to your account within 24 hours.
+            {isVerifiedBadge ? (
+              <>Your payment for <span className="text-blue-400 font-semibold">{selectedPack.durationMonths} month{(selectedPack.durationMonths || 1) > 1 ? 's' : ''} Verified Badge</span> is being verified. Badge will be activated within 24 hours.</>
+            ) : (
+              <>Your payment for <span className="text-primary font-semibold">{selectedPack.credits} credits</span> is being verified. Credits will be added to your account within 24 hours.</>
+            )}
           </p>
           
           <div className="p-4 glass-card rounded-xl mb-6 text-left">
@@ -128,8 +141,17 @@ export function CreditPayment() {
             </h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>1. Our team verifies your payment screenshot</li>
-              <li>2. {selectedPack.credits} credits are added to your account</li>
-              <li>3. You receive a notification once approved</li>
+              {isVerifiedBadge ? (
+                <>
+                  <li>2. Verified badge is activated on your profile</li>
+                  <li>3. Badge appears on all your job posts</li>
+                </>
+              ) : (
+                <>
+                  <li>2. {selectedPack.credits} credits are added to your account</li>
+                  <li>3. You receive a notification once approved</li>
+                </>
+              )}
             </ul>
           </div>
           
@@ -151,27 +173,39 @@ export function CreditPayment() {
         <button onClick={() => goToStep('owner-panel')} className="p-2 -ml-2">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-lg font-bold">Buy Credits</h1>
+        <h1 className="text-lg font-bold">{isVerifiedBadge ? 'Get Verified Badge' : 'Buy Credits'}</h1>
       </header>
       
       {/* Content */}
       <div className="relative z-10 flex-1 p-4 overflow-y-auto">
         {/* Selected Pack Info */}
-        <div className="p-5 glass-card rounded-2xl mb-6">
+        <div className={`p-5 glass-card rounded-2xl mb-6 ${isVerifiedBadge ? 'border-2 border-blue-500/30' : ''}`}>
           <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold">{selectedPack.name}</h2>
-              <p className="text-sm text-muted-foreground">{selectedPack.credits} contact credits</p>
+            <div className="flex items-center gap-3">
+              {isVerifiedBadge && (
+                <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
+                  <BadgeCheck className="w-6 h-6 text-blue-400" />
+                </div>
+              )}
+              <div>
+                <h2 className="text-lg font-semibold">{selectedPack.name}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {isVerifiedBadge 
+                    ? `${selectedPack.durationMonths} month${(selectedPack.durationMonths || 1) > 1 ? 's' : ''} validity`
+                    : `${selectedPack.credits} contact credits`
+                  }
+                </p>
+              </div>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-primary">Rs.{selectedPack.price}</p>
+              <p className={`text-2xl font-bold ${isVerifiedBadge ? 'text-blue-400' : 'text-primary'}`}>Rs.{selectedPack.price}</p>
             </div>
           </div>
           
           <div className="space-y-2">
             {selectedPack.features.map((feature, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
-                <Check className="w-4 h-4 text-primary" />
+                <Check className={`w-4 h-4 ${isVerifiedBadge ? 'text-blue-400' : 'text-primary'}`} />
                 <span className="text-muted-foreground">{feature}</span>
               </div>
             ))}

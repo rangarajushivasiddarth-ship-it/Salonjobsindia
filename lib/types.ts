@@ -164,6 +164,52 @@ export const CONTACT_CREDIT_PACKS: ContactCreditPack[] = [
   }
 ]
 
+// Verified Badge Plans for Salon Owners
+export interface VerifiedBadgePlan {
+  id: string
+  name: string
+  price: number
+  durationMonths: number
+  validityDays: number
+  features: string[]
+  recommended?: boolean
+  savings?: string
+}
+
+export const VERIFIED_BADGE_PLANS: VerifiedBadgePlan[] = [
+  {
+    id: 'verified_1_month',
+    name: '1 Month Verified',
+    price: 199,
+    durationMonths: 1,
+    validityDays: 30,
+    features: [
+      'Verified badge on your salon profile',
+      'Verified badge on all job posts',
+      'Build trust with job seekers',
+      'Stand out from other salons',
+      'Valid for 30 days'
+    ]
+  },
+  {
+    id: 'verified_3_months',
+    name: '3 Months Verified',
+    price: 499,
+    durationMonths: 3,
+    validityDays: 90,
+    features: [
+      'Verified badge on your salon profile',
+      'Verified badge on all job posts',
+      'Build trust with job seekers',
+      'Stand out from other salons',
+      'Valid for 90 days',
+      'Save Rs.98 compared to monthly'
+    ],
+    recommended: true,
+    savings: 'Save Rs.98'
+  }
+]
+
 // Salon Profile
 export interface SalonProfile {
   id: string

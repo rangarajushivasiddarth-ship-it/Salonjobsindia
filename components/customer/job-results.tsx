@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, MapPin, Building2, User, Phone, Briefcase, DollarSign, Clock, Heart, HeartOff, Filter, ChevronRight, Navigation, Star, Lock, Crown } from 'lucide-react'
+import { Search, MapPin, Building2, User, Phone, Briefcase, DollarSign, Clock, Heart, HeartOff, Filter, ChevronRight, Navigation, Star, Lock, Crown, BadgeCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
@@ -100,7 +100,12 @@ export function JobResults() {
                     <Building2 className="w-6 h-6 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">{job.salonName}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold">{job.salonName}</h3>
+                      {job.isVerified && (
+                        <BadgeCheck className="w-4 h-4 text-blue-400" />
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
                       <MapPin className="w-3 h-3" />
                       {getDistance()} · {job.location.area}
@@ -198,7 +203,12 @@ export function JobResults() {
             <div className="p-6 pt-12">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h2 className="text-xl font-bold">{selectedJob.salonName}</h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold">{selectedJob.salonName}</h2>
+                    {selectedJob.isVerified && (
+                      <BadgeCheck className="w-5 h-5 text-blue-400" />
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
                     <MapPin className="w-3 h-3" />
                     {getDistance()} · {selectedJob.location.address}

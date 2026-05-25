@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Briefcase, Users, Settings, LogOut, Edit2, Trash2, Eye, ChevronRight, Building2, MapPin, DollarSign, Clock, Crown, User, Search, Filter, TrendingUp, UserCheck, Bell, BarChart3, MessageCircle, Phone, AlertCircle, Check, X, Rocket, ShoppingCart } from 'lucide-react'
+import { Plus, Briefcase, Users, Settings, LogOut, Edit2, Trash2, Eye, ChevronRight, Building2, MapPin, DollarSign, Clock, Crown, User, Search, Filter, TrendingUp, UserCheck, Bell, BarChart3, MessageCircle, Phone, AlertCircle, Check, X, Rocket, ShoppingCart, BadgeCheck, Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
@@ -39,6 +39,39 @@ const CREDIT_PACKS = [
   }
 ]
 
+// Verified Badge Plans
+const VERIFIED_BADGE_PLANS = [
+  {
+    id: 'verified_1_month',
+    name: '1 Month Verified',
+    price: 199,
+    durationMonths: 1,
+    validityDays: 30,
+    features: [
+      'Verified badge on your salon profile',
+      'Verified badge on all job posts',
+      'Build trust with job seekers',
+      'Stand out from other salons'
+    ]
+  },
+  {
+    id: 'verified_3_months',
+    name: '3 Months Verified',
+    price: 499,
+    durationMonths: 3,
+    validityDays: 90,
+    features: [
+      'Verified badge on your salon profile',
+      'Verified badge on all job posts',
+      'Build trust with job seekers',
+      'Stand out from other salons',
+      'Save Rs.98 compared to monthly'
+    ],
+    recommended: true,
+    savings: 'Save Rs.98'
+  }
+]
+
 type TabType = 'dashboard' | 'jobs' | 'applicants' | 'candidates' | 'settings'
 
 export function OwnerPanel() {
@@ -46,6 +79,7 @@ export function OwnerPanel() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false)
+  const [showVerifiedBadgeModal, setShowVerifiedBadgeModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>('All')
   const [selectedApplicant, setSelectedApplicant] = useState<Application | null>(null)
@@ -633,7 +667,12 @@ export function OwnerPanel() {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Salon Name</span>
-                    <span className="font-medium">{salonProfile.salonName}</span>
+                    <span className="font-medium flex items-center gap-2">
+                      {salonProfile.salonName}
+                      {salonProfile.isVerified && (
+                        <BadgeCheck className="w-4 h-4 text-blue-400" />
+                      )}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Owner</span>
@@ -647,18 +686,61 @@ export function OwnerPanel() {
                     <span className="text-muted-foreground">Location</span>
                     <span className="font-medium text-right max-w-[60%]">{salonProfile.city}, {salonProfile.state}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Verified</span>
-                    <span className={`font-medium ${salonProfile.isVerified ? 'text-green-400' : 'text-muted-foreground'}`}>
-                      {salonProfile.isVerified ? 'Yes' : 'No'}
-                    </span>
-                  </div>
                 </div>
               ) : (
                 <div className="text-center py-4">
                   <p className="text-muted-foreground mb-3">Profile not set up</p>
                   <Button onClick={() => goToStep('salon-profile')} size="sm">
                     Set Up Profile
+                  </Button>
+                </div>
+              )}
+            </div>
+            
+            {/* Verified Badge Section */}
+            <div className="p-5 glass-card rounded-2xl border-2 border-blue-500/30">
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <BadgeCheck className="w-5 h-5 text-blue-400" />
+                Verified Badge
+              </h3>
+              {salonProfile?.isVerified ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-3 bg-blue-500/10 rounded-xl">
+                    <BadgeCheck className="w-8 h-8 text-blue-400" />
+                    <div>
+                      <p className="font-medium text-blue-400">Verified Salon</p>
+                      <p className="text-xs text-muted-foreground">
+                        Valid until {salonProfile.verifiedUntil ? new Date(salonProfile.verifiedUntil).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Your verified badge is visible on your profile and all job posts.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Get a verified badge to build trust with job seekers and stand out from other salons.
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Check className="w-3 h-3 text-blue-400" />
+                    Badge visible on your profile
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Check className="w-3 h-3 text-blue-400" />
+                    Badge shown on all job posts
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Check className="w-3 h-3 text-blue-400" />
+                    Increased trust from candidates
+                  </div>
+                  <Button 
+                    onClick={() => setShowVerifiedBadgeModal(true)} 
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                  >
+                    <Shield className="w-4 h-4 mr-2" />
+                    Get Verified Badge
                   </Button>
                 </div>
               )}
@@ -868,6 +950,99 @@ export function OwnerPanel() {
               
               <p className="text-xs text-center text-muted-foreground">
                 Credits never expire and are added instantly after payment approval.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Verified Badge Modal */}
+      {showVerifiedBadgeModal && (
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-background/90 backdrop-blur-md">
+          <div className="w-full md:max-w-md md:rounded-2xl bg-card glass-card rounded-t-3xl max-h-[90vh] overflow-y-auto animate-slide-up">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold">Get Verified Badge</h2>
+                <button onClick={() => setShowVerifiedBadgeModal(false)}>
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center">
+                  <BadgeCheck className="w-10 h-10 text-blue-400" />
+                </div>
+              </div>
+              
+              <p className="text-sm text-muted-foreground text-center mb-6">
+                A verified badge shows job seekers that your salon is trustworthy and legitimate.
+              </p>
+              
+              <div className="space-y-4 mb-6">
+                {VERIFIED_BADGE_PLANS.map((plan) => (
+                  <div 
+                    key={plan.id}
+                    className={`p-4 rounded-2xl border-2 transition-colors ${
+                      plan.recommended 
+                        ? 'border-blue-500 bg-blue-500/5' 
+                        : 'border-border/50 bg-secondary/20'
+                    }`}
+                  >
+                    {plan.recommended && (
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-500 text-white">
+                          Best Value
+                        </span>
+                        {plan.savings && (
+                          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-green-500/20 text-green-400">
+                            {plan.savings}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h3 className="font-semibold">{plan.name}</h3>
+                        <p className="text-sm text-muted-foreground">{plan.durationMonths} month{plan.durationMonths > 1 ? 's' : ''}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-blue-400">Rs.{plan.price}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Rs.{Math.round(plan.price / plan.durationMonths)}/month
+                        </p>
+                      </div>
+                    </div>
+                    <ul className="space-y-1 mb-4">
+                      {plan.features.slice(0, 4).map((feature, i) => (
+                        <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Check className="w-3 h-3 text-blue-400" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                    <Button 
+                      onClick={() => {
+                        setShowVerifiedBadgeModal(false)
+                        // Navigate to verified badge payment
+                        goToStep('credit-payment')
+                        // Store selected plan in localStorage for payment screen
+                        localStorage.setItem('salonjobsindia_selected_credit_pack', JSON.stringify({
+                          ...plan,
+                          type: 'verified_badge',
+                          credits: 0
+                        }))
+                      }}
+                      className={`w-full ${plan.recommended ? 'bg-blue-500 hover:bg-blue-600' : ''}`}
+                      variant={plan.recommended ? 'default' : 'outline'}
+                    >
+                      Get {plan.durationMonths} Month{plan.durationMonths > 1 ? 's' : ''} Badge
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              
+              <p className="text-xs text-center text-muted-foreground">
+                Badge activates instantly after payment approval by admin.
               </p>
             </div>
           </div>
