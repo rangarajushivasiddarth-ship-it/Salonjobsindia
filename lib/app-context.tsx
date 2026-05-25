@@ -79,7 +79,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             isLoading: false,
             currentStep: currentUser.role ? 
               (currentUser.role === 'job_seeker' ? 
-                (currentUser.isSubscribed ? 'results' : 'discovery') 
+                'results'  // Job seekers always go to results (free access to view salons)
                 : 'owner-panel') // handles both 'salon_owner' and 'employer'
               : 'role',
           }))
@@ -179,7 +179,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         isAuthenticated: true,
         currentStep: user.role ? 
           (user.role === 'job_seeker' ? 
-            (user.isSubscribed ? 'results' : 'discovery') 
+            'results'  // Job seekers always go to results (free access)
             : 'owner-panel') 
           : 'role',
       }))

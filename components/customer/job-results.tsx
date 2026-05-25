@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, MapPin, Building2, User, Phone, Briefcase, DollarSign, Clock, Heart, HeartOff, Filter, ChevronRight, Navigation, Star } from 'lucide-react'
+import { Search, MapPin, Building2, User, Phone, Briefcase, DollarSign, Clock, Heart, HeartOff, Filter, ChevronRight, Navigation, Star, Lock, Crown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
@@ -12,7 +12,11 @@ export function JobResults() {
   const { user, savedJobs, appliedJobs, saveJob, unsaveJob, applyToJob, goToStep } = useApp()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [showSubscribeModal, setShowSubscribeModal] = useState(false)
   const [jobs, setJobs] = useState<Job[]>([])
+
+  // Check if user has active subscription
+  const isSubscribed = user?.isSubscribed === true
 
   // Load real jobs from data store
   useEffect(() => {
@@ -135,14 +139,27 @@ export function JobResults() {
               </div>
               
               <div className="flex items-center justify-between pt-3 border-t border-border/30">
-                <a
-                  href={`tel:${job.contact}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-2 text-sm text-primary hover:underline"
-                >
-                  <Phone className="w-4 h-4" />
-                  {job.contact}
-                </a>
+                {isSubscribed ? (
+                  <a
+                    href={`tel:${job.contact}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-2 text-sm text-primary hover:underline"
+                  >
+                    <Phone className="w-4 h-4" />
+                    {job.contact}
+                  </a>
+                ) : (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowSubscribeModal(true)
+                    }}
+                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                  >
+                    <Lock className="w-4 h-4" />
+                    <span className="blur-sm select-none">+91 98XXX XXXXX</span>
+                  </button>
+                )}
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </div>
             </button>
@@ -219,18 +236,36 @@ export function JobResults() {
               
               <div className="mb-6">
                 <h4 className="font-semibold mb-2">Contact</h4>
-                <a
-                  href={`tel:${selectedJob.contact}`}
-                  className="flex items-center gap-3 p-4 bg-secondary/30 rounded-xl"
-                >
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                    <Phone className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-semibold">{selectedJob.contact}</p>
-                    <p className="text-xs text-muted-foreground">Tap to call</p>
-                  </div>
-                </a>
+                {isSubscribed ? (
+                  <a
+                    href={`tel:${selectedJob.contact}`}
+                    className="flex items-center gap-3 p-4 bg-secondary/30 rounded-xl"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Phone className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">{selectedJob.contact}</p>
+                      <p className="text-xs text-muted-foreground">Tap to call</p>
+                    </div>
+                  </a>
+                ) : (
+                  <button
+                    onClick={() => setShowSubscribeModal(true)}
+                    className="w-full flex items-center gap-3 p-4 bg-secondary/30 rounded-xl text-left"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                      <Lock className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold blur-sm select-none">+91 98XXX XXXXX</p>
+                      <p className="text-xs text-primary flex items-center gap-1">
+                        <Crown className="w-3 h-3" />
+                        Subscribe to view contact
+                      </p>
+                    </div>
+                  </button>
+                )}
               </div>
               
               <div className="flex gap-3">
@@ -252,6 +287,59 @@ export function JobResults() {
                   {isJobApplied(selectedJob.id) ? 'Applied' : 'Apply Now'}
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Subscribe Modal */}
+      {showSubscribeModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-background/90 backdrop-blur-md">
+          <div className="w-full max-w-sm bg-card glass-card rounded-2xl p-6 animate-slide-up">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
+                <Crown className="w-8 h-8 text-primary" />
+              </div>
+            </div>
+            
+            <h2 className="text-xl font-bold text-center mb-2">Unlock Contact Details</h2>
+            <p className="text-sm text-muted-foreground text-center mb-6">
+              Subscribe to view salon contact numbers and connect with employers directly.
+            </p>
+            
+            <div className="space-y-3 mb-6">
+              <div className="flex items-center gap-3 p-3 bg-secondary/30 rounded-xl">
+                <Phone className="w-5 h-5 text-primary" />
+                <span className="text-sm">View all contact numbers</span>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-secondary/30 rounded-xl">
+                <Briefcase className="w-5 h-5 text-primary" />
+                <span className="text-sm">Apply to unlimited jobs</span>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-secondary/30 rounded-xl">
+                <Star className="w-5 h-5 text-primary" />
+                <span className="text-sm">Priority profile visibility</span>
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowSubscribeModal(false)}
+                className="flex-1"
+              >
+                Not Now
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowSubscribeModal(false)
+                  setSelectedJob(null)
+                  goToStep('subscription')
+                }}
+                className="flex-1 bg-primary hover:bg-primary/90 gold-glow"
+              >
+                Subscribe
+              </Button>
             </div>
           </div>
         </div>
