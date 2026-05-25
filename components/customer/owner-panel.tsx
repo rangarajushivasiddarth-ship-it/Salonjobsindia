@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Briefcase, Users, Settings, LogOut, Edit2, Trash2, Eye, ChevronRight, Building2, MapPin, DollarSign, Clock, Crown, User, Search, Filter, TrendingUp, UserCheck, Bell, BarChart3, MessageCircle, Phone, AlertCircle, Check, X, Rocket, ShoppingCart, BadgeCheck, Shield } from 'lucide-react'
+import { Plus, Briefcase, Users, Settings, LogOut, Edit2, Trash2, Eye, ChevronRight, Building2, MapPin, DollarSign, Clock, Crown, User, Search, Filter, TrendingUp, UserCheck, Bell, BarChart3, MessageCircle, Phone, AlertCircle, Check, X, Rocket, ShoppingCart, BadgeCheck, Shield, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
@@ -581,7 +581,15 @@ export function OwnerPanel() {
                           <User className="w-6 h-6 text-primary" />
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-semibold">{candidate.name}</h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold">{candidate.name}</h3>
+                            {candidate.availabilityStatus === 'not_looking' && (
+                              <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">
+                                <EyeOff className="w-3 h-3" />
+                                Not looking
+                              </span>
+                            )}
+                          </div>
                           <p className="text-sm text-primary">{candidate.role}</p>
                           <div className="flex flex-wrap gap-2 mt-2">
                             <span className="text-xs px-2 py-1 rounded-full bg-secondary/80">

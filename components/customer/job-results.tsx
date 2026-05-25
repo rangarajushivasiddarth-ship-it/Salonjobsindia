@@ -96,9 +96,17 @@ export function JobResults() {
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
-                    <Building2 className="w-6 h-6 text-primary" />
-                  </div>
+                  {job.salonLogo ? (
+                    <img 
+                      src={job.salonLogo} 
+                      alt={job.salonName}
+                      className="w-12 h-12 rounded-xl object-cover border border-border/30"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+                      <Building2 className="w-6 h-6 text-primary" />
+                    </div>
+                  )}
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold">{job.salonName}</h3>
@@ -193,9 +201,17 @@ export function JobResults() {
                 <ChevronRight className="w-5 h-5 rotate-90" />
               </button>
               <div className="absolute -bottom-8 left-6">
-                <div className="w-16 h-16 rounded-xl bg-card glass flex items-center justify-center gold-glow">
-                  <Building2 className="w-8 h-8 text-primary" />
-                </div>
+                {selectedJob.salonLogo ? (
+                  <img 
+                    src={selectedJob.salonLogo} 
+                    alt={selectedJob.salonName}
+                    className="w-16 h-16 rounded-xl object-cover border-2 border-card shadow-lg"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-xl bg-card glass flex items-center justify-center gold-glow">
+                    <Building2 className="w-8 h-8 text-primary" />
+                  </div>
+                )}
               </div>
             </div>
             

@@ -273,10 +273,20 @@ export function approvePayment(paymentId: string, adminId: string): Payment | nu
     const jobs = getAllJobs()
     const job = jobs.find(j => j.id === payment.jobId)
     if (job) {
+      // Get salon profile for logo and verified status
+      const salonProfile = getSalonProfileByOwnerId(payment.userId)
+      
       job.status = 'live'
       job.isActive = true
       job.expiresAt = new Date(Date.now() + payment.validityDays * 24 * 60 * 60 * 1000)
       job.paymentApprovedAt = new Date()
+      
+      // Copy salon logo and verified status from profile
+      if (salonProfile) {
+        job.salonLogo = salonProfile.logoUrl
+        job.isVerified = salonProfile.isVerified && salonProfile.verifiedUntil && new Date(salonProfile.verifiedUntil) > new Date()
+      }
+      
       localStorage.setItem(JOBS_KEY, JSON.stringify(jobs))
     }
     
@@ -299,6 +309,15 @@ export function approvePayment(paymentId: string, adminId: string): Payment | nu
       profile.isVerified = true
       profile.verifiedUntil = new Date(Date.now() + payment.validityDays * 24 * 60 * 60 * 1000)
       saveSalonProfile(profile)
+      
+      // Update all live jobs from this salon to show verified badge
+      const jobs = getAllJobs()
+      jobs.forEach(job => {
+        if (job.salonId === payment.userId && job.status === 'live') {
+          job.isVerified = true
+        }
+      })
+      localStorage.setItem(JOBS_KEY, JSON.stringify(jobs))
     }
     
     createAlert({

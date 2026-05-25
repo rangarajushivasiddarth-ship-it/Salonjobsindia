@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, User, Bell, Shield, Moon, Sun, Globe, HelpCircle, FileText, LogOut, ChevronRight, Camera, Mail, Phone, MapPin, Edit2, Check, X } from 'lucide-react'
+import { ArrowLeft, User, Bell, Shield, Moon, Sun, Globe, HelpCircle, FileText, LogOut, ChevronRight, Camera, Mail, Phone, MapPin, Edit2, Check, X, Briefcase } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
@@ -19,6 +19,7 @@ export function SettingsScreen() {
     promotions: false,
     reminders: true,
   })
+  const [isLookingForJob, setIsLookingForJob] = useState(true)
   const [editForm, setEditForm] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -66,6 +67,24 @@ export function SettingsScreen() {
     
     setIsSaving(false)
     setActiveTab('main')
+  }
+
+  const handleToggleLookingForJob = () => {
+    const newValue = !isLookingForJob
+    setIsLookingForJob(newValue)
+    
+    // Update in localStorage for job seekers
+    const resumeStr = localStorage.getItem('salonjobsindia_resumes')
+    if (resumeStr && user?.id) {
+      const resumes = JSON.parse(resumeStr)
+      const userResume = resumes.find((r: { userId: string }) => r.userId === user.id)
+      if (userResume) {
+        userResume.availabilityStatus = newValue ? 'actively_looking' : 'not_looking'
+        localStorage.setItem('salonjobsindia_resumes', JSON.stringify(resumes))
+        // Dispatch event to notify other components
+        window.dispatchEvent(new CustomEvent('localStorageUpdate', { detail: { key: 'salonjobsindia_resumes' } }))
+      }
+    }
   }
   
   const ToggleSwitch = ({ enabled, onChange }: { enabled: boolean; onChange: () => void }) => (
@@ -304,6 +323,27 @@ export function SettingsScreen() {
         {/* Settings Menu */}
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground uppercase tracking-wider px-2 mb-2">Preferences</p>
+          
+          {/* Job Seeking Status - Only for Job Seekers */}
+          {user?.role === 'job_seeker' && (
+            <div className="p-4 glass-card rounded-xl flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isLookingForJob ? 'bg-green-500/20' : 'bg-orange-500/20'}`}>
+                  <Briefcase className={`w-5 h-5 ${isLookingForJob ? 'text-green-500' : 'text-orange-500'}`} />
+                </div>
+                <div>
+                  <span className="font-medium">Looking for Job</span>
+                  <p className="text-xs text-muted-foreground">
+                    {isLookingForJob ? 'Visible to salon owners' : 'Hidden from salon owners'}
+                  </p>
+                </div>
+              </div>
+              <ToggleSwitch
+                enabled={isLookingForJob}
+                onChange={handleToggleLookingForJob}
+              />
+            </div>
+          )}
           
           <button
             onClick={() => setActiveTab('notifications')}
