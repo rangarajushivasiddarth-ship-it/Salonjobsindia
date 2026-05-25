@@ -116,64 +116,13 @@ export const SALON_OWNER_PLANS: SalonOwnerPlan[] = [
     features: [
       '1 live job post for 30 days',
       '30 contact credits to unlock candidates',
-      'Auto Search Candidates enabled',
-      'Receive applications from job seekers',
+      'Edit job up to 3 times',
+      'Delete job anytime',
+      'Receive unlimited applications',
       'View applicant profiles'
     ],
     recommended: true
   },
-  {
-    id: 'verified_badge_1m',
-    name: 'Verified Badge (1 Month)',
-    price: 199,
-    validityDays: 30,
-    features: [
-      'Verified Salon badge on profile',
-      'Verified badge on job cards',
-      'Trust indicator for job seekers',
-      'Priority in search results'
-    ]
-  },
-  {
-    id: 'verified_badge_3m',
-    name: 'Verified Badge (3 Months)',
-    price: 499,
-    validityDays: 90,
-    features: [
-      'Verified Salon badge on profile',
-      'Verified badge on job cards',
-      'Trust indicator for job seekers',
-      'Priority in search results',
-      'Save Rs.98 compared to monthly'
-    ]
-  },
-  {
-    id: 'contact_pack_10',
-    name: 'Contact Pack (10)',
-    price: 150,
-    validityDays: 365,
-    contactCredits: 10,
-    features: [
-      '10 contact credits',
-      'Unlock candidate phone numbers',
-      'View candidate resumes',
-      'WhatsApp contact option'
-    ]
-  },
-  {
-    id: 'contact_pack_50',
-    name: 'Contact Pack (50)',
-    price: 499,
-    validityDays: 365,
-    contactCredits: 50,
-    features: [
-      '50 contact credits',
-      'Unlock candidate phone numbers',
-      'View candidate resumes',
-      'WhatsApp contact option',
-      'Best value pack'
-    ]
-  }
 ]
 
 // Salon Profile

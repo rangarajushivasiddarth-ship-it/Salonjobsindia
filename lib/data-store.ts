@@ -62,7 +62,7 @@ export const SALON_OWNER_PLANS: SalonOwnerPlan[] = [
   {
     id: 'single_post',
     name: 'Single Job Post',
-    price: 199,
+    price: 499,
     jobPosts: 1,
     validityDays: 30,
     contactCredits: 30,
@@ -70,28 +70,12 @@ export const SALON_OWNER_PLANS: SalonOwnerPlan[] = [
       'Post 1 job for 30 days',
       'Receive unlimited applications',
       '30 candidate contact unlocks',
-      'Basic analytics',
-      'Email notifications'
+      'Edit job up to 3 times',
+      'Delete job anytime',
+      'Basic analytics'
     ],
     recommended: true,
     color: '#4A90D9',
-  },
-  {
-    id: 'triple_post',
-    name: 'Triple Job Post',
-    price: 499,
-    jobPosts: 3,
-    validityDays: 45,
-    contactCredits: 100,
-    features: [
-      'Post 3 jobs for 45 days each',
-      'Receive unlimited applications',
-      '100 candidate contact unlocks',
-      'Featured listing placement',
-      'Advanced analytics',
-      'Priority support'
-    ],
-    color: '#9B59B6',
   },
 ]
 

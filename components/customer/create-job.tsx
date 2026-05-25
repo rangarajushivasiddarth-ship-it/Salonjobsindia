@@ -22,7 +22,7 @@ const SALARY_OPTIONS = [
   '₹40,000 - ₹60,000', '₹60,000+', 'Negotiable'
 ]
 
-const JOB_POST_PRICE = 149
+const JOB_POST_PRICE = 499
 
 type Step = 'form' | 'payment' | 'pending' | 'success'
 
