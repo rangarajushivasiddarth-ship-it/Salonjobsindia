@@ -1,13 +1,43 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Briefcase, Users, Settings, LogOut, Edit2, Trash2, Eye, ChevronRight, Building2, MapPin, DollarSign, Clock, Crown, User, Search, Filter, TrendingUp, UserCheck, Bell, BarChart3, MessageCircle, Phone, AlertCircle, Check, X, Rocket } from 'lucide-react'
+import { Plus, Briefcase, Users, Settings, LogOut, Edit2, Trash2, Eye, ChevronRight, Building2, MapPin, DollarSign, Clock, Crown, User, Search, Filter, TrendingUp, UserCheck, Bell, BarChart3, MessageCircle, Phone, AlertCircle, Check, X, Rocket, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
 import { getMessagesForOwner, getAllJobs, getUnreadMessageCount, getApplicationsBySalonId, getAllJobSeekers, isCandidateUnlocked, deductSalonCredit, getSalonProfileByOwnerId } from '@/lib/data-store'
-import type { Job, Application } from '@/lib/types'
+import type { Job, Application, CONTACT_CREDIT_PACKS } from '@/lib/types'
 import type { JobSeeker } from '@/lib/data-store'
+
+// Credit pack data
+const CREDIT_PACKS = [
+  {
+    id: 'credit_pack_15',
+    name: '15 Credits Pack',
+    credits: 15,
+    price: 199,
+    features: [
+      'Unlock 15 job seeker contacts',
+      '1 credit = 1 contact unlock',
+      'Never expires',
+      'Instant activation after approval'
+    ]
+  },
+  {
+    id: 'credit_pack_50',
+    name: '50 Credits Pack',
+    credits: 50,
+    price: 499,
+    features: [
+      'Unlock 50 job seeker contacts',
+      '1 credit = 1 contact unlock',
+      'Never expires',
+      'Instant activation after approval',
+      'Best value - save Rs.149'
+    ],
+    recommended: true
+  }
+]
 
 type TabType = 'dashboard' | 'jobs' | 'applicants' | 'candidates' | 'settings'
 
@@ -15,6 +45,7 @@ export function OwnerPanel() {
   const { user, logout, goToStep } = useApp()
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
+  const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>('All')
   const [selectedApplicant, setSelectedApplicant] = useState<Application | null>(null)
@@ -469,15 +500,27 @@ export function OwnerPanel() {
             </div>
             
             {/* Credits Info */}
-            <div className="p-4 glass-card rounded-xl flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Contact Credits</p>
-                <p className="text-xs text-muted-foreground">Unlock candidate contacts</p>
+            <div className="p-4 glass-card rounded-xl">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-sm font-medium">Contact Credits</p>
+                  <p className="text-xs text-muted-foreground">1 credit = 1 contact unlock</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-primary">{stats.contactCredits}</p>
+                  <p className="text-xs text-muted-foreground">remaining</p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-primary">{stats.contactCredits}</p>
-                <p className="text-xs text-muted-foreground">remaining</p>
-              </div>
+              {stats.contactCredits <= 5 && (
+                <Button 
+                  onClick={() => setShowBuyCreditsModal(true)} 
+                  className="w-full bg-primary hover:bg-primary/90"
+                  size="sm"
+                >
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  Buy More Credits
+                </Button>
+              )}
             </div>
             
             {candidates.length === 0 ? (
@@ -546,12 +589,27 @@ export function OwnerPanel() {
                         ) : (
                           <Button
                             size="sm"
-                            onClick={() => handleUnlockCandidate(candidate.id)}
+                            onClick={() => {
+                              if (stats.contactCredits <= 0) {
+                                setShowBuyCreditsModal(true)
+                              } else {
+                                handleUnlockCandidate(candidate.id)
+                              }
+                            }}
                             className="w-full"
-                            disabled={stats.contactCredits <= 0}
+                            variant={stats.contactCredits <= 0 ? "outline" : "default"}
                           >
-                            <Crown className="w-4 h-4 mr-2" />
-                            Unlock Contact (1 credit)
+                            {stats.contactCredits <= 0 ? (
+                              <>
+                                <ShoppingCart className="w-4 h-4 mr-2" />
+                                Buy Credits to Unlock
+                              </>
+                            ) : (
+                              <>
+                                <Crown className="w-4 h-4 mr-2" />
+                                Unlock Contact (1 credit)
+                              </>
+                            )}
                           </Button>
                         )}
                       </div>
@@ -615,7 +673,8 @@ export function OwnerPanel() {
                 <span className="text-muted-foreground">Available Credits</span>
                 <span className="text-2xl font-bold text-primary">{stats.contactCredits}</span>
               </div>
-              <Button onClick={() => goToStep('subscription')} variant="outline" className="w-full">
+              <Button onClick={() => setShowBuyCreditsModal(true)} variant="outline" className="w-full">
+                <ShoppingCart className="w-4 h-4 mr-2" />
                 Buy More Credits
               </Button>
             </div>
@@ -734,6 +793,82 @@ export function OwnerPanel() {
               <Button onClick={() => setSelectedApplicant(null)} className="w-full">
                 Close
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Buy Credits Modal */}
+      {showBuyCreditsModal && (
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-background/90 backdrop-blur-md">
+          <div className="w-full md:max-w-md md:rounded-2xl bg-card glass-card rounded-t-3xl max-h-[90vh] overflow-y-auto animate-slide-up">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold">Buy Contact Credits</h2>
+                <button onClick={() => setShowBuyCreditsModal(false)}>
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <p className="text-sm text-muted-foreground mb-6">
+                Use credits to unlock job seeker contact numbers. 1 credit = 1 contact unlock.
+              </p>
+              
+              <div className="space-y-4 mb-6">
+                {CREDIT_PACKS.map((pack) => (
+                  <div 
+                    key={pack.id}
+                    className={`p-4 rounded-2xl border-2 transition-colors ${
+                      pack.recommended 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border/50 bg-secondary/20'
+                    }`}
+                  >
+                    {pack.recommended && (
+                      <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-primary text-primary-foreground mb-2">
+                        Best Value
+                      </span>
+                    )}
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h3 className="font-semibold">{pack.name}</h3>
+                        <p className="text-sm text-muted-foreground">{pack.credits} credits</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-primary">Rs.{pack.price}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Rs.{(pack.price / pack.credits).toFixed(0)}/credit
+                        </p>
+                      </div>
+                    </div>
+                    <ul className="space-y-1 mb-4">
+                      {pack.features.slice(0, 3).map((feature, i) => (
+                        <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Check className="w-3 h-3 text-primary" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                    <Button 
+                      onClick={() => {
+                        setShowBuyCreditsModal(false)
+                        // Navigate to payment with pack info
+                        goToStep('credit-payment')
+                        // Store selected pack in localStorage for payment screen
+                        localStorage.setItem('salonjobsindia_selected_credit_pack', JSON.stringify(pack))
+                      }}
+                      className={`w-full ${pack.recommended ? 'bg-primary hover:bg-primary/90' : ''}`}
+                      variant={pack.recommended ? 'default' : 'outline'}
+                    >
+                      Buy {pack.credits} Credits
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              
+              <p className="text-xs text-center text-muted-foreground">
+                Credits never expire and are added instantly after payment approval.
+              </p>
             </div>
           </div>
         </div>

@@ -125,6 +125,45 @@ export const SALON_OWNER_PLANS: SalonOwnerPlan[] = [
   },
 ]
 
+// Contact Credit Packs for Salon Owners
+export interface ContactCreditPack {
+  id: string
+  name: string
+  credits: number
+  price: number
+  features: string[]
+  recommended?: boolean
+}
+
+export const CONTACT_CREDIT_PACKS: ContactCreditPack[] = [
+  {
+    id: 'credit_pack_15',
+    name: '15 Credits Pack',
+    credits: 15,
+    price: 199,
+    features: [
+      'Unlock 15 job seeker contacts',
+      '1 credit = 1 contact unlock',
+      'Never expires',
+      'Instant activation after approval'
+    ]
+  },
+  {
+    id: 'credit_pack_50',
+    name: '50 Credits Pack',
+    credits: 50,
+    price: 499,
+    features: [
+      'Unlock 50 job seeker contacts',
+      '1 credit = 1 contact unlock',
+      'Never expires',
+      'Instant activation after approval',
+      'Best value - save Rs.149'
+    ],
+    recommended: true
+  }
+]
+
 // Salon Profile
 export interface SalonProfile {
   id: string

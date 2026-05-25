@@ -1,0 +1,289 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { ArrowLeft, Upload, Check, Clock, Crown, Phone, AlertCircle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useApp } from '@/lib/app-context'
+import { savePayment, getSalonProfileByOwnerId } from '@/lib/data-store'
+import type { Payment, SalonOwnerPlanType } from '@/lib/types'
+
+interface CreditPack {
+  id: string
+  name: string
+  credits: number
+  price: number
+  features: string[]
+  recommended?: boolean
+}
+
+// QR Code and UPI details - admin can change these
+const PAYMENT_CONFIG = {
+  upiId: 'salonjobsindia@upi',
+  qrCodeUrl: '/qr-code.png', // Replace with actual QR code
+  supportPhone: '+91 98765 43210',
+}
+
+export function CreditPayment() {
+  const { user, goToStep } = useApp()
+  const [selectedPack, setSelectedPack] = useState<CreditPack | null>(null)
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null)
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
+
+  useEffect(() => {
+    // Load selected pack from localStorage
+    const packStr = localStorage.getItem('salonjobsindia_selected_credit_pack')
+    if (packStr) {
+      try {
+        setSelectedPack(JSON.parse(packStr))
+      } catch {
+        // Invalid pack, go back
+        goToStep('owner-panel')
+      }
+    } else {
+      goToStep('owner-panel')
+    }
+  }, [goToStep])
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setScreenshotFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setScreenshotPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleSubmit = async () => {
+    if (!user?.id || !selectedPack || !screenshotPreview) return
+
+    setIsSubmitting(true)
+
+    try {
+      const salonProfile = getSalonProfileByOwnerId(user.id)
+      
+      // Create payment record
+      const payment: Payment = {
+        id: crypto.randomUUID(),
+        userId: user.id,
+        userName: user.name || salonProfile?.ownerName,
+        userPhone: user.phone || salonProfile?.mobile,
+        salonName: salonProfile?.salonName,
+        type: 'contact_pack',
+        planId: selectedPack.id as SalonOwnerPlanType,
+        amount: selectedPack.price,
+        screenshotUrl: screenshotPreview,
+        status: 'pending',
+        contactCredits: selectedPack.credits,
+        validityDays: 365, // Credits never expire
+        submittedAt: new Date(),
+      }
+
+      savePayment(payment)
+      
+      // Clear selected pack from localStorage
+      localStorage.removeItem('salonjobsindia_selected_credit_pack')
+      
+      setIsSubmitted(true)
+    } catch (error) {
+      console.error('Error submitting payment:', error)
+      alert('Error submitting payment. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (!selectedPack) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (isSubmitted) {
+    return (
+      <div className="relative min-h-screen flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5" />
+        
+        <div className="relative z-10 w-full max-w-sm text-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/20 flex items-center justify-center">
+            <Clock className="w-10 h-10 text-primary" />
+          </div>
+          
+          <h1 className="text-2xl font-bold mb-3">Payment Under Review</h1>
+          <p className="text-muted-foreground mb-6">
+            Your payment for <span className="text-primary font-semibold">{selectedPack.credits} credits</span> is being verified. 
+            Credits will be added to your account within 24 hours.
+          </p>
+          
+          <div className="p-4 glass-card rounded-xl mb-6 text-left">
+            <h3 className="font-semibold mb-2 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-primary" />
+              What happens next?
+            </h3>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>1. Our team verifies your payment screenshot</li>
+              <li>2. {selectedPack.credits} credits are added to your account</li>
+              <li>3. You receive a notification once approved</li>
+            </ul>
+          </div>
+          
+          <Button onClick={() => goToStep('owner-panel')} className="w-full bg-primary hover:bg-primary/90">
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative min-h-screen flex flex-col">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5" />
+      
+      {/* Header */}
+      <header className="relative z-10 p-4 glass flex items-center gap-3">
+        <button onClick={() => goToStep('owner-panel')} className="p-2 -ml-2">
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h1 className="text-lg font-bold">Buy Credits</h1>
+      </header>
+      
+      {/* Content */}
+      <div className="relative z-10 flex-1 p-4 overflow-y-auto">
+        {/* Selected Pack Info */}
+        <div className="p-5 glass-card rounded-2xl mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold">{selectedPack.name}</h2>
+              <p className="text-sm text-muted-foreground">{selectedPack.credits} contact credits</p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-primary">Rs.{selectedPack.price}</p>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            {selectedPack.features.map((feature, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm">
+                <Check className="w-4 h-4 text-primary" />
+                <span className="text-muted-foreground">{feature}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Payment Instructions */}
+        <div className="p-5 glass-card rounded-2xl mb-6">
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <Crown className="w-5 h-5 text-primary" />
+            Payment Instructions
+          </h3>
+          
+          <div className="space-y-4 text-sm">
+            <div className="flex gap-3">
+              <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold shrink-0">1</span>
+              <p className="text-muted-foreground">
+                Pay <span className="text-primary font-semibold">Rs.{selectedPack.price}</span> to the UPI ID below
+              </p>
+            </div>
+            
+            {/* UPI ID */}
+            <div className="p-3 bg-secondary/30 rounded-xl">
+              <p className="text-xs text-muted-foreground mb-1">UPI ID</p>
+              <p className="font-mono font-semibold">{PAYMENT_CONFIG.upiId}</p>
+            </div>
+            
+            {/* QR Code Placeholder */}
+            <div className="p-4 bg-white rounded-xl flex items-center justify-center">
+              <div className="w-40 h-40 bg-gray-100 rounded-lg flex items-center justify-center">
+                <p className="text-gray-500 text-xs text-center px-2">QR Code<br/>Scan to Pay</p>
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold shrink-0">2</span>
+              <p className="text-muted-foreground">Take a screenshot of successful payment</p>
+            </div>
+            
+            <div className="flex gap-3">
+              <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold shrink-0">3</span>
+              <p className="text-muted-foreground">Upload the screenshot below for verification</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Screenshot Upload */}
+        <div className="p-5 glass-card rounded-2xl mb-6">
+          <h3 className="font-semibold mb-4">Upload Payment Screenshot</h3>
+          
+          {screenshotPreview ? (
+            <div className="relative">
+              <img 
+                src={screenshotPreview} 
+                alt="Payment screenshot" 
+                className="w-full rounded-xl border border-border/50"
+              />
+              <button
+                onClick={() => {
+                  setScreenshotFile(null)
+                  setScreenshotPreview(null)
+                }}
+                className="absolute top-2 right-2 p-2 bg-background/80 rounded-full"
+              >
+                <span className="text-xs">Change</span>
+              </button>
+            </div>
+          ) : (
+            <label className="block">
+              <div className="p-8 border-2 border-dashed border-border/50 rounded-xl text-center cursor-pointer hover:border-primary/50 transition-colors">
+                <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground mb-1">Tap to upload screenshot</p>
+                <p className="text-xs text-muted-foreground">PNG, JPG up to 5MB</p>
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </label>
+          )}
+        </div>
+        
+        {/* Support */}
+        <div className="p-4 glass-card rounded-xl mb-6">
+          <p className="text-sm text-muted-foreground text-center">
+            Need help? Call us at{' '}
+            <a href={`tel:${PAYMENT_CONFIG.supportPhone}`} className="text-primary font-medium">
+              {PAYMENT_CONFIG.supportPhone}
+            </a>
+          </p>
+        </div>
+      </div>
+      
+      {/* Submit Button */}
+      <div className="relative z-10 p-4 glass">
+        <Button
+          onClick={handleSubmit}
+          disabled={!screenshotFile || isSubmitting}
+          className="w-full h-14 bg-primary hover:bg-primary/90 gold-glow"
+        >
+          {isSubmitting ? (
+            <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+          ) : (
+            <>
+              <Check className="w-5 h-5 mr-2" />
+              Submit Payment for Verification
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  )
+}

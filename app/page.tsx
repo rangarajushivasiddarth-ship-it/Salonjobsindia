@@ -15,6 +15,7 @@ import { MessagesScreen } from '@/components/customer/messages-screen'
 import { NotificationsScreen } from '@/components/customer/notifications-screen'
 import { SettingsScreen } from '@/components/customer/settings-screen'
 import { AboutUsScreen } from '@/components/customer/about-us-screen'
+import { CreditPayment } from '@/components/customer/credit-payment'
 import { BottomNav } from '@/components/customer/bottom-nav'
 
 function CustomerApp() {
@@ -74,6 +75,8 @@ function CustomerApp() {
         return <SettingsScreen />
       case 'about':
         return <AboutUsScreen />
+      case 'credit-payment':
+        return <CreditPayment />
       default:
         return (
           <SplashScreen
