@@ -1,29 +1,31 @@
 'use client'
 
-import type { Subscription, Job, User, JobSeekerPlan } from './types'
+import type { Subscription, Job, User, JobSeekerPlan, SalonProfile, Payment, Alert, Application } from './types'
 
-// Storage keys - unified with data-service for consistency
+// Storage keys
 const SUBSCRIPTIONS_KEY = 'salonjobsindia_subscriptions'
 const JOBS_KEY = 'salonjobsindia_jobs'
 const USERS_KEY = 'salonjobsindia_users'
 const MESSAGES_KEY = 'salonjobsindia_messages'
 const NOTIFICATIONS_KEY = 'salonjobsindia_notifications'
 const JOB_ALERTS_KEY = 'salonjobsindia_job_alerts'
+const SALON_PROFILES_KEY = 'salonjobsindia_salon_profiles'
+const PAYMENTS_KEY = 'salonjobsindia_payments'
+const ALERTS_KEY = 'salonjobsindia_alerts'
+const APPLICATIONS_KEY = 'salonjobsindia_applications'
+const JOB_SEEKERS_KEY = 'salonjobsindia_job_seekers'
 
-// Helper to dispatch sync events and trigger cross-tab communication
+// Helper to dispatch sync events
 function dispatchDataUpdate(key: string) {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('salonjobsindia_data_updated', { detail: { key } }))
-    
-    // Force trigger storage event for cross-tab sync by writing a sync timestamp
-    // This ensures other tabs (like admin) get notified immediately
     const syncKey = 'salonjobsindia_sync_trigger'
     const timestamp = Date.now().toString()
     localStorage.setItem(syncKey, timestamp)
   }
 }
 
-// Job Seeker Plans - Single Rs.99 plan for unlimited access
+// Job Seeker Plans
 export const JOB_SEEKER_PLANS: JobSeekerPlan[] = [
   {
     id: 'unlimited',
@@ -43,52 +45,101 @@ export const JOB_SEEKER_PLANS: JobSeekerPlan[] = [
   },
 ]
 
-// Salon Owner Plans - Per Job Post
-export const SALON_OWNER_PLANS = [
+// Salon Owner Plans
+export interface SalonOwnerPlan {
+  id: string
+  name: string
+  price: number
+  jobPosts: number
+  validityDays: number
+  contactCredits: number
+  features: string[]
+  recommended?: boolean
+  color: string
+}
+
+export const SALON_OWNER_PLANS: SalonOwnerPlan[] = [
   {
     id: 'single_post',
-    name: 'Single Post',
-    price: 99,
+    name: 'Single Job Post',
+    price: 199,
     jobPosts: 1,
     validityDays: 30,
+    contactCredits: 30,
     features: [
-      '1 Job posting',
-      'Valid for 30 days',
-      'View applicant profiles',
-      'In-app chat'
+      'Post 1 job for 30 days',
+      'Receive unlimited applications',
+      '30 candidate contact unlocks',
+      'Basic analytics',
+      'Email notifications'
     ],
+    recommended: true,
+    color: '#4A90D9',
   },
   {
     id: 'triple_post',
-    name: 'Triple Post',
-    price: 249,
+    name: 'Triple Job Post',
+    price: 499,
     jobPosts: 3,
     validityDays: 45,
+    contactCredits: 100,
     features: [
-      '3 Job postings',
-      'Valid for 45 days',
-      'Priority listing',
-      'Applicant filters',
-      'Chat + Call access'
-    ],
-    recommended: true,
-  },
-  {
-    id: 'bulk_post',
-    name: 'Bulk Post',
-    price: 499,
-    jobPosts: 10,
-    validityDays: 90,
-    features: [
-      '10 Job postings',
-      'Valid for 90 days',
-      'Featured listings',
+      'Post 3 jobs for 45 days each',
+      'Receive unlimited applications',
+      '100 candidate contact unlocks',
+      'Featured listing placement',
       'Advanced analytics',
-      'Priority support',
-      'Bulk hiring tools'
+      'Priority support'
     ],
+    color: '#9B59B6',
   },
 ]
+
+// ============== SHOP VIEW TRACKING ==============
+
+export function canViewMoreShops(userId: string): { canView: boolean; remaining: number | 'unlimited'; total: number | 'unlimited' } {
+  const subscription = getSubscriptionByUserId(userId)
+  
+  if (!subscription || subscription.status !== 'approved') {
+    return { canView: false, remaining: 0, total: 0 }
+  }
+  
+  // Check if subscription has expired
+  if (subscription.expiresAt && new Date(subscription.expiresAt) < new Date()) {
+    return { canView: false, remaining: 0, total: 0 }
+  }
+  
+  // Check shop limit
+  if (subscription.shopLimit === 'unlimited') {
+    return { canView: true, remaining: 'unlimited', total: 'unlimited' }
+  }
+  
+  const shopLimit = typeof subscription.shopLimit === 'number' ? subscription.shopLimit : 999
+  const shopsViewed = subscription.shopsViewed || 0
+  const remaining = shopLimit - shopsViewed
+  
+  return {
+    canView: remaining > 0,
+    remaining: Math.max(0, remaining),
+    total: shopLimit
+  }
+}
+
+export function incrementShopsViewed(userId: string): boolean {
+  const subscriptions = getAllSubscriptions()
+  const subscription = subscriptions.find(s => s.userId === userId && s.status === 'approved')
+  
+  if (!subscription) return false
+  
+  subscription.shopsViewed = (subscription.shopsViewed || 0) + 1
+  
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subscriptions))
+    dispatchDataUpdate(SUBSCRIPTIONS_KEY)
+  }
+  
+  return true
+}
 
 // Message interface
 export interface Message {
@@ -96,13 +147,414 @@ export interface Message {
   fromUserId: string
   fromUserName: string
   fromUserPhone: string
-  toUserId: string // Salon owner ID
+  toUserId: string
   toSalonName: string
   jobId: string
   jobRole: string
   message: string
   createdAt: Date
   isRead: boolean
+}
+
+// ============== SALON PROFILES ==============
+
+export function getAllSalonProfiles(): SalonProfile[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const data = localStorage.getItem(SALON_PROFILES_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+export function getSalonProfileByOwnerId(ownerId: string): SalonProfile | null {
+  const profiles = getAllSalonProfiles()
+  return profiles.find(p => p.ownerId === ownerId) || null
+}
+
+export function saveSalonProfile(profile: SalonProfile): void {
+  if (typeof window === 'undefined') return
+  const profiles = getAllSalonProfiles()
+  const existingIndex = profiles.findIndex(p => p.id === profile.id)
+  
+  if (existingIndex >= 0) {
+    profiles[existingIndex] = profile
+  } else {
+    profiles.push(profile)
+  }
+  
+  localStorage.setItem(SALON_PROFILES_KEY, JSON.stringify(profiles))
+  dispatchDataUpdate(SALON_PROFILES_KEY)
+}
+
+export function updateSalonCredits(ownerId: string, creditsToAdd: number): SalonProfile | null {
+  const profile = getSalonProfileByOwnerId(ownerId)
+  if (profile) {
+    profile.contactCredits = (profile.contactCredits || 0) + creditsToAdd
+    saveSalonProfile(profile)
+    return profile
+  }
+  return null
+}
+
+export function deductSalonCredit(ownerId: string, candidateId: string): boolean {
+  const profile = getSalonProfileByOwnerId(ownerId)
+  if (!profile) return false
+  
+  // Check if already unlocked
+  if (profile.unlockedCandidates?.includes(candidateId)) {
+    return true // Already unlocked, no deduction needed
+  }
+  
+  // Check if has credits
+  if ((profile.contactCredits || 0) <= 0) {
+    return false
+  }
+  
+  // Deduct credit and add to unlocked
+  profile.contactCredits = (profile.contactCredits || 0) - 1
+  profile.unlockedCandidates = [...(profile.unlockedCandidates || []), candidateId]
+  saveSalonProfile(profile)
+  
+  // Create alert for credits low
+  if (profile.contactCredits <= 5) {
+    createAlert({
+      userId: ownerId,
+      type: 'credits_low',
+      title: 'Credits Running Low',
+      message: `You have only ${profile.contactCredits} contact credits remaining. Buy more to continue unlocking candidates.`,
+      isRead: false,
+    })
+  }
+  
+  return true
+}
+
+export function isCandidateUnlocked(ownerId: string, candidateId: string): boolean {
+  const profile = getSalonProfileByOwnerId(ownerId)
+  return profile?.unlockedCandidates?.includes(candidateId) || false
+}
+
+// ============== PAYMENTS ==============
+
+export function getAllPayments(): Payment[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const data = localStorage.getItem(PAYMENTS_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+export function getPendingPayments(): Payment[] {
+  return getAllPayments().filter(p => p.status === 'pending')
+}
+
+export function getPaymentsByUserId(userId: string): Payment[] {
+  return getAllPayments().filter(p => p.userId === userId)
+}
+
+export function savePayment(payment: Payment): void {
+  if (typeof window === 'undefined') return
+  const payments = getAllPayments()
+  const existingIndex = payments.findIndex(p => p.id === payment.id)
+  
+  if (existingIndex >= 0) {
+    payments[existingIndex] = payment
+  } else {
+    payments.push(payment)
+  }
+  
+  localStorage.setItem(PAYMENTS_KEY, JSON.stringify(payments))
+  dispatchDataUpdate(PAYMENTS_KEY)
+}
+
+export function approvePayment(paymentId: string, adminId: string): Payment | null {
+  const payments = getAllPayments()
+  const payment = payments.find(p => p.id === paymentId)
+  
+  if (!payment) return null
+  
+  payment.status = 'approved'
+  payment.processedAt = new Date()
+  payment.processedBy = adminId
+  
+  localStorage.setItem(PAYMENTS_KEY, JSON.stringify(payments))
+  
+  // Handle different payment types
+  if (payment.type === 'job_publishing' && payment.jobId) {
+    // Make job live
+    const jobs = getAllJobs()
+    const job = jobs.find(j => j.id === payment.jobId)
+    if (job) {
+      job.status = 'live'
+      job.isActive = true
+      job.expiresAt = new Date(Date.now() + payment.validityDays * 24 * 60 * 60 * 1000)
+      job.paymentApprovedAt = new Date()
+      localStorage.setItem(JOBS_KEY, JSON.stringify(jobs))
+    }
+    
+    // Add contact credits
+    updateSalonCredits(payment.userId, payment.contactCredits || 30)
+    
+    // Create alert
+    createAlert({
+      userId: payment.userId,
+      type: 'job_live',
+      title: 'Job is Live!',
+      message: 'Your job post is now live and visible to job seekers.',
+      data: { jobId: payment.jobId },
+      isRead: false,
+    })
+  } else if (payment.type === 'verified_badge') {
+    // Activate verified badge
+    const profile = getSalonProfileByOwnerId(payment.userId)
+    if (profile) {
+      profile.isVerified = true
+      profile.verifiedUntil = new Date(Date.now() + payment.validityDays * 24 * 60 * 60 * 1000)
+      saveSalonProfile(profile)
+    }
+    
+    createAlert({
+      userId: payment.userId,
+      type: 'verified_activated',
+      title: 'Verified Badge Activated',
+      message: 'Your salon is now verified. The badge will appear on your profile and job posts.',
+      isRead: false,
+    })
+  } else if (payment.type === 'contact_pack') {
+    // Add contact credits
+    updateSalonCredits(payment.userId, payment.contactCredits || 0)
+    
+    createAlert({
+      userId: payment.userId,
+      type: 'contact_pack_approved',
+      title: 'Contact Pack Approved',
+      message: `${payment.contactCredits} contact credits have been added to your account.`,
+      isRead: false,
+    })
+  }
+  
+  dispatchDataUpdate(PAYMENTS_KEY)
+  return payment
+}
+
+export function rejectPayment(paymentId: string, adminId: string, reason?: string): Payment | null {
+  const payments = getAllPayments()
+  const payment = payments.find(p => p.id === paymentId)
+  
+  if (!payment) return null
+  
+  payment.status = 'rejected'
+  payment.processedAt = new Date()
+  payment.processedBy = adminId
+  payment.rejectionReason = reason
+  
+  localStorage.setItem(PAYMENTS_KEY, JSON.stringify(payments))
+  
+  // Update job status if job publishing
+  if (payment.type === 'job_publishing' && payment.jobId) {
+    const jobs = getAllJobs()
+    const job = jobs.find(j => j.id === payment.jobId)
+    if (job) {
+      job.status = 'draft'
+      localStorage.setItem(JOBS_KEY, JSON.stringify(jobs))
+    }
+  }
+  
+  createAlert({
+    userId: payment.userId,
+    type: 'payment_rejected',
+    title: 'Payment Rejected',
+    message: reason || 'Your payment could not be verified. Please try again or contact support.',
+    isRead: false,
+  })
+  
+  dispatchDataUpdate(PAYMENTS_KEY)
+  return payment
+}
+
+// ============== ALERTS ==============
+
+export function getAllAlerts(): Alert[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const data = localStorage.getItem(ALERTS_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+export function getAlertsByUserId(userId: string): Alert[] {
+  return getAllAlerts()
+    .filter(a => a.userId === userId)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+}
+
+export function getUnreadAlertCount(userId: string): number {
+  return getAlertsByUserId(userId).filter(a => !a.isRead).length
+}
+
+export function createAlert(alert: Omit<Alert, 'id' | 'createdAt'>): Alert {
+  const newAlert: Alert = {
+    ...alert,
+    id: crypto.randomUUID(),
+    createdAt: new Date(),
+  }
+  
+  const alerts = getAllAlerts()
+  alerts.unshift(newAlert)
+  
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts))
+    dispatchDataUpdate(ALERTS_KEY)
+  }
+  
+  return newAlert
+}
+
+export function markAlertAsRead(alertId: string): void {
+  const alerts = getAllAlerts()
+  const alert = alerts.find(a => a.id === alertId)
+  
+  if (alert) {
+    alert.isRead = true
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts))
+      dispatchDataUpdate(ALERTS_KEY)
+    }
+  }
+}
+
+export function markAllAlertsAsRead(userId: string): void {
+  const alerts = getAllAlerts()
+  
+  alerts.forEach(a => {
+    if (a.userId === userId) {
+      a.isRead = true
+    }
+  })
+  
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts))
+    dispatchDataUpdate(ALERTS_KEY)
+  }
+}
+
+// ============== APPLICATIONS ==============
+
+export function getAllApplications(): Application[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const data = localStorage.getItem(APPLICATIONS_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+export function getApplicationsByJobId(jobId: string): Application[] {
+  return getAllApplications().filter(a => a.jobId === jobId)
+}
+
+export function getApplicationsBySalonId(salonId: string): Application[] {
+  return getAllApplications()
+    .filter(a => a.salonId === salonId)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+}
+
+export function getApplicationsByCandidateId(candidateId: string): Application[] {
+  return getAllApplications()
+    .filter(a => a.candidateId === candidateId)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+}
+
+export function saveApplication(application: Application): void {
+  if (typeof window === 'undefined') return
+  const applications = getAllApplications()
+  const existingIndex = applications.findIndex(a => a.id === application.id)
+  
+  if (existingIndex >= 0) {
+    applications[existingIndex] = application
+  } else {
+    applications.push(application)
+  }
+  
+  localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(applications))
+  dispatchDataUpdate(APPLICATIONS_KEY)
+}
+
+export function updateApplicationStatus(applicationId: string, status: Application['status']): Application | null {
+  const applications = getAllApplications()
+  const application = applications.find(a => a.id === applicationId)
+  
+  if (application) {
+    application.status = status
+    application.updatedAt = new Date()
+    localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(applications))
+    dispatchDataUpdate(APPLICATIONS_KEY)
+    return application
+  }
+  
+  return null
+}
+
+// ============== JOB SEEKERS (Candidates) ==============
+
+export interface JobSeeker {
+  id: string
+  userId: string
+  name: string
+  phone?: string
+  email?: string
+  photoUrl?: string
+  role: string
+  experience: string
+  skills: string[]
+  salaryExpectation: string
+  location: {
+    lat: number
+    lng: number
+    address: string
+    city?: string
+    area?: string
+  }
+  availabilityStatus: 'actively_looking' | 'open_to_opportunities' | 'not_looking'
+  resumeUrl?: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+export function getAllJobSeekers(): JobSeeker[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const data = localStorage.getItem(JOB_SEEKERS_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+export function getJobSeekerByUserId(userId: string): JobSeeker | null {
+  return getAllJobSeekers().find(js => js.userId === userId) || null
+}
+
+export function saveJobSeeker(jobSeeker: JobSeeker): void {
+  if (typeof window === 'undefined') return
+  const jobSeekers = getAllJobSeekers()
+  const existingIndex = jobSeekers.findIndex(js => js.id === jobSeeker.id)
+  
+  if (existingIndex >= 0) {
+    jobSeekers[existingIndex] = jobSeeker
+  } else {
+    jobSeekers.push(jobSeeker)
+  }
+  
+  localStorage.setItem(JOB_SEEKERS_KEY, JSON.stringify(jobSeekers))
+  dispatchDataUpdate(JOB_SEEKERS_KEY)
 }
 
 // ============== SUBSCRIPTIONS ==============
@@ -123,7 +575,6 @@ export function getPendingSubscriptions(): Subscription[] {
 
 export function getSubscriptionByUserId(userId: string): Subscription | null {
   const subscriptions = getAllSubscriptions()
-  // Get the most recent subscription for this user
   const userSubs = subscriptions
     .filter(s => s.userId === userId)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -142,8 +593,6 @@ export function saveSubscription(subscription: Subscription): void {
   }
   
   localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subscriptions))
-  
-  // Dispatch event for real-time updates (triggers cross-tab sync)
   dispatchDataUpdate(SUBSCRIPTIONS_KEY)
 }
 
@@ -154,15 +603,12 @@ export function approveSubscription(subscriptionId: string): Subscription | null
   if (subscription) {
     subscription.status = 'approved'
     subscription.approvedAt = new Date()
-    subscription.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+    subscription.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     subscription.shopsViewed = 0
     
     localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subscriptions))
-    
-    // Update user subscription status
     updateUserSubscription(subscription.userId, true)
     
-    // Create notification for user
     createNotification({
       userId: subscription.userId,
       type: 'payment_approved',
@@ -171,9 +617,7 @@ export function approveSubscription(subscriptionId: string): Subscription | null
       isRead: false,
     })
     
-    // Dispatch event for real-time updates (triggers cross-tab sync)
     dispatchDataUpdate(SUBSCRIPTIONS_KEY)
-    
     return subscription
   }
   return null
@@ -187,7 +631,6 @@ export function rejectSubscription(subscriptionId: string, reason?: string): voi
     subscription.status = 'rejected'
     localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subscriptions))
     
-    // Create notification for user
     createNotification({
       userId: subscription.userId,
       type: 'payment_rejected',
@@ -196,53 +639,14 @@ export function rejectSubscription(subscriptionId: string, reason?: string): voi
       isRead: false,
     })
     
-    // Dispatch event for real-time updates
     dispatchDataUpdate(SUBSCRIPTIONS_KEY)
   }
 }
-
-export function incrementShopsViewed(userId: string): boolean {
-  const subscription = getSubscriptionByUserId(userId)
-  if (!subscription || subscription.status !== 'approved') return false
-  
-  // Check if unlimited
-  if (subscription.shopLimit === 'unlimited') return true
-  
-  const currentViewed = subscription.shopsViewed || 0
-  const limit = typeof subscription.shopLimit === 'number' ? subscription.shopLimit : 0
-  
-  if (currentViewed >= limit) return false
-  
-  subscription.shopsViewed = currentViewed + 1
-  saveSubscription(subscription)
-  return true
-}
-
-export function canViewMoreShops(userId: string): { canView: boolean; remaining: number | 'unlimited'; total: number | 'unlimited' } {
-  const subscription = getSubscriptionByUserId(userId)
-  
-  if (!subscription || subscription.status !== 'approved') {
-    return { canView: false, remaining: 0, total: 0 }
-  }
-  
-  if (subscription.shopLimit === 'unlimited') {
-    return { canView: true, remaining: 'unlimited', total: 'unlimited' }
-  }
-  
-  const limit = typeof subscription.shopLimit === 'number' ? subscription.shopLimit : 0
-  const viewed = subscription.shopsViewed || 0
-  const remaining = Math.max(0, limit - viewed)
-  
-  return { canView: remaining > 0, remaining, total: limit }
-}
-
-// ============== USER SUBSCRIPTION STATUS ==============
 
 function updateUserSubscription(userId: string, isSubscribed: boolean): void {
   if (typeof window === 'undefined' || !userId) return
   
   try {
-    // Update current user in localStorage first (most reliable)
     const currentUserStr = localStorage.getItem('fitone_current_user')
     if (currentUserStr) {
       try {
@@ -252,22 +656,17 @@ function updateUserSubscription(userId: string, isSubscribed: boolean): void {
           localStorage.setItem('fitone_current_user', JSON.stringify(currentUser))
         }
       } catch {
-        // Ignore parse errors for current user
+        // Ignore
       }
     }
     
-    // Also try to update in users store
     const usersStr = localStorage.getItem(USERS_KEY)
     if (usersStr) {
       try {
         const users = JSON.parse(usersStr)
-        let updated = false
-        
         for (const email in users) {
           if (!users[email]) continue
-          
           const userData = users[email]
-          // Support multiple data structures
           let uid: string | undefined
           
           if (typeof userData === 'object') {
@@ -284,23 +683,18 @@ function updateUserSubscription(userId: string, isSubscribed: boolean): void {
             } else {
               userData.isSubscribed = isSubscribed
             }
-            updated = true
             break
           }
         }
-        
-        if (updated) {
-          localStorage.setItem(USERS_KEY, JSON.stringify(users))
-        }
+        localStorage.setItem(USERS_KEY, JSON.stringify(users))
       } catch {
-        // Ignore parse errors for users store
+        // Ignore
       }
     }
     
-    // Trigger cross-tab sync
     dispatchDataUpdate(USERS_KEY)
-  } catch (error) {
-    // Silently fail - subscription status update is not critical
+  } catch {
+    // Silently fail
   }
 }
 
@@ -316,13 +710,20 @@ export function getAllJobs(): Job[] {
   }
 }
 
+export function getLiveJobs(): Job[] {
+  return getAllJobs().filter(j => j.status === 'live' && j.isActive)
+}
+
 export function getJobById(jobId: string): Job | null {
-  const jobs = getAllJobs()
-  return jobs.find(j => j.id === jobId) || null
+  return getAllJobs().find(j => j.id === jobId) || null
 }
 
 export function getJobsBySalonId(salonId: string): Job[] {
   return getAllJobs().filter(j => j.salonId === salonId)
+}
+
+export function getLiveJobBySalonId(salonId: string): Job | null {
+  return getAllJobs().find(j => j.salonId === salonId && j.status === 'live') || null
 }
 
 export function saveJob(job: Job): void {
@@ -337,18 +738,45 @@ export function saveJob(job: Job): void {
   }
   
   localStorage.setItem(JOBS_KEY, JSON.stringify(jobs))
-  
-  // Dispatch event for real-time updates
   dispatchDataUpdate(JOBS_KEY)
 }
 
 export function deleteJob(jobId: string): void {
   if (typeof window === 'undefined') return
-  const jobs = getAllJobs().filter(j => j.id !== jobId)
-  localStorage.setItem(JOBS_KEY, JSON.stringify(jobs))
+  const jobs = getAllJobs()
+  const job = jobs.find(j => j.id === jobId)
   
-  // Dispatch event for real-time updates
-  dispatchDataUpdate(JOBS_KEY)
+  if (job) {
+    job.status = 'deleted'
+    job.isActive = false
+    localStorage.setItem(JOBS_KEY, JSON.stringify(jobs))
+    dispatchDataUpdate(JOBS_KEY)
+  }
+}
+
+export function canEditJob(jobId: string): { canEdit: boolean; editsUsed: number; maxEdits: number } {
+  const job = getJobById(jobId)
+  if (!job) return { canEdit: false, editsUsed: 0, maxEdits: 3 }
+  
+  return {
+    canEdit: (job.editsUsed || 0) < (job.maxEdits || 3),
+    editsUsed: job.editsUsed || 0,
+    maxEdits: job.maxEdits || 3,
+  }
+}
+
+export function incrementJobEdit(jobId: string): boolean {
+  const job = getJobById(jobId)
+  if (!job) return false
+  
+  const editsUsed = job.editsUsed || 0
+  const maxEdits = job.maxEdits || 3
+  
+  if (editsUsed >= maxEdits) return false
+  
+  job.editsUsed = editsUsed + 1
+  saveJob(job)
+  return true
 }
 
 // ============== MESSAGES ==============
@@ -386,8 +814,6 @@ export function sendMessage(message: Omit<Message, 'id' | 'createdAt' | 'isRead'
   
   if (typeof window !== 'undefined') {
     localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages))
-    
-    // Dispatch event for real-time updates
     dispatchDataUpdate(MESSAGES_KEY)
   }
   
@@ -403,23 +829,6 @@ export function markMessageAsRead(messageId: string): void {
     if (typeof window !== 'undefined') {
       localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages))
     }
-  }
-}
-
-// ============== REAL-TIME UPDATES HOOK ==============
-
-export function useDataUpdates(callback: (detail: { type: string; action?: string }) => void) {
-  if (typeof window === 'undefined') return
-  
-  const handler = (event: Event) => {
-    const customEvent = event as CustomEvent
-    callback(customEvent.detail)
-  }
-  
-  window.addEventListener('fitonze_data_update', handler)
-  
-  return () => {
-    window.removeEventListener('fitonze_data_update', handler)
   }
 }
 
@@ -501,7 +910,7 @@ export function markAllNotificationsAsRead(userId: string): void {
   }
 }
 
-// ============== GET ALL USERS (for admin) ==============
+// ============== GET ALL USERS ==============
 
 export function getAllUsersForAdmin(): User[] {
   if (typeof window === 'undefined') return []
@@ -510,13 +919,13 @@ export function getAllUsersForAdmin(): User[] {
     if (!data) return []
     
     const usersObj = JSON.parse(data)
-    return Object.values(usersObj).map((record: any) => record.user)
+    return Object.values(usersObj).map((record: unknown) => (record as { user: User }).user)
   } catch {
     return []
   }
 }
 
-// ============== JOB ALERTS (Job Seeker Resume/Profile Submissions) ==============
+// ============== JOB ALERTS ==============
 
 export interface JobAlert {
   id: string
@@ -558,8 +967,7 @@ export function getPendingJobAlerts(): JobAlert[] {
 }
 
 export function getJobAlertByUserId(userId: string): JobAlert | null {
-  const alerts = getAllJobAlerts()
-  return alerts.find(a => a.userId === userId) || null
+  return getAllJobAlerts().find(a => a.userId === userId) || null
 }
 
 export function saveJobAlert(alert: JobAlert): void {
@@ -589,7 +997,6 @@ export function approveJobAlert(alertId: string, adminId: string): JobAlert | nu
     
     localStorage.setItem(JOB_ALERTS_KEY, JSON.stringify(alerts))
     
-    // Create notification for the user
     createNotification({
       userId: alert.userId,
       type: 'system',
@@ -617,7 +1024,6 @@ export function rejectJobAlert(alertId: string, adminId: string, reason?: string
     
     localStorage.setItem(JOB_ALERTS_KEY, JSON.stringify(alerts))
     
-    // Create notification for the user
     createNotification({
       userId: alert.userId,
       type: 'system',
@@ -631,4 +1037,61 @@ export function rejectJobAlert(alertId: string, adminId: string, reason?: string
   }
   
   return null
+}
+
+// ============== EXPIRY CHECKS ==============
+
+export function checkAndExpireJobs(): void {
+  const jobs = getAllJobs()
+  const now = new Date()
+  let updated = false
+  
+  jobs.forEach(job => {
+    if (job.status === 'live' && job.expiresAt && new Date(job.expiresAt) < now) {
+      job.status = 'expired'
+      job.isActive = false
+      updated = true
+      
+      createAlert({
+        userId: job.salonId,
+        type: 'job_expired',
+        title: 'Job Post Expired',
+        message: 'Your job post has expired. Subscribe again to make it live.',
+        data: { jobId: job.id },
+        isRead: false,
+      })
+    }
+  })
+  
+  if (updated && typeof window !== 'undefined') {
+    localStorage.setItem(JOBS_KEY, JSON.stringify(jobs))
+    dispatchDataUpdate(JOBS_KEY)
+  }
+}
+
+export function checkAndExpireVerifiedBadges(): void {
+  const profiles = getAllSalonProfiles()
+  const now = new Date()
+  let updated = false
+  
+  profiles.forEach(profile => {
+    if (profile.isVerified && profile.verifiedUntil && new Date(profile.verifiedUntil) < now) {
+      profile.isVerified = false
+      profile.verifiedUntil = undefined
+      updated = true
+      
+      createAlert({
+        userId: profile.ownerId,
+        type: 'verified_expired',
+        title: 'Verified Badge Expired',
+        message: 'Your Verified Salon badge has expired. Renew to maintain trust with job seekers.',
+        isRead: false,
+      })
+    }
+  })
+  
+  if (updated && typeof window !== 'undefined') {
+    localStorage.setItem(SALON_PROFILES_KEY, JSON.stringify(profiles))
+    dispatchDataUpdate(SALON_PROFILES_KEY)
+  }
 }

@@ -1,8 +1,8 @@
 // ==========================================
-// FITONE - Complete Type Definitions
+// SALON JOBS INDIA - Complete Type Definitions
 // ==========================================
 
-// User Types (employer replaces salon_owner, keeping both for backward compatibility)
+// User Types
 export type UserRole = 'job_seeker' | 'salon_owner' | 'employer'
 
 export interface User {
@@ -14,8 +14,8 @@ export interface User {
   isSubscribed: boolean
   subscriptionType?: JobSeekerPlanType | SalonOwnerPlanType
   subscriptionExpiry?: Date
-  shopsViewed?: number // For job seekers - tracks how many shops they've viewed
-  jobPostsRemaining?: number // For salon owners - tracks remaining job posts
+  shopsViewed?: number
+  jobPostsRemaining?: number
   profilePhoto?: string
   identityProof?: {
     type: string
@@ -28,7 +28,6 @@ export interface User {
 // JOB SEEKER TYPES
 // ==========================================
 
-// Resume/Profile Types
 export interface Resume {
   id: string
   userId: string
@@ -55,11 +54,11 @@ export interface Resume {
   }
   videoIntro?: string
   isActive?: boolean
+  availabilityStatus?: 'actively_looking' | 'open_to_opportunities' | 'not_looking'
   createdAt: Date
   updatedAt: Date
 }
 
-// Job Seeker Subscription Plans
 export type JobSeekerPlanType = 'gold' | 'premium' | 'ultra_premium' | 'unlimited'
 
 export interface JobSeekerPlan {
@@ -74,47 +73,20 @@ export interface JobSeekerPlan {
 
 export const JOB_SEEKER_PLANS: JobSeekerPlan[] = [
   {
-    id: 'gold',
-    name: 'Gold',
+    id: 'unlimited',
+    name: 'Premium Access',
     price: 99,
-    shopLimit: 10,
-    features: [
-      'View up to 10 salon profiles',
-      'Apply to jobs',
-      'Basic chat support',
-      'Email notifications'
-    ],
-    color: '#FFD700'
-  },
-  {
-    id: 'premium',
-    name: 'Premium',
-    price: 199,
-    shopLimit: 15,
-    features: [
-      'View up to 15 salon profiles',
-      'Priority applications',
-      'Full chat access',
-      'Push notifications',
-      'Profile boost'
-    ],
-    recommended: true,
-    color: '#C0C0C0'
-  },
-  {
-    id: 'ultra_premium',
-    name: 'Ultra Premium',
-    price: 349,
     shopLimit: 'unlimited',
     features: [
-      'View unlimited salon profiles',
-      'Top priority applications',
-      'Direct call access to owners',
-      'Verified badge',
-      'Featured profile',
-      'Dedicated support'
+      'View all salon job listings',
+      'Unlock salon phone numbers',
+      'Apply to unlimited jobs',
+      'Chat with salon owners',
+      'Priority support',
+      'Valid for 30 days'
     ],
-    color: '#B76E79'
+    recommended: true,
+    color: '#FFD700'
   }
 ]
 
@@ -122,237 +94,331 @@ export const JOB_SEEKER_PLANS: JobSeekerPlan[] = [
 // SALON OWNER TYPES
 // ==========================================
 
-export type SalonOwnerPlanType = 'single_post' | 'triple_post' | 'bulk_post'
+export type SalonOwnerPlanType = 'job_publishing' | 'verified_badge_1m' | 'verified_badge_3m' | 'contact_pack_10' | 'contact_pack_50'
 
 export interface SalonOwnerPlan {
   id: SalonOwnerPlanType
   name: string
   price: number
-  jobPosts: number
   validityDays: number
+  contactCredits?: number
   features: string[]
   recommended?: boolean
 }
 
 export const SALON_OWNER_PLANS: SalonOwnerPlan[] = [
   {
-    id: 'single_post',
-    name: 'Single Post',
-    price: 99,
-    jobPosts: 1,
+    id: 'job_publishing',
+    name: 'Job Publishing Plan',
+    price: 499,
     validityDays: 30,
+    contactCredits: 30,
     features: [
-      '1 Job posting',
-      'Valid for 30 days',
-      'View applicant profiles',
-      'In-app chat'
-    ]
-  },
-  {
-    id: 'triple_post',
-    name: 'Triple Post',
-    price: 249,
-    jobPosts: 3,
-    validityDays: 45,
-    features: [
-      '3 Job postings',
-      'Valid for 45 days',
-      'Priority listing',
-      'Applicant filters',
-      'Chat + Call access'
+      '1 live job post for 30 days',
+      '30 contact credits to unlock candidates',
+      'Auto Search Candidates enabled',
+      'Receive applications from job seekers',
+      'View applicant profiles'
     ],
     recommended: true
   },
   {
-    id: 'bulk_post',
-    name: 'Bulk Post',
+    id: 'verified_badge_1m',
+    name: 'Verified Badge (1 Month)',
+    price: 199,
+    validityDays: 30,
+    features: [
+      'Verified Salon badge on profile',
+      'Verified badge on job cards',
+      'Trust indicator for job seekers',
+      'Priority in search results'
+    ]
+  },
+  {
+    id: 'verified_badge_3m',
+    name: 'Verified Badge (3 Months)',
     price: 499,
-    jobPosts: 10,
     validityDays: 90,
     features: [
-      '10 Job postings',
-      'Valid for 90 days',
-      'Featured listings',
-      'Advanced analytics',
-      'Priority support',
-      'Bulk hiring tools'
+      'Verified Salon badge on profile',
+      'Verified badge on job cards',
+      'Trust indicator for job seekers',
+      'Priority in search results',
+      'Save Rs.98 compared to monthly'
+    ]
+  },
+  {
+    id: 'contact_pack_10',
+    name: 'Contact Pack (10)',
+    price: 150,
+    validityDays: 365,
+    contactCredits: 10,
+    features: [
+      '10 contact credits',
+      'Unlock candidate phone numbers',
+      'View candidate resumes',
+      'WhatsApp contact option'
+    ]
+  },
+  {
+    id: 'contact_pack_50',
+    name: 'Contact Pack (50)',
+    price: 499,
+    validityDays: 365,
+    contactCredits: 50,
+    features: [
+      '50 contact credits',
+      'Unlock candidate phone numbers',
+      'View candidate resumes',
+      'WhatsApp contact option',
+      'Best value pack'
     ]
   }
 ]
 
-// Salon Types
-export interface Salon {
+// Salon Profile
+export interface SalonProfile {
   id: string
   ownerId: string
-  name: string
-  description?: string
-  photos?: string[]
-  location: {
-    lat: number
-    lng: number
-    address: string
-    area: string
-    city: string
-  }
-  contact: string
-  whatsapp?: string
+  salonName: string
+  ownerName: string
+  mobile: string
   email?: string
-  rating?: number
-  reviewCount?: number
-  establishedYear?: number
-  employeeCount?: number
-  services?: string[]
-  openingHours?: {
-    open: string
-    close: string
-    days: string[]
-  }
+  logoUrl?: string
+  address: string
+  state: string
+  city: string
+  area: string
+  locality: string
+  workingHours: string
+  description?: string
   isVerified: boolean
+  verifiedUntil?: Date
+  contactCredits: number
+  unlockedCandidates: string[] // Array of candidate IDs
   createdAt: Date
+  updatedAt: Date
 }
 
-// Job Post Status
+// ==========================================
+// JOB TYPES
+// ==========================================
+
 export type JobPostStatus = 
   | 'draft'
-  | 'payment_pending'
+  | 'pending_payment'
   | 'pending_approval'
-  | 'approved'
   | 'live'
-  | 'rejected'
   | 'expired'
+  | 'deleted'
 
-// Job Types
 export interface Job {
   id: string
   salonId: string
   salonName: string
-  salonPhoto?: string
-  salonMobile: string // Required mobile number
-  role: BeautyRole
-  salary: string
-  salaryType: 'monthly' | 'weekly' | 'daily' | 'commission'
+  salonLogo?: string
+  salonMobile: string
+  role: string
+  customRole?: string
+  skills: string[]
+  customSkills?: string[]
+  salaryType: 'fixed' | 'range'
+  salaryFixed?: string
+  salaryRange?: string
   experience: string
-  experienceYears?: number
+  jobType: 'full_time' | 'part_time'
+  description: string
   location: {
     lat: number
     lng: number
     address: string
-    area: string
+    state: string
     city: string
+    area: string
+    locality: string
   }
   contact: string
-  whatsapp?: string
-  description?: string
-  requirements?: string[]
-  benefits?: string[]
-  timing?: string
-  vacancies?: number
-  gender?: 'male' | 'female' | 'any'
-  accommodation?: boolean
-  foodProvided?: boolean
-  createdAt: Date
-  expiresAt?: Date
-  isActive: boolean
-  isPremium?: boolean
-  applicationsCount?: number
-  // Payment & Status fields
   status: JobPostStatus
+  editsUsed: number
+  maxEdits: number
+  viewsCount: number
+  applicationsCount: number
+  isVerified: boolean
   paymentId?: string
-  paymentAmount?: number
   paymentScreenshot?: string
   paymentSubmittedAt?: Date
   paymentApprovedAt?: Date
-  paymentRejectedAt?: Date
-  rejectionReason?: string
-}
-
-// Job Payment Request
-export interface JobPaymentRequest {
-  id: string
-  jobId: string
-  salonOwnerId: string
-  salonOwnerName?: string
-  salonOwnerPhone?: string
-  salonName: string
-  jobRole: string
-  amount: number
-  screenshotUrl?: string
-  transactionId?: string
-  status: 'pending' | 'approved' | 'rejected'
-  submittedAt: Date
-  processedAt?: Date
-  processedBy?: string
-  rejectionReason?: string
+  createdAt: Date
+  expiresAt?: Date
+  isActive: boolean
 }
 
 // ==========================================
-// BEAUTY/SALON JOB ROLES
+// ROLE & SKILL LIBRARIES
 // ==========================================
 
-export type BeautyRole = 
-  | 'Hair Stylist'
-  | 'Senior Hair Stylist'
-  | 'Junior Hair Stylist'
-  | 'Hair Colorist'
-  | 'Makeup Artist'
-  | 'Bridal Makeup Artist'
-  | 'Nail Technician'
-  | 'Nail Artist'
-  | 'Spa Therapist'
-  | 'Massage Therapist'
-  | 'Beautician'
-  | 'Senior Beautician'
-  | 'Skin Care Specialist'
-  | 'Esthetician'
-  | 'Barber'
-  | 'Master Barber'
-  | 'Mehendi Artist'
-  | 'Henna Artist'
-  | 'Tattoo Artist'
-  | 'Eyebrow Specialist'
-  | 'Lash Technician'
-  | 'Salon Manager'
-  | 'Salon Receptionist'
-  | 'Salon Assistant'
-  | 'Trainee'
-  | 'Other'
+export const SALON_ROLES = [
+  'Apprentice',
+  'Assistant Beautician',
+  'Assistant Hair Stylist',
+  'Junior Hair Stylist',
+  'Senior Hair Stylist',
+  'Hair Stylist',
+  'Hair Artist',
+  'Hair Technician',
+  'Hair Color Specialist',
+  'Hair Extension Specialist',
+  'Hair Treatment Specialist',
+  'Keratin Specialist',
+  'Smoothening Specialist',
+  'Rebonding Specialist',
+  'Hair Spa Specialist',
+  'Scalp Treatment Specialist',
+  'Barber',
+  "Men's Grooming Specialist",
+  'Beard Grooming Specialist',
+  'Bridal Makeup Artist',
+  'Party Makeup Artist',
+  'HD Makeup Artist',
+  'Airbrush Makeup Artist',
+  'Celebrity Makeup Artist',
+  'Makeup Artist',
+  'Beautician',
+  'Senior Beautician',
+  'Skin Specialist',
+  'Facial Specialist',
+  'Waxing Specialist',
+  'Threading Specialist',
+  'Eyebrow Specialist',
+  'Lash Technician',
+  'Nail Artist',
+  'Nail Technician',
+  'Gel Nail Specialist',
+  'Acrylic Nail Specialist',
+  'Spa Therapist',
+  'Massage Therapist',
+  'Head Massage Specialist',
+  'Body Massage Specialist',
+  'Mehendi Artist',
+  'Bridal Mehendi Specialist',
+  'Tattoo Artist',
+  'Receptionist',
+  'Customer Support Executive',
+  'Salon Manager',
+  'Branch Manager',
+  'Academy Trainer',
+  'Beauty Trainer',
+  'Salon Consultant',
+] as const
+
+export const SALON_SKILLS = [
+  'Hair Cutting',
+  'Hair Coloring',
+  'Hair Styling',
+  'Hair Wash',
+  'Blow Dry',
+  'Hair Spa',
+  'Hair Treatment',
+  'Dandruff Treatment',
+  'Scalp Treatment',
+  'Keratin Smoothening',
+  'Smoothening',
+  'Rebonding',
+  'Perm',
+  'Hair Extensions',
+  'Balayage Highlights',
+  'Global Color',
+  'Highlights',
+  'Root Touch Up',
+  'Beard Styling',
+  'Beard Grooming',
+  'Shaving',
+  "Men's Haircut",
+  "Women's Haircut",
+  "Kids Haircut",
+  'Bridal Makeup',
+  'Party Makeup',
+  'HD Makeup',
+  'Airbrush Makeup',
+  'Engagement Makeup',
+  'Reception Makeup',
+  'Makeup Consultation',
+  'Saree Draping',
+  'Manicure',
+  'Pedicure',
+  'Gel Nails',
+  'Acrylic Nails',
+  'Nail Art',
+  'Nail Extensions',
+  'Facial',
+  'Clean Up',
+  'Detan',
+  'Anti-aging Facial',
+  'Skin Analysis',
+  'Threading',
+  'Eyebrow Shaping',
+  'Waxing',
+  'Full Body Waxing',
+  'Body Polishing',
+  'Lash Extensions',
+  'Body Massage',
+  'Head Massage',
+  'Foot Massage',
+  'Spa Treatment',
+  'Mehendi Design',
+  'Bridal Mehendi',
+  'Product Knowledge',
+  'Client Consultation',
+  'Customer Handling',
+  'Salon Hygiene',
+  'Sanitization',
+  'Appointment Handling',
+  'Salon Management',
+  'Team Handling',
+  'Training Juniors',
+] as const
+
+export const SALARY_RANGES = [
+  '₹10,000–15,000',
+  '₹15,000–25,000',
+  '₹25,000–40,000',
+  '₹40,000–60,000',
+  '₹60,000+',
+  'Negotiable',
+] as const
+
+export const EXPERIENCE_OPTIONS = [
+  'Fresher',
+  '0–1 year',
+  '1–3 years',
+  '3–5 years',
+  '5–10 years',
+  '10+ years',
+] as const
+
+export type BeautyRole = typeof SALON_ROLES[number] | string
 
 export const BEAUTY_ROLES: { role: BeautyRole; category: string; icon: string }[] = [
-  // Hair
   { role: 'Hair Stylist', category: 'Hair', icon: '💇' },
   { role: 'Senior Hair Stylist', category: 'Hair', icon: '💇' },
   { role: 'Junior Hair Stylist', category: 'Hair', icon: '💇' },
-  { role: 'Hair Colorist', category: 'Hair', icon: '🎨' },
-  // Makeup
+  { role: 'Hair Color Specialist', category: 'Hair', icon: '🎨' },
   { role: 'Makeup Artist', category: 'Makeup', icon: '💄' },
   { role: 'Bridal Makeup Artist', category: 'Makeup', icon: '👰' },
-  // Nails
   { role: 'Nail Technician', category: 'Nails', icon: '💅' },
   { role: 'Nail Artist', category: 'Nails', icon: '💅' },
-  // Spa & Wellness
   { role: 'Spa Therapist', category: 'Spa', icon: '🧖' },
   { role: 'Massage Therapist', category: 'Spa', icon: '💆' },
-  // Beauty
   { role: 'Beautician', category: 'Beauty', icon: '✨' },
   { role: 'Senior Beautician', category: 'Beauty', icon: '✨' },
-  { role: 'Skin Care Specialist', category: 'Beauty', icon: '🧴' },
-  { role: 'Esthetician', category: 'Beauty', icon: '🧴' },
-  // Barber
+  { role: 'Skin Specialist', category: 'Beauty', icon: '🧴' },
   { role: 'Barber', category: 'Barber', icon: '💈' },
-  { role: 'Master Barber', category: 'Barber', icon: '💈' },
-  // Art
   { role: 'Mehendi Artist', category: 'Art', icon: '🖌️' },
-  { role: 'Henna Artist', category: 'Art', icon: '🖌️' },
   { role: 'Tattoo Artist', category: 'Art', icon: '🖋️' },
-  // Specialty
   { role: 'Eyebrow Specialist', category: 'Specialty', icon: '👁️' },
   { role: 'Lash Technician', category: 'Specialty', icon: '👁️' },
-  // Management
   { role: 'Salon Manager', category: 'Management', icon: '👔' },
-  { role: 'Salon Receptionist', category: 'Management', icon: '📞' },
-  { role: 'Salon Assistant', category: 'Support', icon: '🙋' },
-  { role: 'Trainee', category: 'Support', icon: '📚' },
-  { role: 'Other', category: 'Other', icon: '💼' },
+  { role: 'Receptionist', category: 'Management', icon: '📞' },
 ]
 
 export const ROLE_CATEGORIES = [
@@ -366,11 +432,156 @@ export const ROLE_CATEGORIES = [
   'Art',
   'Specialty',
   'Management',
-  'Support'
 ]
 
 // ==========================================
-// CHAT & MESSAGING TYPES
+// APPLICATION TYPES
+// ==========================================
+
+export type ApplicationStatus = 'applied' | 'viewed' | 'shortlisted' | 'selected' | 'rejected'
+
+export interface Application {
+  id: string
+  jobId: string
+  jobRole: string
+  salonId: string
+  salonName: string
+  candidateId: string
+  candidateName: string
+  candidatePhoto?: string
+  candidatePhone?: string
+  candidateExperience: string
+  candidateSkills: string[]
+  candidateLocation: string
+  candidateAvailability?: 'actively_looking' | 'open_to_opportunities' | 'not_looking'
+  resumeId?: string
+  status: ApplicationStatus
+  isContactUnlocked: boolean
+  matchPercentage?: number
+  notes?: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+// ==========================================
+// ALERT TYPES
+// ==========================================
+
+export type AlertType = 
+  | 'payment_pending'
+  | 'payment_approved'
+  | 'payment_rejected'
+  | 'job_live'
+  | 'job_expired'
+  | 'verified_activated'
+  | 'verified_expired'
+  | 'new_application'
+  | 'candidate_unlocked'
+  | 'credits_low'
+  | 'subscription_expiring'
+  | 'contact_pack_approved'
+  | 'system'
+
+export interface Alert {
+  id: string
+  userId: string
+  type: AlertType
+  title: string
+  message: string
+  data?: Record<string, unknown>
+  isRead: boolean
+  createdAt: Date
+}
+
+// ==========================================
+// PAYMENT TYPES
+// ==========================================
+
+export type PaymentStatus = 'pending' | 'approved' | 'rejected'
+export type PaymentType = 'job_publishing' | 'verified_badge' | 'contact_pack'
+
+export interface Payment {
+  id: string
+  userId: string
+  userName?: string
+  userPhone?: string
+  salonName?: string
+  type: PaymentType
+  planId: SalonOwnerPlanType
+  amount: number
+  screenshotUrl?: string
+  status: PaymentStatus
+  jobId?: string // For job publishing payments
+  contactCredits?: number // For contact pack payments
+  validityDays: number
+  submittedAt: Date
+  processedAt?: Date
+  processedBy?: string
+  rejectionReason?: string
+}
+
+// ==========================================
+// SUBSCRIPTION TYPES
+// ==========================================
+
+export interface Subscription {
+  id: string
+  userId: string
+  userPhone?: string
+  userName?: string
+  userRole: UserRole
+  planType: JobSeekerPlanType | SalonOwnerPlanType
+  planName: string
+  amount: number
+  screenshotUrl?: string
+  transactionId?: string
+  paymentMethod: 'upi' | 'card' | 'netbanking'
+  status: 'pending' | 'approved' | 'rejected' | 'expired'
+  shopLimit?: number | 'unlimited'
+  shopsViewed?: number
+  jobPostsTotal?: number
+  jobPostsUsed?: number
+  contactCredits?: number
+  createdAt: Date
+  approvedAt?: Date
+  expiresAt?: Date
+}
+
+// ==========================================
+// NOTIFICATION TYPES
+// ==========================================
+
+export type NotificationType = 
+  | 'new_job'
+  | 'application_viewed'
+  | 'application_accepted'
+  | 'new_message'
+  | 'subscription_expiring'
+  | 'subscription_expired'
+  | 'profile_viewed'
+  | 'new_applicant'
+  | 'system'
+  | 'payment_approved'
+  | 'payment_rejected'
+
+export interface Notification {
+  id: string
+  userId: string
+  type: NotificationType
+  title: string
+  message: string
+  data?: {
+    jobId?: string
+    applicationId?: string
+    conversationId?: string
+    senderId?: string
+  }
+  isRead: boolean
+  createdAt: Date
+}
+
+// ==========================================
+// CHAT TYPES
 // ==========================================
 
 export interface ChatMessage {
@@ -412,132 +623,6 @@ export interface Conversation {
 }
 
 // ==========================================
-// NOTIFICATION TYPES
-// ==========================================
-
-export type NotificationType = 
-  | 'new_job'
-  | 'application_viewed'
-  | 'application_accepted'
-  | 'new_message'
-  | 'subscription_expiring'
-  | 'subscription_expired'
-  | 'profile_viewed'
-  | 'new_applicant'
-  | 'system'
-
-export interface Notification {
-  id: string
-  userId: string
-  type: NotificationType
-  title: string
-  message: string
-  data?: {
-    jobId?: string
-    applicationId?: string
-    conversationId?: string
-    senderId?: string
-  }
-  isRead: boolean
-  createdAt: Date
-}
-
-// ==========================================
-// SUBSCRIPTION & PAYMENT TYPES
-// ==========================================
-
-export interface Subscription {
-  id: string
-  userId: string
-  userPhone?: string
-  userName?: string
-  userRole: UserRole
-  planType: JobSeekerPlanType | SalonOwnerPlanType
-  planName: string
-  amount: number
-  screenshotUrl?: string
-  transactionId?: string
-  paymentMethod: 'upi' | 'card' | 'netbanking'
-  status: 'pending' | 'approved' | 'rejected' | 'expired'
-  shopLimit?: number | 'unlimited'
-  shopsViewed?: number
-  jobPostsTotal?: number
-  jobPostsUsed?: number
-  createdAt: Date
-  approvedAt?: Date
-  expiresAt?: Date
-}
-
-// ==========================================
-// APPLICATION TYPES
-// ==========================================
-
-export interface Application {
-  id: string
-  jobId: string
-  jobRole: string
-  salonId: string
-  salonName: string
-  userId: string
-  userName: string
-  userPhoto?: string
-  resumeId: string
-  status: 'pending' | 'viewed' | 'shortlisted' | 'contacted' | 'rejected' | 'hired'
-  notes?: string
-  contactShared: boolean
-  createdAt: Date
-  updatedAt: Date
-}
-
-// ==========================================
-// ADMIN/STATS TYPES
-// ==========================================
-
-export interface AdminStats {
-  totalUsers: number
-  totalJobSeekers: number
-  totalSalonOwners: number
-  totalJobs: number
-  activeJobs: number
-  totalApplications: number
-  pendingSubscriptions: number
-  pendingApprovals: number
-  activeSubscriptions: number
-  totalRevenue: number
-  monthlyRevenue: number
-}
-
-export interface AppSettings {
-  qrCodeUrl: string
-  radiusKm: number
-  paymentInstructions: string
-  subscriptionDurationDays: number
-  supportEmail: string
-  supportPhone: string
-  appVersion: string
-}
-
-// ==========================================
-// API RESPONSE TYPES
-// ==========================================
-
-export interface ApiResponse<T> {
-  success: boolean
-  data?: T
-  error?: string
-  message?: string
-}
-
-export interface PaginatedResponse<T> {
-  success: boolean
-  data: T[]
-  total: number
-  page: number
-  limit: number
-  hasMore: boolean
-}
-
-// ==========================================
 // FILTER TYPES
 // ==========================================
 
@@ -571,7 +656,57 @@ export interface CandidateFilters {
   }
   city?: string
   skills?: string[]
+  availability?: 'actively_looking' | 'open_to_opportunities' | 'not_looking'
   hasVideo?: boolean
   isVerified?: boolean
-  sortBy?: 'newest' | 'experience' | 'rating'
+  sortBy?: 'newest' | 'experience' | 'match'
+}
+
+// ==========================================
+// API RESPONSE TYPES
+// ==========================================
+
+export interface ApiResponse<T> {
+  success: boolean
+  data?: T
+  error?: string
+  message?: string
+}
+
+export interface PaginatedResponse<T> {
+  success: boolean
+  data: T[]
+  total: number
+  page: number
+  limit: number
+  hasMore: boolean
+}
+
+// ==========================================
+// ADMIN TYPES
+// ==========================================
+
+export interface AdminStats {
+  totalUsers: number
+  totalJobSeekers: number
+  totalSalonOwners: number
+  totalJobs: number
+  activeJobs: number
+  totalApplications: number
+  pendingPayments: number
+  pendingApprovals: number
+  activeSubscriptions: number
+  totalRevenue: number
+  monthlyRevenue: number
+}
+
+export interface AppSettings {
+  qrCodeUrl: string
+  upiId: string
+  radiusKm: number
+  paymentInstructions: string
+  subscriptionDurationDays: number
+  supportEmail: string
+  supportPhone: string
+  appVersion: string
 }
