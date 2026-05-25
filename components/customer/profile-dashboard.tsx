@@ -28,9 +28,10 @@ export function ProfileDashboard() {
     setIsDownloading(true)
     
     try {
-      // Dynamic import to avoid SSR issues with jsPDF
-      const { jsPDF } = await import('jspdf')
-      const doc = new jsPDF()
+      // Dynamic import with explicit browser-only module to avoid SSR issues
+      const jsPDFModule = await import('jspdf/dist/jspdf.umd.min.js')
+      const jsPDF = jsPDFModule.default
+      const doc = new jsPDF.jsPDF()
       const pageWidth = doc.internal.pageSize.getWidth()
       let yPos = 20
       
