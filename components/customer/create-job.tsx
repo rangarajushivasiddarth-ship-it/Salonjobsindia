@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Building2, Briefcase, MapPin, Navigation, FileText, Check, X, Phone, Upload, CreditCard, Clock, AlertCircle, Image as ImageIcon } from 'lucide-react'
+import { ArrowLeft, Building2, Briefcase, MapPin, Navigation, FileText, Check, X, Phone, Upload, CreditCard, Clock, AlertCircle, Image as ImageIcon, Crown, Users, Edit2, Trash2, Gift } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
@@ -375,6 +375,57 @@ export function CreateJob() {
               <h2 className="text-xl font-bold mb-2">Job Post Fee</h2>
               <p className="text-4xl font-bold text-primary mb-2">₹{JOB_POST_PRICE}</p>
               <p className="text-sm text-muted-foreground">One-time payment per job post</p>
+            </div>
+            
+            {/* What You Get - Benefits */}
+            <div className="p-4 glass-card rounded-xl animate-slide-up border-2 border-primary/30" style={{ animationDelay: '25ms' }}>
+              <div className="flex items-center gap-2 mb-4">
+                <Gift className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold">What You Get</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-lg">
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Briefcase className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium">Job Post</p>
+                    <p className="text-xs text-muted-foreground">Live for 30 days</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-lg">
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Crown className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium">30 Credits</p>
+                    <p className="text-xs text-muted-foreground">Unlock contacts</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-secondary/30 rounded-lg">
+                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                    <Users className="w-4 h-4 text-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium">Unlimited</p>
+                    <p className="text-xs text-muted-foreground">Applications</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-secondary/30 rounded-lg">
+                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                    <Edit2 className="w-4 h-4 text-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium">3 Edits</p>
+                    <p className="text-xs text-muted-foreground">Modify anytime</p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 p-2 bg-accent/10 border border-accent/30 rounded-lg">
+                <p className="text-xs text-center">
+                  <span className="font-medium text-accent">Bonus:</span> Delete job anytime + View all applicant profiles
+                </p>
+              </div>
             </div>
             
             {/* Job Summary */}
