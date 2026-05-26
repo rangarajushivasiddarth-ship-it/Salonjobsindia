@@ -240,30 +240,10 @@ export function CreateJob() {
     }
     
     // Save to localStorage
-    const existingJobs = localStorage.getItem(`fitone_pending_jobs_${user?.id}`)
+    const existingJobs = localStorage.getItem(`salonjobsindia_pending_jobs_${user?.id}`)
     const jobs: JobDraft[] = existingJobs ? JSON.parse(existingJobs) : []
     jobs.push(jobDraft)
-    localStorage.setItem(`fitone_pending_jobs_${user?.id}`, JSON.stringify(jobs))
-    
-    // Also save to admin job payments queue (local fallback)
-    const adminPayments = localStorage.getItem('fitone_admin_job_payments')
-    const payments = adminPayments ? JSON.parse(adminPayments) : []
-    payments.push({
-      id: `payment_${Date.now()}`,
-      jobId: jobDraft.id,
-      salonOwnerId: user?.id,
-      salonOwnerName: user?.name,
-      salonOwnerPhone: user?.phone,
-      salonName: formData.salonName,
-      salonMobile: formData.salonMobile,
-      salonLogo: formData.salonLogo,
-      jobRole: formData.role || formData.customRole,
-      amount: JOB_POST_PRICE,
-      screenshotUrl: paymentScreenshot,
-      status: 'pending',
-      submittedAt: new Date(),
-    })
-    localStorage.setItem('fitone_admin_job_payments', JSON.stringify(payments))
+    localStorage.setItem(`salonjobsindia_pending_jobs_${user?.id}`, JSON.stringify(jobs))
     
     // IMPORTANT: Submit to cloud sync API for cross-device real-time sync
     console.log('[CreateJob] Submitting to cloud sync...')
@@ -297,61 +277,15 @@ export function CreateJob() {
     setCurrentStep('pending')
   }
 
-  // Pending Approval Screen
+  // Pending Approval Screen - with real-time approval checking
   if (currentStep === 'pending') {
     return (
-      <div className="relative min-h-screen flex flex-col items-center justify-center p-6 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/20" />
-        <div className="absolute top-1/4 right-0 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse-glow" />
-        
-        <div className="relative z-10 text-center max-w-md animate-scale-in">
-          <div className="w-24 h-24 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-6">
-            <Clock className="w-12 h-12 text-accent" />
-          </div>
-          <h1 className="text-2xl font-bold mb-3">Payment Under Review</h1>
-          <p className="text-muted-foreground mb-6">
-            Your payment is being verified by our team. You will be notified once approved.
-          </p>
-          
-          <div className="p-4 glass-card rounded-xl mb-6 text-left">
-            <h3 className="font-semibold mb-3">Job Details</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Salon:</span>
-                <span>{savedJob?.salonName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Role:</span>
-                <span>{savedJob?.role || savedJob?.customRole}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Status:</span>
-                <span className="text-accent">Pending Approval</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Amount Paid:</span>
-                <span>₹{JOB_POST_PRICE}</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="p-4 bg-accent/10 border border-accent/30 rounded-xl mb-6">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" />
-              <p className="text-sm text-left">
-                Once approved, your job post will go live and you can publish it from your dashboard.
-              </p>
-            </div>
-          </div>
-          
-          <Button
-            onClick={() => goToStep('owner-panel')}
-            className="w-full h-12 bg-primary hover:bg-primary/90"
-          >
-            Go to Dashboard
-          </Button>
-        </div>
-      </div>
+      <PendingApprovalScreen 
+        savedJob={savedJob} 
+        user={user} 
+        goToStep={goToStep}
+        formData={formData}
+      />
     )
   }
 
@@ -869,6 +803,178 @@ export function CreateJob() {
             Continue to Payment
           </Button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+// Pending Approval Screen Component with real-time approval checking
+function PendingApprovalScreen({ 
+  savedJob, 
+  user, 
+  goToStep,
+  formData,
+}: { 
+  savedJob: JobDraft | null
+  user: { id: string; name?: string } | null | undefined
+  goToStep: (step: string) => void
+  formData: {
+    salonName: string
+    salonMobile: string
+    salonLogo: string
+    role: string
+    customRole: string
+    salary: string
+    experience: string
+    description: string
+    location: { lat: number; lng: number; address: string }
+  }
+}) {
+  const { isApproved, approvalData, isChecking } = useApprovalStatus(user?.id, 2000)
+  const [showSuccess, setShowSuccess] = useState(false)
+  
+  // When approved, create the job locally and show success
+  useEffect(() => {
+    if (isApproved && approvalData) {
+      // Create the job in localStorage if not already done by the hook
+      const jobsStr = localStorage.getItem('salonjobsindia_jobs')
+      const jobs = jobsStr ? JSON.parse(jobsStr) : []
+      
+      // Check if job already exists
+      const existingJob = jobs.find((j: { salonId?: string; salonName?: string; role?: string }) => 
+        j.salonId === user?.id && 
+        j.salonName === formData.salonName && 
+        j.role === (formData.role || formData.customRole)
+      )
+      
+      if (!existingJob) {
+        const newJob = {
+          id: `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          salonId: user?.id,
+          salonName: formData.salonName,
+          salonMobile: formData.salonMobile,
+          salonLogo: formData.salonLogo,
+          role: formData.role || formData.customRole,
+          salary: formData.salary,
+          experience: formData.experience,
+          description: formData.description,
+          location: formData.location,
+          status: 'live',
+          isActive: true,
+          isVerified: false,
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          paymentApprovedAt: new Date().toISOString(),
+        }
+        
+        jobs.push(newJob)
+        localStorage.setItem('salonjobsindia_jobs', JSON.stringify(jobs))
+        
+        // Update salon profile with 30 free credits if first job
+        const profilesStr = localStorage.getItem('salonjobsindia_salon_profiles')
+        const profiles = profilesStr ? JSON.parse(profilesStr) : []
+        const profileIndex = profiles.findIndex((p: { ownerId: string }) => p.ownerId === user?.id)
+        
+        if (profileIndex >= 0) {
+          const profile = profiles[profileIndex]
+          if (!profile.contactCredits || profile.contactCredits === 0) {
+            profile.contactCredits = 30
+            localStorage.setItem('salonjobsindia_salon_profiles', JSON.stringify(profiles))
+          }
+        }
+        
+        // Dispatch update event
+        window.dispatchEvent(new CustomEvent('salonjobsindia_data_updated', { detail: { key: 'salonjobsindia_jobs' } }))
+      }
+      
+      setShowSuccess(true)
+      
+      // Redirect to dashboard after 2 seconds
+      setTimeout(() => {
+        goToStep('owner-panel')
+      }, 2000)
+    }
+  }, [isApproved, approvalData, user?.id, formData, goToStep])
+  
+  if (showSuccess) {
+    return (
+      <div className="relative min-h-screen flex flex-col items-center justify-center p-6 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/20" />
+        <div className="absolute top-1/4 right-0 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse-glow" />
+        
+        <div className="relative z-10 text-center animate-scale-in">
+          <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-6 gold-glow">
+            <Check className="w-12 h-12 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold mb-3">Job Approved!</h1>
+          <p className="text-muted-foreground mb-2">Your job listing is now live</p>
+          <p className="text-sm text-primary">+ 30 Free Contact Credits Added!</p>
+          <p className="text-xs text-muted-foreground mt-4">
+            Redirecting to your dashboard...
+          </p>
+        </div>
+      </div>
+    )
+  }
+  
+  return (
+    <div className="relative min-h-screen flex flex-col items-center justify-center p-6 overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/20" />
+      <div className="absolute top-1/4 right-0 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse-glow" />
+      
+      <div className="relative z-10 text-center max-w-md animate-scale-in">
+        <div className="w-24 h-24 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-6">
+          {isChecking ? (
+            <div className="w-12 h-12 border-4 border-accent/30 border-t-accent rounded-full animate-spin" />
+          ) : (
+            <Clock className="w-12 h-12 text-accent" />
+          )}
+        </div>
+        <h1 className="text-2xl font-bold mb-3">Payment Under Review</h1>
+        <p className="text-muted-foreground mb-6">
+          Your payment is being verified by our team. This page will automatically update once approved.
+        </p>
+        
+        <div className="p-4 glass-card rounded-xl mb-6 text-left">
+          <h3 className="font-semibold mb-3">Job Details</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Salon:</span>
+              <span>{savedJob?.salonName || formData.salonName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Role:</span>
+              <span>{savedJob?.role || savedJob?.customRole || formData.role || formData.customRole}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Status:</span>
+              <span className="text-accent flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+                Pending Approval
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Amount Paid:</span>
+              <span>Rs.499</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="p-4 bg-accent/10 border border-accent/30 rounded-xl mb-6">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+            <p className="text-sm text-left">
+              Once approved, your job post will go live automatically and you will receive 30 free contact credits!
+            </p>
+          </div>
+        </div>
+        
+        <Button
+          onClick={() => goToStep('owner-panel')}
+          className="w-full h-12 bg-primary hover:bg-primary/90"
+        >
+          Go to Dashboard
+        </Button>
       </div>
     </div>
   )

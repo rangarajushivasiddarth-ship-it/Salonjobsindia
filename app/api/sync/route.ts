@@ -56,6 +56,7 @@ interface ApprovedUser {
   planName: string
   approvedAt: string
   expiresAt?: string
+  jobDetails?: Record<string, unknown>
 }
 
 // Helper to read JSON from Blob
@@ -316,14 +317,14 @@ export async function PUT(request: NextRequest) {
       
       await writeBlobJson(PENDING_JOB_PAYMENTS_PATH, payments)
       
-      // If approved, add to approved users list
+      // If approved, add to approved users list AND create the job entry
       if (action === 'approve') {
         const approved = await readBlobJson<ApprovedUser[]>(APPROVED_USERS_PATH, [])
         
         // Remove any existing approval for this salon
         const filtered = approved.filter(a => a.userId !== payment.salonId)
         
-        // Add new approval
+        // Add new approval with job details
         filtered.push({
           orderId: payment.id,
           pendingId: payment.id,
@@ -331,16 +332,18 @@ export async function PUT(request: NextRequest) {
           type: 'job_payment',
           planName: payment.planName,
           approvedAt: new Date().toISOString(),
+          jobDetails: payment.jobDetails, // Include job details for client-side job creation
         })
         
         await writeBlobJson(APPROVED_USERS_PATH, filtered)
-        console.log(`[Sync API] Salon ${payment.salonId} job payment approved`)
+        console.log(`[Sync API] Salon ${payment.salonId} job payment approved - Job: ${payment.jobTitle}`)
       }
       
       return NextResponse.json({ 
         success: true, 
         message: `Job payment ${action}d`,
-        payment 
+        payment,
+        jobDetails: action === 'approve' ? payment.jobDetails : undefined,
       })
     }
     

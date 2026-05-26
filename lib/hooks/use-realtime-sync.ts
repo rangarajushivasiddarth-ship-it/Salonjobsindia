@@ -331,6 +331,11 @@ export function useApprovalStatus(userId: string | undefined, pollInterval = 200
         setIsApproved(true)
         setApprovalData(data.data)
         
+        // If this is a job payment approval, create the job in localStorage
+        if (data.data?.type === 'job_payment' && data.data?.jobDetails) {
+          createJobFromApproval(userId, data.data)
+        }
+        
         // Stop polling once approved
         if (intervalRef.current) {
           clearInterval(intervalRef.current)
@@ -365,6 +370,69 @@ export function useApprovalStatus(userId: string | undefined, pollInterval = 200
   }, [userId, checkApproval, pollInterval])
   
   return { isApproved, approvalData, isChecking, refresh: checkApproval }
+}
+
+// Helper function to create a job from approval data
+function createJobFromApproval(salonId: string, approvalData: Record<string, unknown>) {
+  try {
+    const jobDetails = approvalData.jobDetails as Record<string, unknown>
+    if (!jobDetails) return
+    
+    // Create the live job in localStorage
+    const jobsStr = localStorage.getItem('salonjobsindia_jobs')
+    const jobs = jobsStr ? JSON.parse(jobsStr) : []
+    
+    // Check if job already exists
+    const existingJob = jobs.find((j: { id?: string; salonId?: string }) => 
+      j.id === approvalData.orderId || 
+      (j.salonId === salonId && j.salonName === jobDetails.salonName && j.role === (jobDetails.role || jobDetails.customRole))
+    )
+    
+    if (existingJob) {
+      console.log('[Realtime Sync] Job already exists, skipping creation')
+      return
+    }
+    
+    const newJob = {
+      id: `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      salonId: salonId,
+      salonName: jobDetails.salonName || 'Unknown Salon',
+      salonMobile: jobDetails.salonMobile || '',
+      salonLogo: jobDetails.salonLogo || '',
+      role: jobDetails.role || jobDetails.customRole || 'Staff',
+      salary: jobDetails.salary || 'Negotiable',
+      experience: jobDetails.experience || 'Any',
+      description: jobDetails.description || '',
+      location: jobDetails.location || { lat: 0, lng: 0, address: '' },
+      status: 'live',
+      isActive: true,
+      isVerified: false,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+      paymentApprovedAt: approvalData.approvedAt,
+    }
+    
+    jobs.push(newJob)
+    localStorage.setItem('salonjobsindia_jobs', JSON.stringify(jobs))
+    
+    // Also update salon profile with 30 free credits if first job
+    const profilesStr = localStorage.getItem('salonjobsindia_salon_profiles')
+    const profiles = profilesStr ? JSON.parse(profilesStr) : []
+    const profile = profiles.find((p: { ownerId: string }) => p.ownerId === salonId)
+    
+    if (profile && (!profile.contactCredits || profile.contactCredits === 0)) {
+      profile.contactCredits = 30 // First job gets 30 free credits
+      localStorage.setItem('salonjobsindia_salon_profiles', JSON.stringify(profiles))
+      console.log('[Realtime Sync] Added 30 free credits to salon profile')
+    }
+    
+    // Dispatch update event
+    window.dispatchEvent(new CustomEvent('salonjobsindia_data_updated', { detail: { key: 'salonjobsindia_jobs' } }))
+    
+    console.log('[Realtime Sync] Created job from approval:', newJob.id)
+  } catch (error) {
+    console.error('[Realtime Sync] Error creating job from approval:', error)
+  }
 }
 
 // Function to submit a subscription payment
