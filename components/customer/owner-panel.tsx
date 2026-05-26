@@ -944,65 +944,90 @@ export function OwnerPanel() {
                 </button>
               </div>
               
-              <p className="text-sm text-muted-foreground mb-6">
-                Use credits to unlock job seeker contact numbers. 1 credit = 1 contact unlock.
-              </p>
-              
-              <div className="space-y-4 mb-6">
-                {CREDIT_PACKS.map((pack) => (
-                  <div 
-                    key={pack.id}
-                    className={`p-4 rounded-2xl border-2 transition-colors ${
-                      pack.recommended 
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-border/50 bg-secondary/20'
-                    }`}
-                  >
-                    {pack.recommended && (
-                      <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-primary text-primary-foreground mb-2">
-                        Best Value
-                      </span>
-                    )}
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h3 className="font-semibold">{pack.name}</h3>
-                        <p className="text-sm text-muted-foreground">{pack.credits} credits</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-primary">Rs.{pack.price}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Rs.{(pack.price / pack.credits).toFixed(0)}/credit
-                        </p>
-                      </div>
-                    </div>
-                    <ul className="space-y-1 mb-4">
-                      {pack.features.slice(0, 3).map((feature, i) => (
-                        <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Check className="w-3 h-3 text-primary" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                    <Button 
-                      onClick={() => {
-                        setShowBuyCreditsModal(false)
-                        // Navigate to payment with pack info
-                        goToStep('credit-payment')
-                        // Store selected pack in localStorage for payment screen
-                        localStorage.setItem('salonjobsindia_selected_credit_pack', JSON.stringify(pack))
-                      }}
-                      className={`w-full ${pack.recommended ? 'bg-primary hover:bg-primary/90' : ''}`}
-                      variant={pack.recommended ? 'default' : 'outline'}
-                    >
-                      Buy {pack.credits} Credits
-                    </Button>
+              {/* Check if user has posted at least one job */}
+              {ownerJobs.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/20 flex items-center justify-center">
+                    <AlertCircle className="w-8 h-8 text-amber-400" />
                   </div>
-                ))}
-              </div>
-              
-              <p className="text-xs text-center text-muted-foreground">
-                Credits never expire and are added instantly after payment approval.
-              </p>
+                  <h3 className="text-lg font-semibold mb-2">Post a Job First</h3>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    You need to post at least one job before you can purchase additional contact credits. Your first job post includes 30 free credits!
+                  </p>
+                  <Button 
+                    onClick={() => {
+                      setShowBuyCreditsModal(false)
+                      goToStep('create-job')
+                    }}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Post Your First Job
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    Use credits to unlock job seeker contact numbers. 1 credit = 1 contact unlock.
+                  </p>
+                  
+                  <div className="space-y-4 mb-6">
+                    {CREDIT_PACKS.map((pack) => (
+                      <div 
+                        key={pack.id}
+                        className={`p-4 rounded-2xl border-2 transition-colors ${
+                          pack.recommended 
+                            ? 'border-primary bg-primary/5' 
+                            : 'border-border/50 bg-secondary/20'
+                        }`}
+                      >
+                        {pack.recommended && (
+                          <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-primary text-primary-foreground mb-2">
+                            Best Value
+                          </span>
+                        )}
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <h3 className="font-semibold">{pack.name}</h3>
+                            <p className="text-sm text-muted-foreground">{pack.credits} credits</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-primary">Rs.{pack.price}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Rs.{(pack.price / pack.credits).toFixed(0)}/credit
+                            </p>
+                          </div>
+                        </div>
+                        <ul className="space-y-1 mb-4">
+                          {pack.features.slice(0, 3).map((feature, i) => (
+                            <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Check className="w-3 h-3 text-primary" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                        <Button 
+                          onClick={() => {
+                            setShowBuyCreditsModal(false)
+                            // Navigate to payment with pack info
+                            goToStep('credit-payment')
+                            // Store selected pack in localStorage for payment screen
+                            localStorage.setItem('salonjobsindia_selected_credit_pack', JSON.stringify(pack))
+                          }}
+                          className={`w-full ${pack.recommended ? 'bg-primary hover:bg-primary/90' : ''}`}
+                          variant={pack.recommended ? 'default' : 'outline'}
+                        >
+                          Buy {pack.credits} Credits
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <p className="text-xs text-center text-muted-foreground">
+                    Credits never expire and are added instantly after payment approval.
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>
