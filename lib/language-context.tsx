@@ -370,6 +370,9 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.forgotPassword': 'ಪಾಸ್‌ವರ್ಡ್ ಮರೆತುಬಿದ್ದೀರಾ?',
     'auth.dontHaveAccount': 'ಖಾತೆ ಇಲ್ಲವೇ?',
     'auth.alreadyHaveAccount': 'ಈಗಾಗಲ�� ಖಾತೆ ಇದೆಯೇ?',
+    'auth.createAccount': 'ಖಾತೆ ರಚಿಸಿ',
+    'auth.signInSubtitle': 'ಮುಂದುವರೆಸಲು ಸೈನ್ ಇನ್ ಮಾಡಿ',
+    'auth.signUpSubtitle': 'ಪ್ರಾರಂಭಿಸಲು ಸೈನ್ ಅಪ್ ಮಾಡಿ',
     
     // Role Selection
     'role.selectRole': 'ನಿಮ್ಮ ಪಾತ್ರವನ್ನು ಆರಿಸಿ',
