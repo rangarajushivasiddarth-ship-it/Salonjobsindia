@@ -171,12 +171,12 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
         
         {/* Title */}
         <h1 className="text-2xl md:text-3xl font-bold mb-2 animate-slide-up">
-          {mode === 'signin' ? t('auth.title') : 'Create Account'}
+          {mode === 'signin' ? t('auth.title') : t('auth.createAccount')}
         </h1>
         <p className="text-muted-foreground mb-6 animate-slide-up text-center" style={{ animationDelay: '100ms' }}>
           {mode === 'signin' 
-            ? t('auth.signIn') + ' to continue' 
-            : t('auth.signUp') + ' to get started'}
+            ? t('auth.signInSubtitle')
+            : t('auth.signUpSubtitle')}
         </p>
         
         {/* API Error */}

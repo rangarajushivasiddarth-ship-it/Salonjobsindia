@@ -25,6 +25,9 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Auth
     'auth.title': 'Welcome Back',
+    'auth.createAccount': 'Create Account',
+    'auth.signInSubtitle': 'Sign In to continue',
+    'auth.signUpSubtitle': 'Sign Up to get started',
     'auth.signIn': 'Sign In',
     'auth.signUp': 'Sign Up',
     'auth.email': 'Email',
@@ -106,6 +109,9 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Auth
     'auth.title': 'वापस स्वागत है',
+    'auth.createAccount': 'खाता बनाएं',
+    'auth.signInSubtitle': 'जारी रखने के लिए साइन इन करें',
+    'auth.signUpSubtitle': 'शुरुआत करने के लिए साइन अप करें',
     'auth.signIn': 'साइन इन',
     'auth.signUp': 'साइन अप',
     'auth.email': 'ईमेल',
@@ -187,6 +193,9 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Auth
     'auth.title': 'తిరిగి స్వాగతం',
+    'auth.createAccount': 'ఖాతా సృష్టించండి',
+    'auth.signInSubtitle': 'కొనసాగించడానికి సైన్ ఇన్ చేయండి',
+    'auth.signUpSubtitle': 'ప్రారంభించడానికి సైన్ అప్ చేయండి',
     'auth.signIn': 'సైన్ ఇన్ చేయి',
     'auth.signUp': 'సైన్ అప్ చేయి',
     'auth.email': 'ఇమెయిల్',
@@ -194,7 +203,7 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.phone': 'ఫోన్ నంబర్',
     'auth.name': 'పూర్తి పేరు',
     'auth.forgotPassword': 'పాస్‌వర్డ్ మరిచిపోయారా?',
-    'auth.dontHaveAccount': 'ఖాతా లేదా?',
+    'auth.dontHaveAccount': 'ఖాతా లేదు?',
     'auth.alreadyHaveAccount': 'ఇప్పటికే ఖాతా ఉందా?',
     
     // Role Selection
@@ -267,14 +276,17 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.about': 'எங்களைப் பற்றி',
     
     // Auth
-    'auth.title': 'திரும்பி வரவேற்கிறோம்',
-    'auth.signIn': 'உள்நுழைக',
-    'auth.signUp': 'பதிவு செய்க',
-    'auth.email': 'மின்னஞ்சல்',
-    'auth.password': 'கடவுச்சொல்',
+    'auth.title': 'மீண்டும் வரவேற்கிறோம்',
+    'auth.createAccount': 'கணக்கு உருவாக்கவும்',
+    'auth.signInSubtitle': 'தொடர சைன் இன் செய்யவும்',
+    'auth.signUpSubtitle': 'தொடங்க சைன் அப் செய்யவும்',
+    'auth.signIn': 'சைன் இன்',
+    'auth.signUp': 'சைன் அப்',
+    'auth.email': 'ஈமெயில்',
+    'auth.password': 'கடவுசொல்',
     'auth.phone': 'ফোன் எண்',
     'auth.name': 'முழு பெயர்',
-    'auth.forgotPassword': 'கடவுச்சொல்ை மறந்துவிட்டீர்களா?',
+    'auth.forgotPassword': 'கடவுசொல் மறந்துவிட்டீர்களா?',
     'auth.dontHaveAccount': 'கணக்கு இல்லையா?',
     'auth.alreadyHaveAccount': 'ஏற்கனவே கணக்கு உள்ளதா?',
     
@@ -357,7 +369,7 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.name': 'ಪೂರ್ಣ ಹೆಸರು',
     'auth.forgotPassword': 'ಪಾಸ್‌ವರ್ಡ್ ಮರೆತುಬಿದ್ದೀರಾ?',
     'auth.dontHaveAccount': 'ಖಾತೆ ಇಲ್ಲವೇ?',
-    'auth.alreadyHaveAccount': 'ಈಗಾಗಲೇ ಖಾತೆ ಇದೆಯೇ?',
+    'auth.alreadyHaveAccount': 'ಈಗಾಗಲ�� ಖಾತೆ ಇದೆಯೇ?',
     
     // Role Selection
     'role.selectRole': 'ನಿಮ್ಮ ಪಾತ್ರವನ್ನು ಆರಿಸಿ',
@@ -367,7 +379,7 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Job Discovery
     'job.search': 'ಸ್ಯಾಲೂನ್‌ಗಳನ್ನು ಹುಡುಕಿ...',
-    'job.filter': 'ಫಿಲ್ಟರ್',
+    'job.filter': 'ಫಿಲ್��ರ್',
     'job.salary': 'ಸಂಬಳ',
     'job.experience': 'ಅನುಭವ',
     'job.location': 'ಸ್ಥಳ',
@@ -430,6 +442,9 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Auth
     'auth.title': 'પાછા આવીને સ્વાગત છે',
+    'auth.createAccount': 'ખાતું બનાવો',
+    'auth.signInSubtitle': 'ચાલુ રાખવા માટે સાઇન ઇન કરો',
+    'auth.signUpSubtitle': 'શરુ કરવા માટે સાઇન અપ કરો',
     'auth.signIn': 'સાઇન ઇન કરો',
     'auth.signUp': 'સાઇન અપ કરો',
     'auth.email': 'ઈમેલ',
@@ -510,7 +525,10 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.about': 'ഞങ്ങളെ പറ്റി',
     
     // Auth
-    'auth.title': 'സ്വാഗതം തിരിച്ചെത്തിയതിന്',
+    'auth.title': 'സ്വാഗതം ഫിരിയെത്തിയതിന്',
+    'auth.createAccount': 'അക്കൗണ്ട് സൃഷ്ടിക്കുക',
+    'auth.signInSubtitle': 'തുടരുന്നതിന് സൈൻ ഇൻ ചെയ്യുക',
+    'auth.signUpSubtitle': 'തുടങ്ങാൻ സൈൻ അപ്പ് ചെയ്യുക',
     'auth.signIn': 'സൈൻ ഇൻ ചെയ്യുക',
     'auth.signUp': 'സൈൻ അപ്പ് ചെയ്യുക',
     'auth.email': 'ഇമെയിൽ',
@@ -518,7 +536,7 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.phone': 'ഫോൻ നമ്പർ',
     'auth.name': 'പൂർണ്ണ നാമം',
     'auth.forgotPassword': 'പാസ്‌വേഡ് മറന്നുവോ?',
-    'auth.dontHaveAccount': 'അക്കൗണ്ട് ഇല്ലേ?',
+    'auth.dontHaveAccount': 'അക്കൗണ്ട് ഇല്ലയോ?',
     'auth.alreadyHaveAccount': 'ഇതിനകം അക്കൗണ്ട് ഉണ്ടോ?',
     
     // Role Selection
@@ -592,6 +610,9 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Auth
     'auth.title': 'पुन्हा स्वागत आहे',
+    'auth.createAccount': 'खाते तयार करा',
+    'auth.signInSubtitle': 'सुरू ठेवण्यासाठी साइन इन करा',
+    'auth.signUpSubtitle': 'सुरुवात करण्यासाठी साइन अप करा',
     'auth.signIn': 'साइन इन करा',
     'auth.signUp': 'साइन अप करा',
     'auth.email': 'ईमेल',
@@ -682,6 +703,9 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.forgotPassword': 'پاس ورڈ بھول گئے?',
     'auth.dontHaveAccount': 'اکاؤنٹ نہیں ہے?',
     'auth.alreadyHaveAccount': 'پہلے سے اکاؤنٹ ہے?',
+    'auth.createAccount': 'اکاؤنٹ بنائیں',
+    'auth.signInSubtitle': 'جاری رکھنے کے لیے سائن ان کریں',
+    'auth.signUpSubtitle': 'شروع کرنے کے لیے سائن اپ کریں',
     
     // Role Selection
     'role.selectRole': 'اپنا کردار منتخب کریں',
