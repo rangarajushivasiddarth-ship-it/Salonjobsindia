@@ -379,6 +379,50 @@ export function OwnerPanel() {
                 Find Talent
               </Button>
             </div>
+            
+            {/* Verified Badge Promo - Show only if not verified */}
+            {!salonProfile?.isVerified && (
+              <div className="p-5 glass-card rounded-2xl border-2 border-blue-500/30 bg-gradient-to-br from-blue-500/5 to-transparent">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                    <BadgeCheck className="w-6 h-6 text-blue-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-blue-400 mb-1">Get Verified Badge</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Stand out from other salons with a verified badge. Job seekers trust verified salons more.
+                    </p>
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400">Rs.199/month</span>
+                      <span className="text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400">Rs.499/3 months - Save Rs.98</span>
+                    </div>
+                    <Button 
+                      onClick={() => setShowVerifiedBadgeModal(true)} 
+                      size="sm"
+                      className="bg-blue-500 hover:bg-blue-600 text-white"
+                    >
+                      <Shield className="w-4 h-4 mr-2" />
+                      Get Verified Now
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Show verified status if verified */}
+            {salonProfile?.isVerified && (
+              <div className="p-4 glass-card rounded-2xl border-2 border-blue-500/50 bg-blue-500/10">
+                <div className="flex items-center gap-3">
+                  <BadgeCheck className="w-8 h-8 text-blue-400" />
+                  <div>
+                    <p className="font-semibold text-blue-400">Verified Salon</p>
+                    <p className="text-xs text-muted-foreground">
+                      Valid until {salonProfile.verifiedUntil ? new Date(salonProfile.verifiedUntil).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
