@@ -92,6 +92,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.success': 'Success',
     'common.back': 'Back',
     'common.next': 'Next',
+    'common.remember': 'Remember',
   },
 
   Hindi: {
@@ -172,6 +173,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.success': 'सफलता',
     'common.back': 'वापस',
     'common.next': 'आगे',
+    'common.remember': 'याद रखें',
   },
 
   Telugu: {
@@ -252,6 +254,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.success': 'సఫలం',
     'common.back': 'వెనుకకు',
     'common.next': 'తరువాత',
+    'common.remember': 'గుర్తుంచుకోండి',
   },
 
   Tamil: {
@@ -325,13 +328,14 @@ const translations: Record<Language, Record<string, string>> = {
     // General
     'common.save': 'சேமிக்கவும்',
     'common.cancel': 'ரத்து செய்க',
-    'common.delete': 'நீக்கவும்',
+    'common.delete': 'அழிக்கவும்',
     'common.edit': 'திருத்தவும்',
     'common.loading': 'சுமைகிறது...',
     'common.error': 'பிழை',
     'common.success': 'வெற்றி',
     'common.back': 'பின்னால்',
     'common.next': 'அடுத்தது',
+    'common.remember': 'நினைவில் வைக்க',
   },
 
   Kannada: {
@@ -412,6 +416,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.success': 'ಯಶಸ್ವಿ',
     'common.back': 'ಹಿಂದೆ',
     'common.next': 'ಮುಂದೆ',
+    'common.remember': 'ನೆನಪಿಡಿ',
   },
 
   Gujarati: {
@@ -492,6 +497,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.success': 'સફળતા',
     'common.back': 'પાછળ',
     'common.next': 'આગલું',
+    'common.remember': 'યાદ રાખો',
   },
 
   Malayalam: {
@@ -572,6 +578,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.success': 'വിജയം',
     'common.back': 'പിന്നിലേക്ക്',
     'common.next': 'അടുത്തത്',
+    'common.remember': 'ഓർക്കുക',
   },
 
   Marathi: {
@@ -652,6 +659,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.success': 'यश',
     'common.back': 'परत',
     'common.next': 'पुढे',
+    'common.remember': 'लक्षात ठेवा',
   },
 
   Urdu: {
@@ -732,6 +740,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.success': 'کامیاب',
     'common.back': 'پیچھے',
     'common.next': 'آگے',
+    'common.remember': 'یاد رکھیں',
   },
 }
 

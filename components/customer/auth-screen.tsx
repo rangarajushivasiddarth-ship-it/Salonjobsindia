@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
+import { useLanguage } from '@/lib/language-context'
 
 type AuthMode = 'signin' | 'signup'
 
@@ -16,6 +17,7 @@ interface AuthScreenProps {
 }
 
 export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
+  const { t } = useLanguage()
   const [mode, setMode] = useState<AuthMode>('signin')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -169,12 +171,12 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
         
         {/* Title */}
         <h1 className="text-2xl md:text-3xl font-bold mb-2 animate-slide-up">
-          {mode === 'signin' ? 'Welcome Back' : 'Create Account'}
+          {mode === 'signin' ? t('auth.title') : 'Create Account'}
         </h1>
         <p className="text-muted-foreground mb-6 animate-slide-up text-center" style={{ animationDelay: '100ms' }}>
           {mode === 'signin' 
-            ? 'Sign in to continue your journey' 
-            : 'Join Salon Jobs India to discover opportunities'}
+            ? t('auth.signIn') + ' to continue' 
+            : t('auth.signUp') + ' to get started'}
         </p>
         
         {/* API Error */}
@@ -194,7 +196,7 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder="Full Name"
+                  placeholder={t('auth.name')}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all"
@@ -212,7 +214,7 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type="email"
-                placeholder="Email address"
+                placeholder={t('auth.email')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all"
@@ -229,7 +231,7 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
               <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type="tel"
-                placeholder="10-digit phone number"
+                placeholder={t('auth.phone')}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all"
@@ -246,7 +248,7 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Password"
+                placeholder={t('auth.password')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="h-14 pl-12 pr-12 bg-secondary/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all"
@@ -271,7 +273,7 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Confirm Password"
+                  placeholder={t('auth.password')}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all"
@@ -292,10 +294,10 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
                   onCheckedChange={(checked) => setRememberMe(checked === true)}
                   className="border-muted-foreground data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                 />
-                <span className="text-sm text-muted-foreground">Remember me</span>
+                <span className="text-sm text-muted-foreground">{t('common.remember')} me</span>
               </label>
               <button type="button" className="text-sm text-primary hover:underline">
-                Forgot password?
+                {t('auth.forgotPassword')}
               </button>
             </div>
           )}
@@ -310,16 +312,16 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
             {isLoading ? (
               <div className="w-6 h-6 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
             ) : (
-              mode === 'signin' ? 'Sign In' : 'Create Account'
+              mode === 'signin' ? t('auth.signIn') : t('auth.signUp')
             )}
           </Button>
         </form>
         
         {/* Switch Mode Link */}
         <p className="mt-6 text-sm text-muted-foreground animate-slide-up" style={{ animationDelay: mode === 'signup' ? '450ms' : '350ms' }}>
-          {mode === 'signin' ? "Don't have an account? " : "Already have an account? "}
+          {mode === 'signin' ? t('auth.dontHaveAccount') : t('auth.alreadyHaveAccount')}
           <button onClick={switchMode} className="text-primary hover:underline font-medium">
-            {mode === 'signin' ? 'Sign up' : 'Sign in'}
+            {mode === 'signin' ? t('auth.signUp') : t('auth.signIn')}
           </button>
         </p>
       </div>
