@@ -18,6 +18,7 @@ import { AboutUsScreen } from '@/components/customer/about-us-screen'
 import { CreditPayment } from '@/components/customer/credit-payment'
 import { SalonProfileSetup } from '@/components/customer/salon-profile-setup'
 import { BottomNav } from '@/components/customer/bottom-nav'
+import { LanguageSwitcher } from '@/components/language-switcher'
 
 function CustomerApp() {
   const { currentStep, signIn, signUp, setRole, goToStep, isLoading } = useApp()
@@ -94,6 +95,10 @@ function CustomerApp() {
   
   return (
     <>
+      {/* Language Switcher - Top Right Corner */}
+      <div className="fixed top-4 right-4 z-50">
+        <LanguageSwitcher />
+      </div>
       {renderScreen()}
       {showBottomNav && <BottomNav unreadMessages={2} unreadNotifications={3} />}
     </>
