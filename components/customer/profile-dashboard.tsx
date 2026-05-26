@@ -10,6 +10,7 @@ type TabType = 'overview' | 'saved' | 'applied'
 
 export function ProfileDashboard() {
   const { user, subscription, savedJobs, appliedJobs, goToStep, logout, resume } = useApp()
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState<TabType>('overview')
   const [isDownloading, setIsDownloading] = useState(false)
 

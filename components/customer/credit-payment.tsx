@@ -28,6 +28,7 @@ const PAYMENT_CONFIG = {
 
 export function CreditPayment() {
   const { user, goToStep } = useApp()
+  const { t } = useLanguage()
   const [selectedPack, setSelectedPack] = useState<SelectedPack | null>(null)
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null)
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null)

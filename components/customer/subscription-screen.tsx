@@ -12,6 +12,7 @@ import type { Subscription, JobSeekerPlanType } from '@/lib/types'
 
 export function SubscriptionScreen() {
   const { user, setSubscription, goToStep } = useApp()
+  const { t } = useLanguage()
   const isOwner = user?.role === 'salon_owner' || user?.role === 'employer'
   
   const [selectedPlan, setSelectedPlan] = useState<string>(isOwner ? 'single_post' : 'unlimited')

@@ -77,6 +77,7 @@ type TabType = 'dashboard' | 'jobs' | 'applicants' | 'candidates' | 'settings'
 
 export function OwnerPanel() {
   const { user, logout, goToStep } = useApp()
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false)

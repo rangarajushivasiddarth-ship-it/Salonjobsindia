@@ -167,6 +167,7 @@ function AwardBadge({ label }: { label: string }) {
 
 export function AboutUsScreen() {
   const { goToStep, user } = useApp()
+  const { t } = useLanguage()
   const isOwner = user?.role === 'salon_owner' || user?.role === 'employer'
 
   const stats = [

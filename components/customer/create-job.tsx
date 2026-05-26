@@ -49,6 +49,7 @@ interface JobDraft {
 
 export function CreateJob() {
   const { user, goToStep } = useApp()
+  const { t } = useLanguage()
   const [currentStep, setCurrentStep] = useState<Step>('form')
   const [isLoading, setIsLoading] = useState(false)
   const [detectingLocation, setDetectingLocation] = useState(false)

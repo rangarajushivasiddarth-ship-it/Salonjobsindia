@@ -33,6 +33,7 @@ interface SalonWithDetails {
 
 export function JobDiscovery() {
   const { user, goToStep, resume } = useApp()
+  const { t } = useLanguage()
   const [searchQuery, setSearchQuery] = useState('')
   const [showUnlockPrompt, setShowUnlockPrompt] = useState(false)
   const [selectedSalon, setSelectedSalon] = useState<SalonWithDetails | null>(null)

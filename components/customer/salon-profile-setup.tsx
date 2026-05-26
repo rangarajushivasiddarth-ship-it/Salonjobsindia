@@ -20,6 +20,7 @@ const INDIAN_STATES = [
 
 export function SalonProfileSetup() {
   const { user, goToStep } = useApp()
+  const { t } = useLanguage()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isDetectingLocation, setIsDetectingLocation] = useState(false)
