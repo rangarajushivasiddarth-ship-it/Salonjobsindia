@@ -16,6 +16,7 @@ import { NotificationsScreen } from '@/components/customer/notifications-screen'
 import { SettingsScreen } from '@/components/customer/settings-screen'
 import { AboutUsScreen } from '@/components/customer/about-us-screen'
 import { CreditPayment } from '@/components/customer/credit-payment'
+import { SalonProfileSetup } from '@/components/customer/salon-profile-setup'
 import { BottomNav } from '@/components/customer/bottom-nav'
 
 function CustomerApp() {
@@ -77,6 +78,8 @@ function CustomerApp() {
         return <AboutUsScreen />
       case 'credit-payment':
         return <CreditPayment />
+      case 'salon-profile':
+        return <SalonProfileSetup />
       default:
         return (
           <SplashScreen
