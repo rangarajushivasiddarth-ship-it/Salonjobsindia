@@ -281,9 +281,11 @@ export function approvePayment(paymentId: string, adminId: string): Payment | nu
       job.expiresAt = new Date(Date.now() + payment.validityDays * 24 * 60 * 60 * 1000)
       job.paymentApprovedAt = new Date()
       
-      // Copy salon logo and verified status from profile
+      // Copy salon logo and verified status from profile (if not already set on job)
       if (salonProfile) {
-        job.salonLogo = salonProfile.logoUrl
+        if (!job.salonLogo && salonProfile.logoUrl) {
+          job.salonLogo = salonProfile.logoUrl
+        }
         job.isVerified = salonProfile.isVerified && salonProfile.verifiedUntil && new Date(salonProfile.verifiedUntil) > new Date()
       }
       

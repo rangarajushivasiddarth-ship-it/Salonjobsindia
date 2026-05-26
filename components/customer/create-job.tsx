@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Building2, Briefcase, MapPin, Navigation, FileText, Check, X, Phone, Upload, CreditCard, Clock, AlertCircle, Image as ImageIcon, Crown, Users, Edit2, Trash2, Gift } from 'lucide-react'
+import { ArrowLeft, Building2, Briefcase, MapPin, Navigation, FileText, Check, X, Phone, Upload, CreditCard, Clock, AlertCircle, Image as ImageIcon, Crown, Users, Edit2, Trash2, Gift, Camera } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
@@ -30,6 +30,7 @@ interface JobDraft {
   id: string
   salonName: string
   salonMobile: string
+  salonLogo?: string
   role: string
   customRole: string
   salary: string
@@ -56,6 +57,7 @@ export function CreateJob() {
   const [formData, setFormData] = useState({
     salonName: '',
     salonMobile: '',
+    salonLogo: '',
     role: '',
     customRole: '',
     salary: '',
@@ -70,6 +72,7 @@ export function CreateJob() {
   
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [savedJob, setSavedJob] = useState<JobDraft | null>(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
 
   // Check for existing pending jobs
   useEffect(() => {
@@ -83,6 +86,30 @@ export function CreateJob() {
       }
     }
   }, [user?.id])
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      setErrors(prev => ({ ...prev, logo: 'Please upload an image file' }))
+      return
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setErrors(prev => ({ ...prev, logo: 'File size should be less than 2MB' }))
+      return
+    }
+
+    setUploadingLogo(true)
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setFormData(prev => ({ ...prev, salonLogo: reader.result as string }))
+      setUploadingLogo(false)
+      setErrors(prev => ({ ...prev, logo: '' }))
+    }
+    reader.readAsDataURL(file)
+  }
 
   const validateMobileNumber = (mobile: string): boolean => {
     const cleaned = mobile.replace(/\D/g, '')
@@ -229,6 +256,7 @@ export function CreateJob() {
       salonOwnerPhone: user?.phone,
       salonName: formData.salonName,
       salonMobile: formData.salonMobile,
+      salonLogo: formData.salonLogo,
       jobRole: formData.role || formData.customRole,
       amount: JOB_POST_PRICE,
       screenshotUrl: paymentScreenshot,
@@ -605,6 +633,60 @@ export function CreateJob() {
               />
             </div>
             {errors.salonName && <p className="text-sm text-destructive">{errors.salonName}</p>}
+          </div>
+          
+          {/* Salon Logo - Optional */}
+          <div className="space-y-2 animate-slide-up" style={{ animationDelay: '15ms' }}>
+            <label className="text-sm font-medium text-muted-foreground">
+              Salon Logo <span className="text-xs text-muted-foreground/60">(Optional)</span>
+            </label>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                  id="logo-input"
+                />
+                {formData.salonLogo ? (
+                  <div className="relative">
+                    <img
+                      src={formData.salonLogo}
+                      alt="Salon logo"
+                      className="w-20 h-20 rounded-xl object-cover border-2 border-primary/50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, salonLogo: '' }))}
+                      className="absolute -top-2 -right-2 p-1 bg-destructive rounded-full"
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="logo-input"
+                    className="flex flex-col items-center justify-center w-20 h-20 border-2 border-dashed border-border/50 rounded-xl cursor-pointer bg-secondary/20 hover:bg-secondary/30 transition-colors"
+                  >
+                    {uploadingLogo ? (
+                      <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                    ) : (
+                      <Camera className="w-6 h-6 text-muted-foreground" />
+                    )}
+                  </label>
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground">
+                  Add your salon logo to make your job post stand out
+                </p>
+                <p className="text-xs text-muted-foreground/60 mt-1">
+                  PNG, JPG up to 2MB
+                </p>
+              </div>
+            </div>
+            {errors.logo && <p className="text-sm text-destructive">{errors.logo}</p>}
           </div>
           
           {/* Salon Mobile Number - NEW FIELD */}
