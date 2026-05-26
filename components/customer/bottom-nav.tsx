@@ -2,6 +2,7 @@
 
 import { Home, Search, MessageCircle, Bell, User, Briefcase, Building2, Info } from 'lucide-react'
 import { useApp } from '@/lib/app-context'
+import { useLanguage } from '@/lib/language-context'
 
 type NavItem = {
   id: string
@@ -18,24 +19,25 @@ interface BottomNavProps {
 
 export function BottomNav({ unreadMessages = 0, unreadNotifications = 0 }: BottomNavProps) {
   const { currentStep, goToStep, user } = useApp()
+  const { t } = useLanguage()
   
   const isOwner = user?.role === 'salon_owner' || user?.role === 'employer'
   
   // Different nav items for job seekers vs salon owners
   const jobSeekerNav: NavItem[] = [
-    { id: 'home', label: 'Jobs', icon: Home, step: user?.isSubscribed ? 'results' : 'discovery' },
-    { id: 'about', label: 'About Us', icon: Info, step: 'about' },
-    { id: 'messages', label: 'Chats', icon: MessageCircle, step: 'messages', badge: unreadMessages },
-    { id: 'notifications', label: 'Alerts', icon: Bell, step: 'notifications', badge: unreadNotifications },
-    { id: 'profile', label: 'Profile', icon: User, step: 'profile' },
+    { id: 'home', label: t('nav.home'), icon: Home, step: user?.isSubscribed ? 'results' : 'discovery' },
+    { id: 'about', label: t('nav.about'), icon: Info, step: 'about' },
+    { id: 'messages', label: t('nav.messages'), icon: MessageCircle, step: 'messages', badge: unreadMessages },
+    { id: 'notifications', label: t('nav.notifications'), icon: Bell, step: 'notifications', badge: unreadNotifications },
+    { id: 'profile', label: t('nav.profile'), icon: User, step: 'profile' },
   ]
   
   const salonOwnerNav: NavItem[] = [
-    { id: 'home', label: 'Dashboard', icon: Building2, step: 'owner-panel' },
-    { id: 'post', label: 'Post Job', icon: Briefcase, step: 'create-job' },
-    { id: 'about', label: 'About Us', icon: Info, step: 'about' },
-    { id: 'messages', label: 'Chats', icon: MessageCircle, step: 'messages', badge: unreadMessages },
-    { id: 'profile', label: 'Profile', icon: User, step: 'profile' },
+    { id: 'home', label: t('owner.manageJobs'), icon: Building2, step: 'owner-panel' },
+    { id: 'post', label: t('job.createJob'), icon: Briefcase, step: 'create-job' },
+    { id: 'about', label: t('nav.about'), icon: Info, step: 'about' },
+    { id: 'messages', label: t('nav.messages'), icon: MessageCircle, step: 'messages', badge: unreadMessages },
+    { id: 'profile', label: t('nav.profile'), icon: User, step: 'profile' },
   ]
   
   const navItems = isOwner ? salonOwnerNav : jobSeekerNav

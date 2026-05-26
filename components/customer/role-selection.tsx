@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Building2, ArrowLeft, ArrowRight, Briefcase } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
+import { useLanguage } from '@/lib/language-context'
 import type { UserRole } from '@/lib/types'
 
 interface RoleSelectionProps {
@@ -13,21 +14,30 @@ interface RoleSelectionProps {
 
 export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null)
+  const { t } = useLanguage()
 
   const roles = [
     {
       id: 'job_seeker' as UserRole,
-      title: 'Apply for Job',
-      description: 'Looking for job opportunities in your area',
+      title: t('role.findJobs'),
+      description: t('role.description1'),
       icon: Briefcase,
-      features: ['Create your professional profile', 'Discover nearby opportunities', 'Apply to job openings'],
+      features: [
+        t('role.description1'),
+        'Discover nearby opportunities',
+        'Apply to job openings'
+      ],
     },
     {
       id: 'employer' as UserRole,
-      title: 'Create Job',
-      description: 'Find talented professionals for your business',
+      title: t('role.manageJobs'),
+      description: t('role.description2'),
       icon: Building2,
-      features: ['Post job openings', 'Review applications', 'Connect with talent'],
+      features: [
+        'Post job openings',
+        'Review applications',
+        'Connect with talent'
+      ],
     },
   ]
 
