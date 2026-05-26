@@ -5,12 +5,14 @@ import { ArrowLeft, User, Bell, Shield, Moon, Sun, Globe, HelpCircle, FileText, 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
+import { useLanguage } from '@/lib/language-context'
 import Image from 'next/image'
 
 type SettingsTab = 'main' | 'edit-profile' | 'notifications' | 'privacy' | 'help'
 
 export function SettingsScreen() {
   const { user, goToStep, logout, updateUser } = useApp()
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState<SettingsTab>('main')
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [notificationSettings, setNotificationSettings] = useState({

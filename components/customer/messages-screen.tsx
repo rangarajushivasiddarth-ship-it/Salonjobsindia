@@ -5,6 +5,7 @@ import { ArrowLeft, Send, Building2, Search, Phone, MoreVertical, Check, CheckCh
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
+import { useLanguage } from '@/lib/language-context'
 
 interface Message {
   id: string
@@ -42,6 +43,7 @@ interface Conversation {
 
 export function MessagesScreen() {
   const { goToStep, user } = useApp()
+  const { t } = useLanguage()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [newMessage, setNewMessage] = useState('')

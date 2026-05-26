@@ -5,6 +5,7 @@ import { ArrowLeft, Bell, Briefcase, Crown, MessageCircle, CheckCircle, Clock, T
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
+import { useLanguage } from '@/lib/language-context'
 
 interface Notification {
   id: string
@@ -19,6 +20,7 @@ interface Notification {
 
 export function NotificationsScreen() {
   const { goToStep, user } = useApp()
+  const { t } = useLanguage()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
   
@@ -138,9 +140,9 @@ const getIcon = (type: Notification['type']) => {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="text-xl font-bold">Notifications</h1>
+              <h1 className="text-xl font-bold">{t('notifications.title')}</h1>
               {unreadCount > 0 && (
-                <p className="text-sm text-muted-foreground">{unreadCount} unread</p>
+                <p className="text-sm text-muted-foreground">{unreadCount} {t('notifications.unread')}</p>
               )}
             </div>
           </div>
@@ -163,7 +165,7 @@ const getIcon = (type: Notification['type']) => {
                 : 'bg-secondary/50 text-muted-foreground hover:text-foreground'
             }`}
           >
-            All
+            {t('common.back') === 'Back' ? 'All' : t('common.back')}
           </button>
           <button
             onClick={() => setFilter('unread')}
@@ -187,7 +189,7 @@ const getIcon = (type: Notification['type']) => {
               onClick={markAllAsRead}
               className="ml-auto px-3 py-2 text-xs font-medium text-primary hover:text-primary/80"
             >
-              Mark all read
+              {t('notifications.markAllRead')}
             </button>
           )}
         </div>
@@ -257,12 +259,12 @@ const getIcon = (type: Notification['type']) => {
             })}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mb-4">
               <Bell className="w-8 h-8 text-muted-foreground" />
             </div>
             <h3 className="font-semibold text-lg mb-2">
-              {filter === 'unread' ? 'All caught up!' : 'No notifications'}
+              {filter === 'unread' ? t('notifications.noNotifications') : t('notifications.noNotifications')}
             </h3>
             <p className="text-sm text-muted-foreground">
               {filter === 'unread' 

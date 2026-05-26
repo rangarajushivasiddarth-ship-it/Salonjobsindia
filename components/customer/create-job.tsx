@@ -5,6 +5,7 @@ import { ArrowLeft, Building2, Briefcase, MapPin, Navigation, FileText, Check, X
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
+import { useLanguage } from '@/lib/language-context'
 import { submitJobPayment, useApprovalStatus } from '@/lib/hooks/use-realtime-sync'
 import Image from 'next/image'
 

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ArrowLeft, User, Crown, Calendar, Heart, Briefcase, LogOut, ChevronRight, MapPin, Building2, Settings, Bell, Shield, TrendingUp, Eye, Clock, Download, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
+import { useLanguage } from '@/lib/language-context'
 
 type TabType = 'overview' | 'saved' | 'applied'
 
