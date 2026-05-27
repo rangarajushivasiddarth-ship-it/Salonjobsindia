@@ -4,6 +4,20 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 import type { User, Resume, Subscription, UserRole } from './types'
 import { UserService, JobSeekerService, SubscriptionService, NotificationService, SyncService } from './data-service'
 
+// Helper to convert JobSeeker data to Resume format
+function jobSeekerToResume(jobSeeker: ReturnType<typeof JobSeekerService.getByUserId>): Resume | null {
+  if (!jobSeeker) return null
+  return {
+    name: jobSeeker.name,
+    role: jobSeeker.role,
+    dateOfBirth: jobSeeker.dateOfBirth,
+    experience: jobSeeker.experience,
+    skills: jobSeeker.skills,
+    salaryExpectation: jobSeeker.salaryExpectation,
+    location: jobSeeker.location,
+  }
+}
+
 interface AppState {
   user: User | null
   resume: Resume | null
@@ -65,12 +79,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // Get subscription status
           const subscription = SubscriptionService.getByUserId(currentUser.id)
           
+          // Get job seeker profile (resume data) if user is a job seeker
+          const jobSeekerProfile = currentUser.role === 'job_seeker' 
+            ? JobSeekerService.getByUserId(currentUser.id)
+            : null
+          const resume = jobSeekerToResume(jobSeekerProfile)
+          
           // Get unread notifications count
           const unreadCount = NotificationService.getUnreadCount(currentUser.id)
           
           setState(prev => ({
             ...prev,
             user: currentUser as unknown as User,
+            resume,
             savedJobs,
             appliedJobs,
             subscription: subscription as unknown as Subscription,
@@ -169,9 +190,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const subscription = SubscriptionService.getByUserId(user.id)
       const unreadCount = NotificationService.getUnreadCount(user.id)
       
+      // Load job seeker profile (resume data) if user is a job seeker
+      const jobSeekerProfile = user.role === 'job_seeker' 
+        ? JobSeekerService.getByUserId(user.id)
+        : null
+      const resume = jobSeekerToResume(jobSeekerProfile)
+      
       setState(prev => ({
         ...prev,
         user,
+        resume,
         savedJobs,
         appliedJobs,
         subscription: subscription as unknown as Subscription,
