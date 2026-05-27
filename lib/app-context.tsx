@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import type { User, Resume, Subscription, UserRole } from './types'
 import { UserService, JobSeekerService, SubscriptionService, NotificationService, SyncService } from './data-service'
+import { SyncService as RealTimeSync } from './sync-service'
 
 interface AppState {
   user: User | null
@@ -79,7 +80,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             isLoading: false,
             currentStep: currentUser.role ? 
               (currentUser.role === 'job_seeker' ? 
-                'results'  // Job seekers always go to results (free access to view salons)
+                'resume'  // Job seekers must upload resume first
                 : 'owner-panel') // handles both 'salon_owner' and 'employer'
               : 'role',
           }))
@@ -108,14 +109,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
     
     return unsubscribe
   }, [state.user?.id])
+
+  // Subscribe to real-time job postings for job seekers
+  useEffect(() => {
+    if (state.user?.role !== 'job_seeker' || !state.user?.id) return
+
+    const unsubscribe = RealTimeSync.subscribe('job_posted', (job: any) => {
+      // Trigger notification for new job
+      if (job && job.status === 'live') {
+        const unreadCount = NotificationService.getUnreadCount(state.user!.id)
+        setState(prev => ({ ...prev, unreadNotifications: unreadCount }))
+      }
+    })
+
+    return unsubscribe
+  }, [state.user?.role, state.user?.id])
+
+  // Subscribe to real-time applications for salon owners
+  useEffect(() => {
+    if (state.user?.role !== 'salon_owner' && state.user?.role !== 'employer') return
+
+    const unsubscribe = RealTimeSync.subscribe('application_created', () => {
+      // Refresh notifications when new application arrives
+      if (state.user?.id) {
+        const unreadCount = NotificationService.getUnreadCount(state.user.id)
+        setState(prev => ({ ...prev, unreadNotifications: unreadCount }))
+      }
+    })
+
+    return unsubscribe
+  }, [state.user?.role, state.user?.id])
+  
   
   // Poll for subscription approval with cross-tab sync
   useEffect(() => {
     if (!state.user?.id || state.user.isSubscribed) return
     
     const checkApproval = () => {
-      // Check from data-store
-      const dataStoreKey = 'fitone_subscriptions'
+      // Check from data-store using consistent key
+      const dataStoreKey = 'salonjobsindia_subscriptions'
       try {
         const stored = localStorage.getItem(dataStoreKey)
         if (stored) {
@@ -129,8 +161,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
               ...prev,
               user: prev.user ? { ...prev.user, isSubscribed: true } : prev.user,
               subscription: userSub as Subscription,
-              currentStep: (prev.user?.role === 'salon_owner' || prev.user?.role === 'employer') ? 'owner-panel' : 'results',
+              currentStep: (prev.user?.role === 'salon_owner' || prev.user?.role === 'employer') ? 'owner-panel' : 'discovery',
             }))
+            // Sync this update across tabs
+            RealTimeSync.syncSubscriptionApproval(userSub)
           }
         }
       } catch {
@@ -144,7 +178,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     
     // Listen for storage changes from admin tab
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'fitone_subscriptions' || event.key === 'fitone_sync_trigger') {
+      if (event.key === 'salonjobsindia_subscriptions' || event.key === 'salonjobsindia_sync_trigger') {
         checkApproval()
       }
     }
@@ -179,7 +213,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         isAuthenticated: true,
         currentStep: user.role ? 
           (user.role === 'job_seeker' ? 
-            'results'  // Job seekers always go to results (free access)
+            'resume'  // Job seekers must upload resume first
             : 'owner-panel') 
           : 'role',
       }))
@@ -278,7 +312,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState(prev => ({
       ...prev,
       resume,
-      currentStep: 'discovery',
+      currentStep: 'discovery',  // Go to job discovery/subscription screen
     }))
   }, [state.user])
 
@@ -293,6 +327,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })
     }
     
+    // Determine next step based on user role
+    let nextStep: AppState['currentStep'] = 'subscription'
+    if (isApproved) {
+      nextStep = state.user?.role === 'job_seeker' ? 'results' : 'owner-panel'
+    }
+    
     setState(prev => ({
       ...prev,
       subscription,
@@ -301,8 +341,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         isSubscribed: isApproved,
         subscriptionExpiry: isApproved ? subscription.expiresAt : undefined
       } : null,
-      currentStep: isApproved ? 'results' : prev.currentStep,
+      currentStep: nextStep,
     }))
+    
+    // Sync subscription approval across tabs
+    if (isApproved) {
+      RealTimeSync.syncSubscriptionApproval(subscription)
+    }
   }, [state.user])
 
   const saveJob = useCallback((jobId: string) => {
@@ -325,9 +370,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState(prev => {
       const newAppliedJobs = [...new Set([...prev.appliedJobs, jobId])]
       localStorage.setItem(APPLIED_JOBS_KEY, JSON.stringify(newAppliedJobs))
+      
+      // Create application object for syncing
+      const application = {
+        id: `app_${state.user?.id}_${jobId}_${Date.now()}`,
+        jobId,
+        candidateId: state.user?.id,
+        candidateName: state.user?.name,
+        candidateEmail: state.user?.email,
+        candidatePhone: state.user?.phone,
+        status: 'pending',
+        appliedAt: new Date().toISOString(),
+      }
+      
+      // Sync application to salon owner
+      RealTimeSync.syncApplicationToSalon(application)
+      
       return { ...prev, appliedJobs: newAppliedJobs }
     })
-  }, [])
+  }, [state.user])
 
   const goToStep = useCallback((step: AppState['currentStep']) => {
     setState(prev => ({ ...prev, currentStep: step }))

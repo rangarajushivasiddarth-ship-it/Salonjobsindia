@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
 import { useLanguage } from '@/lib/language-context'
 import { submitJobPayment, useApprovalStatus } from '@/lib/hooks/use-realtime-sync'
+import { SyncService } from '@/lib/sync-service'
 import Image from 'next/image'
 
 const ROLE_OPTIONS = [
@@ -885,8 +886,9 @@ function PendingApprovalScreen({
           }
         }
         
-        // Dispatch update event
+        // Dispatch update event and sync to job seekers
         window.dispatchEvent(new CustomEvent('salonjobsindia_data_updated', { detail: { key: 'salonjobsindia_jobs' } }))
+        SyncService.syncJobPosting(newJob)
       }
       
       setShowSuccess(true)
