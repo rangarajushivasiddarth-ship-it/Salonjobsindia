@@ -5,8 +5,6 @@ import { Search, Lock, MapPin, Building2, User, Unlock, Filter, ChevronRight, Me
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
-import { useLanguage } from '@/lib/language-context'
-import { SyncService as RealTimeSync } from '@/lib/sync-service'
 import { getAllJobs, canViewMoreShops, incrementShopsViewed, sendMessage, getSubscriptionByUserId } from '@/lib/data-store'
 import type { Job, BeautyRole } from '@/lib/types'
 import { BEAUTY_ROLES, ROLE_CATEGORIES } from '@/lib/types'
@@ -34,7 +32,6 @@ interface SalonWithDetails {
 
 export function JobDiscovery() {
   const { user, goToStep, resume } = useApp()
-  const { t } = useLanguage()
   const [searchQuery, setSearchQuery] = useState('')
   const [showUnlockPrompt, setShowUnlockPrompt] = useState(false)
   const [selectedSalon, setSelectedSalon] = useState<SalonWithDetails | null>(null)
@@ -126,42 +123,6 @@ export function JobDiscovery() {
       const stats = canViewMoreShops(user.id)
       setViewStats({ remaining: stats.remaining, total: stats.total })
     }
-    
-    // Listen for new jobs posted by salon owners
-    const unsubscribe = RealTimeSync.subscribe('job_posted', () => {
-      // Refresh the jobs list
-      const newJobs = getAllJobs().filter(job => job.isActive && job.status === 'live')
-      const newSalons: SalonWithDetails[] = newJobs.map(job => {
-        let distance: number | undefined
-        if (userLocation && job.location) {
-          distance = calculateDistance(
-            userLocation.lat, userLocation.lng,
-            job.location.lat, job.location.lng
-          )
-        }
-        
-        return {
-          id: job.salonId || job.id,
-          name: job.salonName,
-          ownerId: job.salonId || job.id,
-          ownerPhone: job.salonMobile || job.contact || '',
-          job: {
-            role: job.role as BeautyRole,
-            salary: job.salary,
-            experience: job.experience,
-            location: job.location as { address: string; area: string; city: string; lat: number; lng: number },
-            timing: job.timing,
-            gender: job.gender,
-            accommodation: job.accommodation,
-            foodProvided: job.foodProvided,
-          },
-          distance
-        }
-      })
-      setSalons(newSalons)
-    })
-    
-    return unsubscribe
   }, [user?.id, userLocation])
 
   // Filter and sort salons

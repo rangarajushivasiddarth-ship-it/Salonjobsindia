@@ -10,7 +10,6 @@ import type { Job } from '@/lib/types'
 
 export function JobResults() {
   const { user, savedJobs, appliedJobs, saveJob, unsaveJob, applyToJob, goToStep } = useApp()
-  const { t } = useLanguage()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [showSubscribeModal, setShowSubscribeModal] = useState(false)

@@ -5,9 +5,7 @@ import { ArrowLeft, Building2, Briefcase, MapPin, Navigation, FileText, Check, X
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
-import { useLanguage } from '@/lib/language-context'
 import { submitJobPayment, useApprovalStatus } from '@/lib/hooks/use-realtime-sync'
-import { SyncService } from '@/lib/sync-service'
 import Image from 'next/image'
 
 const ROLE_OPTIONS = [
@@ -50,7 +48,6 @@ interface JobDraft {
 
 export function CreateJob() {
   const { user, goToStep } = useApp()
-  const { t } = useLanguage()
   const [currentStep, setCurrentStep] = useState<Step>('form')
   const [isLoading, setIsLoading] = useState(false)
   const [detectingLocation, setDetectingLocation] = useState(false)
@@ -886,9 +883,8 @@ function PendingApprovalScreen({
           }
         }
         
-        // Dispatch update event and sync to job seekers
+        // Dispatch update event
         window.dispatchEvent(new CustomEvent('salonjobsindia_data_updated', { detail: { key: 'salonjobsindia_jobs' } }))
-        SyncService.syncJobPosting(newJob)
       }
       
       setShowSuccess(true)

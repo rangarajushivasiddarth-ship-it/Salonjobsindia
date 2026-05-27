@@ -5,8 +5,6 @@ import { Plus, Briefcase, Users, Settings, LogOut, Edit2, Trash2, Eye, ChevronRi
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
-import { useLanguage } from '@/lib/language-context'
-import { SyncService as RealTimeSync } from '@/lib/sync-service'
 import { getMessagesForOwner, getAllJobs, getUnreadMessageCount, getApplicationsBySalonId, getAllJobSeekers, isCandidateUnlocked, deductSalonCredit, getSalonProfileByOwnerId } from '@/lib/data-store'
 import type { Job, Application, CONTACT_CREDIT_PACKS } from '@/lib/types'
 import type { JobSeeker } from '@/lib/data-store'
@@ -78,7 +76,6 @@ type TabType = 'dashboard' | 'jobs' | 'applicants' | 'candidates' | 'settings'
 
 export function OwnerPanel() {
   const { user, logout, goToStep } = useApp()
-  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false)
@@ -127,18 +124,9 @@ export function OwnerPanel() {
   useEffect(() => {
     loadData()
     
-    // Listen for new applications in real-time
-    const unsubscribe = RealTimeSync.subscribe('application_created', () => {
-      loadData()
-    })
-    
     // Set up polling for real-time updates
     const interval = setInterval(loadData, 10000)
-    
-    return () => {
-      clearInterval(interval)
-      unsubscribe()
-    }
+    return () => clearInterval(interval)
   }, [loadData])
 
   // Calculate real stats

@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
-import { LanguageProvider } from '@/lib/language-context'
 import './globals.css'
 
 const inter = Inter({ 
@@ -48,10 +47,8 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark bg-background">
       <body className={`${inter.variable} font-sans antialiased min-h-screen`}>
-        <LanguageProvider>
-          {children}
-          {process.env.NODE_ENV === 'production' && <Analytics />}
-        </LanguageProvider>
+        {children}
+        {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
   )

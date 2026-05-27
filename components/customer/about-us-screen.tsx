@@ -3,7 +3,6 @@
 import { ArrowLeft, Phone, MessageCircle, Award, Users, MapPin, Clock, CheckCircle, Quote, Target, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
-import { useLanguage } from '@/lib/language-context'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { useEffect, useState, useRef } from 'react'
@@ -167,7 +166,6 @@ function AwardBadge({ label }: { label: string }) {
 
 export function AboutUsScreen() {
   const { goToStep, user } = useApp()
-  const { t } = useLanguage()
   const isOwner = user?.role === 'salon_owner' || user?.role === 'employer'
 
   const stats = [

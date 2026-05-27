@@ -22,7 +22,6 @@ const SKILL_SUGGESTIONS = [
 
 export function ResumeBuilder() {
   const { user, setResume, goToStep } = useApp()
-  const { t } = useLanguage()
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [detectingLocation, setDetectingLocation] = useState(false)
