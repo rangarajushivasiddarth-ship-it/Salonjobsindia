@@ -8,6 +8,7 @@ import { useApp } from '@/lib/app-context'
 import { getAllJobs, canViewMoreShops, incrementShopsViewed, sendMessage, getSubscriptionByUserId } from '@/lib/data-store'
 import type { Job, BeautyRole } from '@/lib/types'
 import { BEAUTY_ROLES, ROLE_CATEGORIES } from '@/lib/types'
+import { BrandingBanner } from './branding-banner'
 
 interface SalonWithDetails {
   id: string
@@ -209,6 +210,11 @@ export function JobDiscovery() {
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/20" />
       <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+      
+      {/* Branding Banner - Find Jobs in Home */}
+      <div className="relative z-10 py-3 bg-gradient-to-r from-background via-secondary/30 to-background border-b border-border/30">
+        <BrandingBanner section="job_seeker" />
+      </div>
       
       {/* Header */}
       <header className="relative z-10 p-4 glass">

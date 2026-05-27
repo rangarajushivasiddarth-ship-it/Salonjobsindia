@@ -255,6 +255,11 @@
   50% { background-position: 200% 0; }
 }
 
+@keyframes scroll-banner {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 @keyframes glow-pulse {
   0%, 100% {
     box-shadow: 0 0 20px rgba(200, 170, 100, 0.4),
@@ -304,6 +309,14 @@
   animation: glow-pulse 2s ease-in-out infinite;
 }
 
+.animate-scroll-banner {
+  animation: scroll-banner 20s linear infinite;
+}
+
+.animate-scroll-banner:hover {
+  animation-play-state: paused;
+}
+
 /* Safe area for mobile devices */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0);
@@ -330,4 +343,14 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(200, 170, 100, 0.5);
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

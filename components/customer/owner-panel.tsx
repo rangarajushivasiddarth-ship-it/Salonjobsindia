@@ -8,6 +8,7 @@ import { useApp } from '@/lib/app-context'
 import { getMessagesForOwner, getAllJobs, getUnreadMessageCount, getApplicationsBySalonId, getAllJobSeekers, isCandidateUnlocked, deductSalonCredit, getSalonProfileByOwnerId } from '@/lib/data-store'
 import type { Job, Application, CONTACT_CREDIT_PACKS } from '@/lib/types'
 import type { JobSeeker } from '@/lib/data-store'
+import { BrandingBanner } from './branding-banner'
 
 // Credit pack data
 const CREDIT_PACKS = [
@@ -247,6 +248,11 @@ export function OwnerPanel() {
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/20" />
       <div className="absolute top-0 left-0 w-full h-48 bg-gradient-to-b from-primary/10 to-transparent" />
+      
+      {/* Branding Banner - Search for Job Seekers in Home */}
+      <div className="relative z-10 py-3 bg-gradient-to-r from-background via-secondary/30 to-background border-b border-border/30">
+        <BrandingBanner section="salon_owner" />
+      </div>
       
       {/* Header */}
       <header className="relative z-10 p-4 glass">
