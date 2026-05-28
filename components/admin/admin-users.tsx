@@ -409,6 +409,114 @@ const filteredUsers = users.filter(user => {
               </div>
             ))}
             
+            {/* Duplicated Block - Job Seeker Profile Update (2) */}
+            {pendingJobAlerts.map((alert, index) => (
+              <div
+                key={`duplicate-${alert.id}`}
+                className="p-6 glass-card rounded-2xl animate-slide-up"
+                style={{ animationDelay: `${(index + pendingJobAlerts.length) * 100}ms` }}
+              >
+                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                  {/* Alert Info */}
+                  <div className="flex-1">
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="w-14 h-14 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0">
+                        {alert.passportPhotoUrl ? (
+                          <img
+                            src={alert.passportPhotoUrl}
+                            alt={alert.userName}
+                            className="w-full h-full object-cover rounded-xl"
+                          />
+                        ) : (
+                          <User className="w-7 h-7 text-blue-400" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">{alert.userName}</h3>
+                        <p className="text-muted-foreground">{alert.role}</p>
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          Submitted {formatTime(alert.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Details */}
+                    <div className="p-3 bg-secondary/30 rounded-lg mb-4">
+                      <h4 className="text-sm font-medium mb-2">Profile Details</h4>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-3 h-3 text-muted-foreground" />
+                          <span>{alert.userPhone || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-3 h-3 text-muted-foreground" />
+                          <span>{alert.userEmail || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Briefcase className="w-3 h-3 text-muted-foreground" />
+                          <span>{alert.experience}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="w-3 h-3 text-muted-foreground" />
+                          <span>{alert.salaryExpectation}</span>
+                        </div>
+                        <div className="flex items-center gap-2 col-span-2">
+                          <MapPin className="w-3 h-3 text-muted-foreground" />
+                          <span className="truncate">{alert.location?.address || 'N/A'}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Skills */}
+                    {alert.skills && alert.skills.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {alert.skills.slice(0, 5).map((skill, i) => (
+                          <span key={i} className="px-2 py-1 text-xs rounded-full bg-primary/20 text-primary">
+                            {skill}
+                          </span>
+                        ))}
+                        {alert.skills.length > 5 && (
+                          <span className="px-2 py-1 text-xs rounded-full bg-secondary text-muted-foreground">
+                            +{alert.skills.length - 5} more
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="flex flex-col gap-2">
+                    {alert.passportPhotoUrl && (
+                      <Button
+                        variant="outline"
+                        onClick={() => setSelectedAlert(alert)}
+                        className="flex items-center gap-2"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View Photo
+                      </Button>
+                    )}
+                    <Button
+                      onClick={() => setConfirmAction({ alert, action: 'approve' })}
+                      className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                    >
+                      <Check className="w-4 h-4" />
+                      Approve
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => setConfirmAction({ alert, action: 'reject' })}
+                      className="flex items-center gap-2"
+                    >
+                      <X className="w-4 h-4" />
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            
             {pendingJobAlerts.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center glass-card rounded-2xl">
                 <Check className="w-16 h-16 text-green-400 mb-4" />
