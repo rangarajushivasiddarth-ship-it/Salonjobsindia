@@ -442,10 +442,13 @@ export function AboutUsScreen() {
       <footer className="px-4 py-8 border-t border-[#D4AF37]/10 text-center">
         <div className="mb-4">
           <h3 className="text-white font-bold text-lg">Salon Jobs India</h3>
-          <p className="text-[#D4AF37] text-sm">Powered by Fitonze Private Limited</p>
+          <p className="text-[#D4AF37] text-sm">Powered by FItonze Private Limited</p>
         </div>
-        <p className="text-white/40 text-xs">
-          © 2026 Fitonze Private Limited. All Rights Reserved.
+        <p className="text-white/40 text-xs mb-2">
+          © 2026 FItonze Private Limited. All Rights Reserved.
+        </p>
+        <p className="text-white/30 text-[10px]">
+          Application developed by Rangaraju Shiva Siddarth
         </p>
       </footer>
     </div>

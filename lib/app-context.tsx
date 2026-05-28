@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import type { User, Resume, Subscription, UserRole } from './types'
 import { UserService, JobSeekerService, SubscriptionService, NotificationService, SyncService } from './data-service'
+import { checkAndExpireJobs, checkAndExpireVerifiedBadges } from './data-store'
 
 // Helper to convert JobSeeker data to Resume format
 function jobSeekerToResume(jobSeeker: ReturnType<typeof JobSeekerService.getByUserId>): Resume | null {
@@ -69,6 +70,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Run expiry checks on app load
+        checkAndExpireJobs()
+        checkAndExpireVerifiedBadges()
+        
         const currentUser = UserService.getCurrentUser()
         
         if (currentUser) {
@@ -115,6 +120,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     
     // Small delay for splash screen
     setTimeout(checkAuth, 1500)
+  }, [])
+
+  // Periodic expiry check (once per hour)
+  useEffect(() => {
+    const expiryInterval = setInterval(() => {
+      checkAndExpireJobs()
+      checkAndExpireVerifiedBadges()
+    }, 60 * 60 * 1000) // Every hour
+    
+    return () => clearInterval(expiryInterval)
   }, [])
 
   // Subscribe to real-time data updates

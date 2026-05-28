@@ -428,12 +428,17 @@ export function SettingsScreen() {
         </button>
         
         {/* App Version */}
-        <p className="text-center text-xs text-muted-foreground mt-8">
-          Salon Jobs India v1.0.0
-        </p>
-        <p className="text-center text-xs text-muted-foreground mt-1">
-          Powered by Fitonze Private Limited
-        </p>
+        <div className="text-center mt-8 mb-4">
+          <p className="text-xs text-muted-foreground">
+            Salon Jobs India v1.0.0
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            © 2026 FItonze Private Limited. All Rights Reserved.
+          </p>
+          <p className="text-[10px] text-muted-foreground/60 mt-1">
+            Application developed by Rangaraju Shiva Siddarth
+          </p>
+        </div>
       </div>
     </div>
   )

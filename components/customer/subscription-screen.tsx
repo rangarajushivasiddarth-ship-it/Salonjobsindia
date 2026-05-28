@@ -499,7 +499,10 @@ export function SubscriptionScreen() {
             )}
           </Button>
           <p className="text-center text-xs text-muted-foreground mt-3">
-            Secure payment verification by FITONZE team
+            Secure payment verification by FItonze Private Limited
+          </p>
+          <p className="text-center text-[10px] text-muted-foreground/60 mt-1">
+            Application developed by Rangaraju Shiva Siddarth
           </p>
         </div>
       </div>

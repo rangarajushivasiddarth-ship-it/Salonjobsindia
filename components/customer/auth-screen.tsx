@@ -332,6 +332,16 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
             {mode === 'signin' ? 'Sign up' : 'Sign in'}
           </button>
         </p>
+        
+        {/* Footer */}
+        <div className="mt-8 text-center">
+          <p className="text-[10px] text-muted-foreground/60">
+            © 2026 FItonze Private Limited. All Rights Reserved.
+          </p>
+          <p className="text-[9px] text-muted-foreground/40 mt-1">
+            Application developed by Rangaraju Shiva Siddarth
+          </p>
+        </div>
       </div>
     </div>
   )

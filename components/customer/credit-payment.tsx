@@ -23,7 +23,7 @@ interface SelectedPack {
 const PAYMENT_CONFIG = {
   upiId: 'salonjobsindia@upi',
   qrCodeUrl: '/qr-code.png', // Replace with actual QR code
-  supportPhone: '+91 98765 43210',
+  supportPhone: '+91 9100609609',
 }
 
 export function CreditPayment() {
