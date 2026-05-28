@@ -99,7 +99,7 @@ export interface Application {
 }
 
 // ============ MOCK DATA STORE (for demo without Firebase) ============
-const MOCK_STORAGE_KEY = 'fitone_mock_db'
+const MOCK_STORAGE_KEY = 'fitonze_mock_db'
 
 interface MockDatabase {
   jobSeekers: JobSeeker[]

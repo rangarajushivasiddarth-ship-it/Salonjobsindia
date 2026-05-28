@@ -17,7 +17,7 @@ export async function connectToDatabase(): Promise<Db> {
   try {
     client = new MongoClient(MONGODB_URI)
     await client.connect()
-    db = client.db('fitone_db')
+    db = client.db('fitonze_db')
     console.log('Connected to MongoDB Atlas')
     return db
   } catch (error) {

@@ -682,13 +682,13 @@ function updateUserSubscription(userId: string, isSubscribed: boolean): void {
   if (typeof window === 'undefined' || !userId) return
   
   try {
-    const currentUserStr = localStorage.getItem('fitone_current_user')
+    const currentUserStr = localStorage.getItem('fitonze_current_user')
     if (currentUserStr) {
       try {
         const currentUser = JSON.parse(currentUserStr)
         if (currentUser?.id === userId) {
           currentUser.isSubscribed = isSubscribed
-          localStorage.setItem('fitone_current_user', JSON.stringify(currentUser))
+          localStorage.setItem('fitonze_current_user', JSON.stringify(currentUser))
         }
       } catch {
         // Ignore

@@ -294,7 +294,15 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
                 />
                 <span className="text-sm text-muted-foreground">Remember me</span>
               </label>
-              <button type="button" className="text-sm text-primary hover:underline">
+              <button 
+                type="button" 
+                className="text-sm text-primary hover:underline"
+                onClick={() => {
+                  // Redirect to WhatsApp for password recovery
+                  const message = encodeURIComponent('Hi, I forgot my password and need help resetting it for my Salon Jobs India account.')
+                  window.open(`https://wa.me/919100609609?text=${message}`, '_blank')
+                }}
+              >
                 Forgot password?
               </button>
             </div>

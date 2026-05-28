@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Edit2, Trash2, MapPin, DollarSign, Clock, Building2, Eye, AlertCircle, Check, X, Phone, Image as ImageIcon, CreditCard } from 'lucide-react'
+import { Search, Edit2, Trash2, MapPin, DollarSign, Clock, Building2, Eye, AlertCircle, Check, X, Phone, Image as ImageIcon, CreditCard, BadgeCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAdmin } from '@/lib/admin-context'
 import { AdminSidebar } from './admin-sidebar'
+import { saveJob, createAlert, updateSalonCredits, getSalonProfileByOwnerId, getAllJobs, type JobSeeker } from '@/lib/data-store'
+import type { Job } from '@/lib/types'
 
 interface JobPaymentRequest {
   id: string
@@ -39,7 +41,7 @@ export function AdminJobs() {
   // Load pending job payments from localStorage
   useEffect(() => {
     const loadPendingPayments = () => {
-      const stored = localStorage.getItem('fitone_admin_job_payments')
+      const stored = localStorage.getItem('fitonze_admin_job_payments')
       if (stored) {
         const payments: JobPaymentRequest[] = JSON.parse(stored)
         setPendingPayments(payments.filter(p => p.status === 'pending'))
@@ -65,7 +67,7 @@ export function AdminJobs() {
 
   const handleApprovePayment = (payment: JobPaymentRequest) => {
     // Update payment status
-    const stored = localStorage.getItem('fitone_admin_job_payments')
+    const stored = localStorage.getItem('fitonze_admin_job_payments')
     if (stored) {
       const payments: JobPaymentRequest[] = JSON.parse(stored)
       const updated = payments.map(p => 
@@ -73,31 +75,82 @@ export function AdminJobs() {
           ? { ...p, status: 'approved' as const, processedAt: new Date() }
           : p
       )
-      localStorage.setItem('fitone_admin_job_payments', JSON.stringify(updated))
+      localStorage.setItem('fitonze_admin_job_payments', JSON.stringify(updated))
     }
     
-    // Update job status in pending jobs
-    const pendingJobsKey = `fitone_pending_jobs_${payment.salonOwnerId}`
+    // Update job status in pending jobs and get job details
+    const pendingJobsKey = `fitonze_pending_jobs_${payment.salonOwnerId}`
     const pendingJobs = localStorage.getItem(pendingJobsKey)
+    let jobDetails: Record<string, unknown> | null = null
+    
     if (pendingJobs) {
       const jobs = JSON.parse(pendingJobs)
-      const updated = jobs.map((j: { id: string; status: string }) => 
-        j.id === payment.jobId 
-          ? { ...j, status: 'approved' }
-          : j
-      )
+      const updated = jobs.map((j: { id: string; status: string }) => {
+        if (j.id === payment.jobId) {
+          jobDetails = j
+          return { ...j, status: 'live' }
+        }
+        return j
+      })
       localStorage.setItem(pendingJobsKey, JSON.stringify(updated))
     }
     
+    // Get salon profile for verification badge status
+    const salonProfile = getSalonProfileByOwnerId(payment.salonOwnerId)
+    const isVerified = !!(salonProfile?.isVerified && salonProfile.verifiedUntil && new Date(salonProfile.verifiedUntil) > new Date())
+    
+    // IMPORTANT: Actually publish the job to the main jobs list
+    const newJob: Job = {
+      id: payment.jobId,
+      salonId: payment.salonOwnerId,
+      salonName: payment.salonName,
+      salonLogo: salonProfile?.logoUrl,
+      role: payment.jobRole,
+      salary: (jobDetails as Record<string, unknown>)?.salary as string || 'Negotiable',
+      experience: (jobDetails as Record<string, unknown>)?.experience as string || 'Any',
+      description: (jobDetails as Record<string, unknown>)?.description as string || '',
+      location: (jobDetails as Record<string, unknown>)?.location as { lat: number; lng: number; address: string; area?: string; city?: string } || {
+        lat: 0,
+        lng: 0,
+        address: 'Location not specified',
+        area: '',
+        city: '',
+      },
+      contact: payment.salonMobile,
+      isActive: true,
+      isVerified: isVerified,
+      status: 'live',
+      postedAt: new Date(),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      paymentApprovedAt: new Date(),
+      applicants: [],
+    }
+    
+    // Save job to the main jobs list
+    saveJob(newJob)
+    
+    // Add contact credits to salon owner (30 credits with each job post)
+    updateSalonCredits(payment.salonOwnerId, 30)
+    
+    // Create alert for salon owner
+    createAlert({
+      userId: payment.salonOwnerId,
+      type: 'job_live',
+      title: 'Job is Now Live!',
+      message: `Your job post for "${payment.jobRole}" has been approved and is now visible to job seekers.`,
+      data: { jobId: payment.jobId },
+      isRead: false,
+    })
+    
     // Add notification for salon owner
-    const notificationsKey = `fitone_notifications_${payment.salonOwnerId}`
+    const notificationsKey = `fitonze_notifications_${payment.salonOwnerId}`
     const existingNotifications = localStorage.getItem(notificationsKey)
     const notifications = existingNotifications ? JSON.parse(existingNotifications) : []
     notifications.unshift({
       id: `notif_${Date.now()}`,
       type: 'payment_approved',
-      title: 'Payment Approved!',
-      message: `Your job post for "${payment.jobRole}" has been approved. You can now publish it.`,
+      title: 'Job is Now Live!',
+      message: `Your job post for "${payment.jobRole}" has been approved and is now visible to job seekers. 30 contact credits have been added to your account.`,
       isRead: false,
       createdAt: new Date(),
     })
@@ -110,7 +163,7 @@ export function AdminJobs() {
 
   const handleRejectPayment = (payment: JobPaymentRequest) => {
     // Update payment status
-    const stored = localStorage.getItem('fitone_admin_job_payments')
+    const stored = localStorage.getItem('fitonze_admin_job_payments')
     if (stored) {
       const payments: JobPaymentRequest[] = JSON.parse(stored)
       const updated = payments.map(p => 
@@ -118,11 +171,11 @@ export function AdminJobs() {
           ? { ...p, status: 'rejected' as const, processedAt: new Date(), rejectionReason }
           : p
       )
-      localStorage.setItem('fitone_admin_job_payments', JSON.stringify(updated))
+      localStorage.setItem('fitonze_admin_job_payments', JSON.stringify(updated))
     }
     
     // Update job status in pending jobs
-    const pendingJobsKey = `fitone_pending_jobs_${payment.salonOwnerId}`
+    const pendingJobsKey = `fitonze_pending_jobs_${payment.salonOwnerId}`
     const pendingJobs = localStorage.getItem(pendingJobsKey)
     if (pendingJobs) {
       const jobs = JSON.parse(pendingJobs)
@@ -135,7 +188,7 @@ export function AdminJobs() {
     }
     
     // Add notification for salon owner
-    const notificationsKey = `fitone_notifications_${payment.salonOwnerId}`
+    const notificationsKey = `fitonze_notifications_${payment.salonOwnerId}`
     const existingNotifications = localStorage.getItem(notificationsKey)
     const notifications = existingNotifications ? JSON.parse(existingNotifications) : []
     notifications.unshift({

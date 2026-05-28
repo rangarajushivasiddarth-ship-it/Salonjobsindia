@@ -25,7 +25,7 @@ export function NotificationsScreen() {
   // Load notifications from localStorage (for payment notifications)
   useEffect(() => {
     if (user?.id) {
-      const stored = localStorage.getItem(`fitone_notifications_${user.id}`)
+      const stored = localStorage.getItem(`fitonze_notifications_${user.id}`)
       if (stored) {
         const storedNotifications = JSON.parse(stored).map((n: Notification & { createdAt?: string }) => ({
           ...n,
@@ -35,7 +35,7 @@ export function NotificationsScreen() {
       }
       
       // Also check the data-store notifications
-      const dataStoreNotifications = localStorage.getItem('fitone_notifications')
+      const dataStoreNotifications = localStorage.getItem('fitonze_notifications')
       if (dataStoreNotifications) {
         try {
           const allNotifications = JSON.parse(dataStoreNotifications)

@@ -76,7 +76,7 @@ export function CreateJob() {
 
   // Check for existing pending jobs
   useEffect(() => {
-    const pendingJobs = localStorage.getItem(`fitone_pending_jobs_${user?.id}`)
+    const pendingJobs = localStorage.getItem(`fitonze_pending_jobs_${user?.id}`)
     if (pendingJobs) {
       const jobs: JobDraft[] = JSON.parse(pendingJobs)
       const pendingJob = jobs.find(j => j.status === 'pending_approval')
@@ -419,7 +419,7 @@ export function CreateJob() {
               <ol className="space-y-3 text-sm">
                 <li className="flex items-start gap-3">
                   <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center shrink-0">1</span>
-                  <span>Scan the QR code below or pay to UPI: <strong>fitone@upi</strong></span>
+                  <span>Scan the QR code below or pay to UPI: <strong>fitonze@upi</strong></span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center shrink-0">2</span>
@@ -447,7 +447,7 @@ export function CreateJob() {
                   className="w-full h-full object-contain"
                 />
               </div>
-              <p className="text-sm text-muted-foreground">UPI: fitone@upi</p>
+              <p className="text-sm text-muted-foreground">UPI: fitonze@upi</p>
             </div>
             
             {/* Screenshot Upload */}

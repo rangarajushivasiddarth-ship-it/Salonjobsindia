@@ -156,7 +156,7 @@ function saveToStorage<T>(key: string, data: T[]): void {
   try {
     localStorage.setItem(key, JSON.stringify(data))
     // Dispatch event for real-time sync
-    window.dispatchEvent(new CustomEvent('fitone_data_updated', { detail: { key } }))
+    window.dispatchEvent(new CustomEvent('fitonze_data_updated', { detail: { key } }))
   } catch (error) {
     console.error('Storage save error:', error)
   }
@@ -618,10 +618,10 @@ export const SyncService = {
       }
     }
     
-    window.addEventListener('fitone_data_updated', handler as EventListener)
+    window.addEventListener('fitonze_data_updated', handler as EventListener)
     
     return () => {
-      window.removeEventListener('fitone_data_updated', handler as EventListener)
+      window.removeEventListener('fitonze_data_updated', handler as EventListener)
     }
   },
   
@@ -629,7 +629,7 @@ export const SyncService = {
   sync: async (): Promise<void> => {
     // In localStorage mode, just dispatch update events
     Object.values(STORAGE_KEYS).forEach(key => {
-      window.dispatchEvent(new CustomEvent('fitone_data_updated', { detail: { key } }))
+      window.dispatchEvent(new CustomEvent('fitonze_data_updated', { detail: { key } }))
     })
   }
 }

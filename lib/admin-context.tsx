@@ -235,7 +235,7 @@ if (event.key === 'salonjobsindia_subscriptions' ||
       if (userPhone) {
         const phone = userPhone.replace(/\D/g, '')
         const message = encodeURIComponent(
-          `🎉 Congratulations! Your FITONE ${planName} subscription has been activated!\n\n✅ You now have full access to premium features.\n\nThank you for subscribing!\n\n- Team FITONE`
+          `🎉 Congratulations! Your FITONZE ${planName} subscription has been activated!\n\n✅ You now have full access to premium features.\n\nThank you for subscribing!\n\n- Team FITONZE`
         )
         window.open(`https://wa.me/91${phone}?text=${message}`, '_blank')
       }

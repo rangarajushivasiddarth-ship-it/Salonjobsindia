@@ -499,7 +499,7 @@ export function SubscriptionScreen() {
             )}
           </Button>
           <p className="text-center text-xs text-muted-foreground mt-3">
-            Secure payment verification by FITONE team
+            Secure payment verification by FITONZE team
           </p>
         </div>
       </div>

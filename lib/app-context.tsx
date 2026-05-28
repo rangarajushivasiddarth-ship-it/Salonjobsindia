@@ -136,7 +136,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     
     const checkApproval = () => {
       // Check from data-store
-      const dataStoreKey = 'fitone_subscriptions'
+      const dataStoreKey = 'fitonze_subscriptions'
       try {
         const stored = localStorage.getItem(dataStoreKey)
         if (stored) {
@@ -165,7 +165,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     
     // Listen for storage changes from admin tab
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'fitone_subscriptions' || event.key === 'fitone_sync_trigger') {
+      if (event.key === 'fitonze_subscriptions' || event.key === 'fitonze_sync_trigger') {
         checkApproval()
       }
     }
