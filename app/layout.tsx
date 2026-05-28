@@ -10,7 +10,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: 'Salon Jobs India - Find Your Perfect Salon Career',
-  description: 'India\'s premier salon job marketplace connecting job seekers with salon owners. Powered by Fitonze Private Limited.',
+  description: 'India\'s premier salon job marketplace connecting job seekers with salon owners. Powered by FItonze Private Limited.',
   generator: 'v0.app',
   icons: {
     icon: [

@@ -55,7 +55,7 @@ export function AdminLogin() {
             />
           </div>
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground text-sm">Powered by Fitonze Private Limited</p>
+          <p className="text-muted-foreground text-sm">Powered by FItonze Private Limited</p>
         </div>
         
         {/* Login Form */}
