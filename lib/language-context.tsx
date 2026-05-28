@@ -8,18 +8,19 @@ export interface Language {
   code: LanguageCode
   name: string
   nativeName: string
+  googleCode: string // Google Translate language code
 }
 
 export const SUPPORTED_LANGUAGES: Language[] = [
-  { code: 'en', name: 'English', nativeName: 'English' },
-  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी' },
-  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు' },
-  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்' },
-  { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം' },
-  { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ' },
-  { code: 'ur', name: 'Urdu', nativeName: 'اردو' },
-  { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી' },
-  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা' },
+  { code: 'en', name: 'English', nativeName: 'English', googleCode: 'en' },
+  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', googleCode: 'hi' },
+  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు', googleCode: 'te' },
+  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', googleCode: 'ta' },
+  { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം', googleCode: 'ml' },
+  { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ', googleCode: 'kn' },
+  { code: 'ur', name: 'Urdu', nativeName: 'اردو', googleCode: 'ur' },
+  { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી', googleCode: 'gu' },
+  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', googleCode: 'bn' },
 ]
 
 interface LanguageContextType {
@@ -63,7 +64,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       setCurrentLanguage(savedLang)
     }
 
-    // Initialize Google Translate widget
+    // Initialize Google Translate widget (hidden)
     const initGoogleTranslate = () => {
       if (window.google?.translate?.TranslateElement) {
         new window.google.translate.TranslateElement(
@@ -71,6 +72,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
             pageLanguage: 'en',
             includedLanguages: 'hi,te,ta,ml,kn,ur,gu,bn',
             autoDisplay: false,
+            layout: 0, // TEXT layout - most minimal
           },
           'google_translate_element'
         )
@@ -106,43 +108,57 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       }, 500)
       return () => clearTimeout(timeout)
     }
-  }, [isInitialized, currentLanguage])
+  }, [isInitialized]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const triggerLanguageChange = useCallback((langCode: LanguageCode) => {
     setIsTranslating(true)
 
-    // Find and trigger the Google Translate select element
+    const langObj = SUPPORTED_LANGUAGES.find(l => l.code === langCode)
+    const googleLangCode = langObj?.googleCode || langCode
+
+    // Method 1: Try using the hidden Google Translate select element
     const selectElement = document.querySelector('.goog-te-combo') as HTMLSelectElement
     
     if (selectElement) {
       if (langCode === 'en') {
-        // Reset to English by selecting empty option or using the reset function
-        const iframe = document.querySelector('.goog-te-banner-frame') as HTMLIFrameElement
-        if (iframe?.contentDocument) {
-          const resetLink = iframe.contentDocument.querySelector('.goog-te-button button')
-          if (resetLink) {
-            (resetLink as HTMLElement).click()
-          }
-        }
-        // Alternative: Clear the cookie
+        // Reset to English - clear the translation
+        selectElement.value = ''
+        selectElement.dispatchEvent(new Event('change', { bubbles: true }))
+        
+        // Also clear cookies to ensure reset
         document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
         document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + window.location.hostname
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + window.location.hostname
+        
         // Reload to apply English
-        window.location.reload()
+        setTimeout(() => {
+          window.location.reload()
+        }, 100)
       } else {
-        selectElement.value = langCode
+        // Set the language in the select dropdown
+        selectElement.value = googleLangCode
         selectElement.dispatchEvent(new Event('change', { bubbles: true }))
       }
     } else {
-      // If select not found, try setting cookie directly
-      const langPair = `/en/${langCode}`
-      document.cookie = `googtrans=${langPair}; path=/`
-      document.cookie = `googtrans=${langPair}; path=/; domain=${window.location.hostname}`
+      // Method 2: Set cookies directly if select not found
+      const langPair = langCode === 'en' ? '' : `/en/${googleLangCode}`
+      
+      // Clear existing cookies first
+      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + window.location.hostname
+      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + window.location.hostname
       
       if (langCode !== 'en') {
-        // Reload to trigger translation
-        window.location.reload()
+        // Set new translation cookie
+        document.cookie = `googtrans=${langPair}; path=/`
+        document.cookie = `googtrans=${langPair}; path=/; domain=${window.location.hostname}`
+        document.cookie = `googtrans=${langPair}; path=/; domain=.${window.location.hostname}`
       }
+      
+      // Reload to trigger translation
+      setTimeout(() => {
+        window.location.reload()
+      }, 100)
     }
 
     // Remove translating state after a delay
@@ -169,8 +185,21 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-      {/* Hidden Google Translate element */}
-      <div id="google_translate_element" className="hidden" />
+      {/* Hidden Google Translate element - completely invisible */}
+      <div 
+        id="google_translate_element" 
+        style={{ 
+          position: 'absolute',
+          top: '-9999px',
+          left: '-9999px',
+          visibility: 'hidden',
+          opacity: 0,
+          pointerEvents: 'none',
+          width: 0,
+          height: 0,
+          overflow: 'hidden',
+        }} 
+      />
     </LanguageContext.Provider>
   )
 }

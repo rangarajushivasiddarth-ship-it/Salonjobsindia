@@ -737,6 +737,47 @@ function updateUserSubscription(userId: string, isSubscribed: boolean): void {
 
 // ============== JOBS ==============
 
+// Fetch approved jobs from cloud and merge with local
+export async function syncApprovedJobsFromCloud(): Promise<void> {
+  if (typeof window === 'undefined') return
+  
+  try {
+    const response = await fetch('/api/sync?type=approved-jobs')
+    const data = await response.json()
+    
+    if (data.success && Array.isArray(data.data)) {
+      const cloudJobs = data.data as Job[]
+      const localJobs = getAllJobs()
+      
+      // Merge cloud jobs with local, avoiding duplicates
+      let hasChanges = false
+      cloudJobs.forEach(cloudJob => {
+        const existingIndex = localJobs.findIndex(
+          j => j.id === cloudJob.id || 
+               (j.salonId === cloudJob.salonId && j.paymentId === cloudJob.paymentId)
+        )
+        
+        if (existingIndex === -1) {
+          // Add new job from cloud
+          localJobs.push({
+            ...cloudJob,
+            isActive: true,
+            status: 'live',
+          } as Job)
+          hasChanges = true
+        }
+      })
+      
+      if (hasChanges) {
+        localStorage.setItem(JOBS_KEY, JSON.stringify(localJobs))
+        dispatchDataUpdate(JOBS_KEY)
+      }
+    }
+  } catch (error) {
+    console.error('Error syncing approved jobs from cloud:', error)
+  }
+}
+
 export function getAllJobs(): Job[] {
   if (typeof window === 'undefined') return []
   try {

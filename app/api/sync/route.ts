@@ -6,6 +6,7 @@ const PENDING_SUBSCRIPTIONS_PATH = 'sync/pending-subscriptions.json'
 const PENDING_JOB_PAYMENTS_PATH = 'sync/pending-job-payments.json'
 const PENDING_JOB_ALERTS_PATH = 'sync/pending-job-alerts.json'
 const APPROVED_USERS_PATH = 'sync/approved-users.json'
+const APPROVED_JOBS_PATH = 'sync/approved-jobs.json'
 
 interface PendingSubscription {
   id: string
@@ -165,6 +166,12 @@ export async function GET(request: NextRequest) {
         totalPending: pendingSubs.length + pendingJobs.length + pendingAlerts.length,
         timestamp: Date.now() 
       })
+    }
+    
+    if (type === 'approved-jobs') {
+      const approvedJobs = await readBlobJson<Record<string, unknown>[]>(APPROVED_JOBS_PATH, [])
+      console.log(`[Sync API] Returning ${approvedJobs.length} approved jobs`)
+      return NextResponse.json({ success: true, data: approvedJobs, timestamp: Date.now() })
     }
     
     return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 })
@@ -336,7 +343,31 @@ export async function PUT(request: NextRequest) {
         })
         
         await writeBlobJson(APPROVED_USERS_PATH, filtered)
-        console.log(`[Sync API] Salon ${payment.salonId} job payment approved - Job: ${payment.jobTitle}`)
+        
+        // Also save the job to approved jobs list for client-side sync
+        const approvedJobs = await readBlobJson<Record<string, unknown>[]>(APPROVED_JOBS_PATH, [])
+        
+        // Create a full job entry
+        const newJob = {
+          id: `job_${payment.id}_${Date.now()}`,
+          ...payment.jobDetails,
+          salonId: payment.salonId,
+          salonName: payment.salonName,
+          ownerName: payment.ownerName,
+          ownerPhone: payment.ownerPhone,
+          ownerEmail: payment.ownerEmail,
+          status: 'live',
+          isApproved: true,
+          approvedAt: new Date().toISOString(),
+          approvedBy: adminId,
+          paymentId: payment.id,
+          createdAt: new Date().toISOString(),
+        }
+        
+        approvedJobs.push(newJob)
+        await writeBlobJson(APPROVED_JOBS_PATH, approvedJobs)
+        
+        console.log(`[Sync API] Salon ${payment.salonId} job payment approved - Job created: ${newJob.id}`)
       }
       
       return NextResponse.json({ 

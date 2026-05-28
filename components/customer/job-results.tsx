@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
 import { LanguageSelector } from '@/components/language-selector'
-import { getAllJobs, saveApplication, getJobSeekerByUserId } from '@/lib/data-store'
+import { getAllJobs, saveApplication, getJobSeekerByUserId, syncApprovedJobsFromCloud } from '@/lib/data-store'
 import type { Job, Application } from '@/lib/types'
 import { BrandingBanner } from './branding-banner'
 
@@ -22,8 +22,13 @@ export function JobResults() {
 
   // Load real jobs from data store
   useEffect(() => {
-    const realJobs = getAllJobs().filter(job => job.isActive && job.status === 'live')
-    setJobs(realJobs)
+    const loadJobs = async () => {
+      // Sync approved jobs from cloud first
+      await syncApprovedJobsFromCloud()
+      const realJobs = getAllJobs().filter(job => job.isActive && job.status === 'live')
+      setJobs(realJobs)
+    }
+    loadJobs()
   }, [])
 
   const filteredJobs = jobs.filter(job =>

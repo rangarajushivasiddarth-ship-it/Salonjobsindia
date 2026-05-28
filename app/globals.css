@@ -355,15 +355,28 @@
   display: none;
 }
 
-/* Google Translate Styles - Hide banner and clean up appearance */
+/* Google Translate Styles - Completely hide widget and banner */
 .goog-te-banner-frame,
 .skiptranslate,
 .goog-te-spinner-pos,
 #goog-gt-tt,
 .goog-tooltip,
 .goog-tooltip:hover,
-.goog-text-highlight {
+.goog-text-highlight,
+.goog-te-gadget,
+.goog-te-gadget-simple,
+#google_translate_element,
+.VIpgJd-ZVi9od-ORHb-OEVmcd,
+.VIpgJd-ZVi9od-aZ2wEe-wOHMyf,
+.VIpgJd-ZVi9od-aZ2wEe-OiiCO {
   display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
 }
 
 body {
@@ -371,19 +384,13 @@ body {
   position: static !important;
 }
 
-.goog-te-gadget {
-  color: transparent !important;
-  font-size: 0 !important;
-}
-
-.goog-te-gadget .goog-te-combo {
-  color: var(--foreground) !important;
-  background: var(--secondary) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 0.5rem !important;
-  padding: 0.5rem !important;
-  font-size: 0.875rem !important;
-  cursor: pointer !important;
+/* Keep the hidden select for programmatic control but invisible */
+.goog-te-combo {
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Prevent translation artifacts */

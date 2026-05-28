@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
 import { LanguageSelector } from '@/components/language-selector'
-import { getAllJobs, canViewMoreShops, incrementShopsViewed, sendMessage, getSubscriptionByUserId } from '@/lib/data-store'
+import { getAllJobs, canViewMoreShops, incrementShopsViewed, sendMessage, getSubscriptionByUserId, syncApprovedJobsFromCloud } from '@/lib/data-store'
 import type { Job, BeautyRole } from '@/lib/types'
 import { BEAUTY_ROLES, ROLE_CATEGORIES } from '@/lib/types'
 import { BrandingBanner } from './branding-banner'
@@ -80,7 +80,11 @@ export function JobDiscovery() {
   useEffect(() => {
     if (!user?.id) return
     
-    const realJobs = getAllJobs().filter(job => job.isActive && job.status === 'live')
+    // First sync approved jobs from cloud, then load all jobs
+    const loadJobs = async () => {
+      await syncApprovedJobsFromCloud()
+      
+      const realJobs = getAllJobs().filter(job => job.isActive && job.status === 'live')
     const subscription = getSubscriptionByUserId(user.id)
     
     // Convert real jobs to salon format with distance calculation
@@ -125,6 +129,8 @@ export function JobDiscovery() {
       const stats = canViewMoreShops(user.id)
       setViewStats({ remaining: stats.remaining, total: stats.total })
     }
+    
+    loadJobs()
   }, [user?.id, userLocation])
 
   // Filter and sort salons
