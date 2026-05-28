@@ -3,6 +3,7 @@
 import { ArrowLeft, Phone, MessageCircle, Award, Users, MapPin, Clock, CheckCircle, Quote, Target, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
+import { LanguageSelector } from '@/components/language-selector'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { useEffect, useState, useRef } from 'react'
@@ -223,25 +224,28 @@ export function AboutUsScreen() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-[#D4AF37]/20 p-4 flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => goToStep(isOwner ? 'owner-panel' : 'discovery')}
-          className="text-white/70 hover:text-white hover:bg-[#D4AF37]/10"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        
-        <div className="relative w-10 h-10">
-          <Image
-            src="/images/logo.png"
-            alt="Salon Jobs India"
-            fill
-            className="object-contain"
-          />
+      <header className="sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-[#D4AF37]/20 p-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => goToStep(isOwner ? 'owner-panel' : 'discovery')}
+            className="text-white/70 hover:text-white hover:bg-[#D4AF37]/10"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          
+          <div className="relative w-10 h-10">
+            <Image
+              src="/images/logo.png"
+              alt="Salon Jobs India"
+              fill
+              className="object-contain"
+            />
+          </div>
+          <h1 className="font-bold text-lg text-white">About Us</h1>
         </div>
-        <h1 className="font-bold text-lg text-white">About Us</h1>
+        <LanguageSelector variant="button" showNativeName={false} />
       </header>
 
       {/* Hero Section */}

@@ -4,6 +4,7 @@ import { LayoutDashboard, CreditCard, Users, Briefcase, Settings, LogOut, Menu, 
 import Image from 'next/image'
 import { useState } from 'react'
 import { useAdmin } from '@/lib/admin-context'
+import { LanguageSelector } from '@/components/language-selector'
 
 export function AdminSidebar() {
   const { currentView, goToView, logout, stats } = useAdmin()
@@ -66,6 +67,11 @@ export function AdminSidebar() {
           ))}
         </ul>
       </nav>
+      
+      {/* Language Selector */}
+      <div className="px-4 py-2">
+        <LanguageSelector variant="dropdown" showNativeName={true} />
+      </div>
       
       {/* Logout */}
       <div className="p-4 border-t border-border/50">

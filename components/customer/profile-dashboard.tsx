@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { ArrowLeft, User, Crown, Calendar, Heart, Briefcase, LogOut, ChevronRight, MapPin, Building2, Settings, Bell, Shield, TrendingUp, Eye, Clock, Download, FileText, Search as SearchIcon, CheckCircle2, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
+import { LanguageSelector } from '@/components/language-selector'
 import { getJobSeekerByUserId, updateJobSeekerPreference, getAllJobs, getApplicationsByCandidateId, type JobSeeker } from '@/lib/data-store'
 import type { Application, Job } from '@/lib/types'
 import { BrandingBanner } from './branding-banner'
@@ -237,14 +238,17 @@ export function ProfileDashboard() {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <h1 className="font-semibold">Profile</h1>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => goToStep('settings')}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <Settings className="w-5 h-5" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <LanguageSelector variant="button" showNativeName={false} />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => goToStep('settings')}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <Settings className="w-5 h-5" />
+          </Button>
+        </div>
       </header>
       
       {/* Profile Card */}

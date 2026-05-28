@@ -5,6 +5,7 @@ import { Plus, Briefcase, Users, Settings, LogOut, Edit2, Trash2, Eye, ChevronRi
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
+import { LanguageSelector } from '@/components/language-selector'
 import { getMessagesForOwner, getAllJobs, getUnreadMessageCount, getApplicationsBySalonId, getAllJobSeekers, isCandidateUnlocked, deductSalonCredit, getSalonProfileByOwnerId, getJobSeekersForSalonOwners } from '@/lib/data-store'
 import type { Job, Application, CONTACT_CREDIT_PACKS } from '@/lib/types'
 import type { JobSeeker } from '@/lib/data-store'
@@ -267,8 +268,9 @@ export function OwnerPanel() {
               <p className="text-sm text-muted-foreground">{user?.name || user?.email}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button 
+<div className="flex items-center gap-2">
+            <LanguageSelector variant="button" showNativeName={false} />
+            <button
               onClick={() => goToStep('messages')}
               className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center relative"
             >
@@ -277,7 +279,7 @@ export function OwnerPanel() {
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">{unreadMessages}</span>
               )}
             </button>
-            <button 
+            <button
               onClick={() => goToStep('notifications')}
               className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center relative"
             >

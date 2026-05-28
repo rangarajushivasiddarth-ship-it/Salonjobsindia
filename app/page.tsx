@@ -1,6 +1,7 @@
 'use client'
 
 import { AppProvider, useApp } from '@/lib/app-context'
+import { LanguageProvider } from '@/lib/language-context'
 import { SplashScreen } from '@/components/customer/splash-screen'
 import { AuthScreen } from '@/components/customer/auth-screen'
 import { RoleSelection } from '@/components/customer/role-selection'
@@ -102,10 +103,12 @@ function CustomerApp() {
 
 export default function Home() {
   return (
-    <AppProvider>
-      <main className="min-h-screen">
-        <CustomerApp />
-      </main>
-    </AppProvider>
+    <LanguageProvider>
+      <AppProvider>
+        <main className="min-h-screen">
+          <CustomerApp />
+        </main>
+      </AppProvider>
+    </LanguageProvider>
   )
 }

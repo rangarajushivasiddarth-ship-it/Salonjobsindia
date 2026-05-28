@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
+import { LanguageSelector } from '@/components/language-selector'
 
 type AuthMode = 'signin' | 'signup'
 
@@ -140,7 +141,7 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
       <div className="absolute bottom-1/4 left-0 w-64 h-64 bg-accent/5 rounded-full blur-3xl" />
       
       {/* Header */}
-      <header className="relative z-10 p-4">
+      <header className="relative z-10 p-4 flex items-center justify-between">
         <Button
           variant="ghost"
           size="icon"
@@ -149,6 +150,7 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
+        <LanguageSelector variant="button" showNativeName={false} />
       </header>
       
       {/* Content */}

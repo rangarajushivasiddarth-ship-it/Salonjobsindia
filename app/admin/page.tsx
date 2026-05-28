@@ -1,6 +1,7 @@
 'use client'
 
 import { AdminProvider, useAdmin } from '@/lib/admin-context'
+import { LanguageProvider } from '@/lib/language-context'
 import { AdminLogin } from '@/components/admin/admin-login'
 import { AdminDashboard } from '@/components/admin/admin-dashboard'
 import { AdminPayments } from '@/components/admin/admin-payments'
@@ -33,10 +34,12 @@ function AdminApp() {
 
 export default function AdminPage() {
   return (
-    <AdminProvider>
-      <main className="min-h-screen bg-background">
-        <AdminApp />
-      </main>
-    </AdminProvider>
+    <LanguageProvider>
+      <AdminProvider>
+        <main className="min-h-screen bg-background">
+          <AdminApp />
+        </main>
+      </AdminProvider>
+    </LanguageProvider>
   )
 }

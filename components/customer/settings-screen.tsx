@@ -5,6 +5,7 @@ import { ArrowLeft, User, Bell, Shield, Moon, Sun, Globe, HelpCircle, FileText, 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
+import { LanguageSelector } from '@/components/language-selector'
 import Image from 'next/image'
 
 type SettingsTab = 'main' | 'edit-profile' | 'notifications' | 'privacy' | 'help'
@@ -371,18 +372,7 @@ export function SettingsScreen() {
             />
           </div>
           
-          <button className="w-full p-4 glass-card rounded-xl flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center">
-                <Globe className="w-5 h-5 text-foreground" />
-              </div>
-              <div className="text-left">
-                <span className="font-medium">Language</span>
-                <p className="text-xs text-muted-foreground">English</p>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-muted-foreground" />
-          </button>
+          <LanguageSelector variant="dropdown" showNativeName={true} />
         </div>
         
         <div className="space-y-2 mt-6">

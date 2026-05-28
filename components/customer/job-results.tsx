@@ -5,6 +5,7 @@ import { Search, MapPin, Building2, User, Phone, Briefcase, DollarSign, Clock, H
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
+import { LanguageSelector } from '@/components/language-selector'
 import { getAllJobs, saveApplication, getJobSeekerByUserId } from '@/lib/data-store'
 import type { Job, Application } from '@/lib/types'
 import { BrandingBanner } from './branding-banner'
@@ -60,12 +61,15 @@ export function JobResults() {
               Showing salons within 20 km
             </p>
           </div>
-          <button 
-            onClick={() => goToStep('profile')}
-            className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center"
-          >
-            <User className="w-5 h-5 text-primary" />
-          </button>
+          <div className="flex items-center gap-2">
+            <LanguageSelector variant="button" showNativeName={false} />
+            <button 
+              onClick={() => goToStep('profile')}
+              className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center"
+            >
+              <User className="w-5 h-5 text-primary" />
+            </button>
+          </div>
         </div>
         
         {/* Search */}
