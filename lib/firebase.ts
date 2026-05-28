@@ -115,62 +115,20 @@ interface MockDatabase {
 }
 
 function getInitialMockData(): MockDatabase {
-  // Generate 10-12 lakh (1-1.2 million) worth of stats display
-  // In production with Firebase, this will be real data
-  const mockJobSeekers: JobSeeker[] = []
-  const roles = ['Hair Stylist', 'Makeup Artist', 'Nail Technician', 'Spa Therapist', 'Beautician', 'Barber', 'Receptionist']
-  const cities = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Hyderabad', 'Pune', 'Kolkata', 'Ahmedabad', 'Jaipur', 'Lucknow']
-  const experiences = ['Fresher', '1-2 years', '2-5 years', '5+ years']
-  
-  // Generate sample seekers for display (50 for pagination demo)
-  for (let i = 0; i < 50; i++) {
-    const role = roles[i % roles.length]
-    const city = cities[i % cities.length]
-    mockJobSeekers.push({
-      id: `seeker_${i + 1}`,
-      name: generateIndianName(),
-      email: `user${i + 1}@example.com`,
-      phone: `+91 ${Math.floor(7000000000 + Math.random() * 3000000000)}`,
-      dateOfBirth: `${1985 + (i % 20)}-${String((i % 12) + 1).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}`,
-      role,
-      experience: experiences[i % experiences.length],
-      skills: [role, 'Customer Service', 'Team Work'],
-      salaryExpectation: `${15000 + (i % 5) * 5000}-${25000 + (i % 5) * 5000}`,
-      location: {
-        lat: 19.0760 + (Math.random() - 0.5) * 2,
-        lng: 72.8777 + (Math.random() - 0.5) * 2,
-        address: `${city}, India`,
-      },
-      identityProof: { type: 'Aadhar', url: '' },
-      passportPhoto: '',
-      isVerified: Math.random() > 0.3,
-      isPremium: Math.random() > 0.7,
-      createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(),
-      lastActive: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-      profileViews: Math.floor(Math.random() * 100),
-      status: 'active',
-    })
-  }
-
+  // Start with empty data - only real registered users/data should be shown
+  // No fake/mock data - everything comes from actual user registrations
   return {
-    jobSeekers: mockJobSeekers,
+    jobSeekers: [],
     salonOwners: [],
     jobs: [],
     applications: [],
     counters: {
-      totalJobSeekers: 1145782, // Display count: 11.45 lakh
-      totalSalonOwners: 28453,
-      totalJobs: 15672,
-      totalApplications: 234567,
+      totalJobSeekers: 0,
+      totalSalonOwners: 0,
+      totalJobs: 0,
+      totalApplications: 0,
     },
   }
-}
-
-function generateIndianName(): string {
-  const firstNames = ['Priya', 'Rahul', 'Anita', 'Vikram', 'Sunita', 'Amit', 'Deepa', 'Rajesh', 'Kavita', 'Suresh', 'Meena', 'Ajay', 'Pooja', 'Arun', 'Neha', 'Sanjay', 'Ritu', 'Manoj', 'Swati', 'Vinod']
-  const lastNames = ['Sharma', 'Verma', 'Patel', 'Singh', 'Kumar', 'Gupta', 'Yadav', 'Reddy', 'Nair', 'Pillai', 'Joshi', 'Mehta', 'Shah', 'Iyer', 'Rao', 'Desai', 'Choudhary', 'Malhotra', 'Kapoor', 'Saxena']
-  return `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`
 }
 
 function getMockDb(): MockDatabase {

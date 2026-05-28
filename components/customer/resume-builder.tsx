@@ -317,7 +317,7 @@ export function ResumeBuilder() {
         address: formData.location.address,
       },
       availabilityStatus: 'actively_looking',
-      jobPreference: 'looking_for_work', // Default to looking for work on registration
+      jobPreference: 'not_looking_for_job', // Set to not_looking until admin approves the profile
       createdAt: new Date(),
       updatedAt: new Date(),
     }

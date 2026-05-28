@@ -580,15 +580,17 @@ export function updateJobSeekerPreference(userId: string, jobPreference: 'lookin
 export function getJobSeekersForSalonOwners(salonOwnerId: string): JobSeeker[] {
   const jobSeekers = getAllJobSeekers()
   const applications = getApplicationsBySalonId(salonOwnerId)
+  const approvedAlerts = getAllJobAlerts().filter(a => a.status === 'approved')
+  const approvedUserIds = approvedAlerts.map(a => a.userId)
   
   // Return job seekers who:
   // 1. Have applied to this salon's jobs, OR
-  // 2. Are "looking_for_work" (visible to all salon owners with permission)
+  // 2. Are "looking_for_work" AND have an approved job alert (profile approved by admin)
   const applicantIds = applications.map(a => a.candidateId)
   
   return jobSeekers.filter(js => 
     applicantIds.includes(js.userId) || 
-    js.jobPreference === 'looking_for_work'
+    (js.jobPreference === 'looking_for_work' && approvedUserIds.includes(js.userId))
   )
 }
 
@@ -1031,6 +1033,14 @@ export function approveJobAlert(alertId: string, adminId: string): JobAlert | nu
     alert.processedBy = adminId
     
     localStorage.setItem(JOB_ALERTS_KEY, JSON.stringify(alerts))
+    
+    // Update the job seeker's preference to make them visible to salon owners
+    const jobSeeker = getJobSeekerByUserId(alert.userId)
+    if (jobSeeker) {
+      jobSeeker.jobPreference = 'looking_for_work'
+      jobSeeker.updatedAt = new Date()
+      saveJobSeeker(jobSeeker)
+    }
     
     createNotification({
       userId: alert.userId,
