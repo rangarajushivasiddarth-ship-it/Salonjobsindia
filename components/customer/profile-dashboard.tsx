@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { ArrowLeft, User, Crown, Calendar, Heart, Briefcase, LogOut, ChevronRight, MapPin, Building2, Settings, Bell, Shield, TrendingUp, Eye, Clock, Download, FileText, Search as SearchIcon, CheckCircle2, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
-import { LanguageSelector } from '@/components/language-selector'
 import { getJobSeekerByUserId, updateJobSeekerPreference, getAllJobs, getApplicationsByCandidateId, type JobSeeker } from '@/lib/data-store'
 import type { Application, Job } from '@/lib/types'
 import { BrandingBanner } from './branding-banner'
@@ -76,10 +75,26 @@ export function ProfileDashboard() {
     ? Math.max(0, Math.ceil((new Date(expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : (user?.isSubscribed ? 30 : 0) // Default to 30 days if subscribed but no expiry set
 
+  // Check if user has a completed profile (either from resume context or jobSeeker data)
+  const hasCompletedProfile = Boolean(resume?.name || jobSeeker?.name)
+  
+  // Get profile data from either source (prioritize resume context, fallback to jobSeeker)
+  const profileData = {
+    name: resume?.name || jobSeeker?.name || user?.name || '',
+    role: resume?.role || jobSeeker?.role || 'Beauty Professional',
+    experience: resume?.experience || jobSeeker?.experience || '',
+    skills: resume?.skills || jobSeeker?.skills || [],
+    salaryExpectation: resume?.salaryExpectation || jobSeeker?.salaryExpectation || '',
+    dateOfBirth: resume?.dateOfBirth || '',
+    location: resume?.location || jobSeeker?.location || null,
+    phone: user?.phone || jobSeeker?.phone || '',
+    email: user?.email || jobSeeker?.email || '',
+  }
+
   // Download resume as PDF using browser print functionality
   const downloadResume = () => {
-    if (!resume) {
-      alert('Please complete your resume first!')
+    if (!hasCompletedProfile) {
+      alert('Please complete your profile first!')
       return
     }
     
@@ -91,7 +106,7 @@ export function ProfileDashboard() {
         <!DOCTYPE html>
         <html>
         <head>
-          <title>${resume.name || user?.name || 'Resume'} - Resume</title>
+          <title>${profileData.name || 'Resume'} - Resume</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { 
@@ -141,10 +156,10 @@ export function ProfileDashboard() {
         </head>
         <body>
           <div class="header">
-            <div class="name">${resume.name || user?.name || 'Name Not Provided'}</div>
-            <div class="role">${resume.role || 'Beauty Professional'}</div>
+            <div class="name">${profileData.name || 'Name Not Provided'}</div>
+            <div class="role">${profileData.role}</div>
             <div class="contact">
-              ${[user?.phone, user?.email, resume.location?.address].filter(Boolean).join(' | ')}
+              ${[profileData.phone, profileData.email, profileData.location?.address].filter(Boolean).join(' | ')}
             </div>
           </div>
           
@@ -152,36 +167,36 @@ export function ProfileDashboard() {
           
           <div class="section">
             <div class="section-title">Experience</div>
-            <div class="section-content">${resume.experience || '0'} years of experience in the beauty industry</div>
+            <div class="section-content">${profileData.experience || 'Fresher'} ${profileData.experience ? 'of experience in the beauty industry' : ''}</div>
           </div>
           
-          ${resume.skills && resume.skills.length > 0 ? `
+          ${profileData.skills && profileData.skills.length > 0 ? `
           <div class="section">
             <div class="section-title">Skills</div>
             <div class="skills-list">
-              ${resume.skills.map((skill: string) => `<span class="skill-tag">${skill}</span>`).join('')}
+              ${profileData.skills.map((skill: string) => `<span class="skill-tag">${skill}</span>`).join('')}
             </div>
           </div>
           ` : ''}
           
-          ${resume.salaryExpectation ? `
+          ${profileData.salaryExpectation ? `
           <div class="section">
             <div class="section-title">Salary Expectation</div>
-            <div class="section-content">${resume.salaryExpectation}</div>
+            <div class="section-content">${profileData.salaryExpectation}</div>
           </div>
           ` : ''}
           
-          ${resume.dateOfBirth ? `
+          ${profileData.dateOfBirth ? `
           <div class="section">
             <div class="section-title">Date of Birth</div>
-            <div class="section-content">${resume.dateOfBirth}</div>
+            <div class="section-content">${profileData.dateOfBirth}</div>
           </div>
           ` : ''}
           
-          ${resume.location?.address ? `
+          ${profileData.location?.address ? `
           <div class="section">
             <div class="section-title">Location</div>
-            <div class="section-content">${resume.location.address}</div>
+            <div class="section-content">${profileData.location.address}</div>
           </div>
           ` : ''}
           
@@ -239,7 +254,6 @@ export function ProfileDashboard() {
         </Button>
         <h1 className="font-semibold">Profile</h1>
         <div className="flex items-center gap-2">
-          <LanguageSelector variant="button" showNativeName={false} />
           <Button
             variant="ghost"
             size="icon"
@@ -293,33 +307,33 @@ export function ProfileDashboard() {
         </div>
       </div>
       
-      {/* Download Resume Button - Only for job seekers */}
-      {user?.role === 'job_seeker' && (
-        <div className="relative z-10 px-4 mb-4">
-          <Button
-            onClick={downloadResume}
-            disabled={isDownloading || !resume}
-            className="w-full h-12 bg-green-600 hover:bg-green-700 text-white"
-          >
-            {isDownloading ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                Generating PDF...
-              </>
-            ) : (
-              <>
-                <Download className="w-5 h-5 mr-2" />
-                Download Resume (PDF)
-              </>
-            )}
-          </Button>
-          {!resume && (
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              Complete your profile to download resume
-            </p>
+{/* Download Resume Button - Available for ALL job seekers with completed profile */}
+          {user?.role === 'job_seeker' && (
+            <div className="relative z-10 px-4 mb-4">
+              <Button
+                onClick={downloadResume}
+                disabled={isDownloading || !hasCompletedProfile}
+                className="w-full h-12 bg-green-600 hover:bg-green-700 text-white"
+              >
+                {isDownloading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-5 h-5 mr-2" />
+                    Download Resume (PDF)
+                  </>
+                )}
+              </Button>
+              {!hasCompletedProfile && (
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  Complete your profile to download resume
+                </p>
+              )}
+            </div>
           )}
-        </div>
-      )}
       
       {/* Job Preference Section - Duplicated Block for Job Seekers */}
       {user?.role === 'job_seeker' && (

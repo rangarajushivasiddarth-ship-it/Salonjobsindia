@@ -6,7 +6,6 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
-import { LanguageSelector } from '@/components/language-selector'
 
 type AuthMode = 'signin' | 'signup'
 
@@ -150,7 +149,6 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <LanguageSelector variant="button" showNativeName={false} />
       </header>
       
       {/* Content */}
