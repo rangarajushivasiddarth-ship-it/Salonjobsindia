@@ -85,49 +85,50 @@ export function JobDiscovery() {
       await syncApprovedJobsFromCloud()
       
       const realJobs = getAllJobs().filter(job => job.isActive && job.status === 'live')
-    const subscription = getSubscriptionByUserId(user.id)
-    
-    // Convert real jobs to salon format with distance calculation
-    const allSalons: SalonWithDetails[] = realJobs.map(job => {
-      let distance: number | undefined
-      if (userLocation && job.location) {
-        distance = calculateDistance(
-          userLocation.lat, userLocation.lng,
-          job.location.lat, job.location.lng
-        )
+      const subscription = getSubscriptionByUserId(user.id)
+      
+      // Convert real jobs to salon format with distance calculation
+      const allSalons: SalonWithDetails[] = realJobs.map(job => {
+        let distance: number | undefined
+        if (userLocation && job.location) {
+          distance = calculateDistance(
+            userLocation.lat, userLocation.lng,
+            job.location.lat, job.location.lng
+          )
+        }
+        
+        return {
+          id: job.salonId || job.id,
+          name: job.salonName,
+          ownerId: job.salonId || job.id,
+          ownerPhone: job.salonMobile || job.contact || '',
+          job: {
+            role: job.role as BeautyRole,
+            salary: job.salary,
+            experience: job.experience,
+            location: job.location as { address: string; area: string; city: string; lat: number; lng: number },
+            timing: job.timing,
+            gender: job.gender,
+            accommodation: job.accommodation,
+            foodProvided: job.foodProvided,
+          },
+          distance
+        }
+      })
+      
+      setSalons(allSalons)
+      
+      // Load unlocked salons
+      const unlockedStr = localStorage.getItem(`fitonze_unlocked_${user.id}`)
+      if (unlockedStr) {
+        setUnlockedSalons(new Set(JSON.parse(unlockedStr)))
       }
       
-      return {
-        id: job.salonId || job.id,
-        name: job.salonName,
-        ownerId: job.salonId || job.id,
-        ownerPhone: job.salonMobile || job.contact || '',
-        job: {
-          role: job.role as BeautyRole,
-          salary: job.salary,
-          experience: job.experience,
-          location: job.location as { address: string; area: string; city: string; lat: number; lng: number },
-          timing: job.timing,
-          gender: job.gender,
-          accommodation: job.accommodation,
-          foodProvided: job.foodProvided,
-        },
-        distance
+      // Check view stats
+      if (subscription?.status === 'approved') {
+        const stats = canViewMoreShops(user.id)
+        setViewStats({ remaining: stats.remaining, total: stats.total })
       }
-    })
-    
-    setSalons(allSalons)
-    
-    // Load unlocked salons
-    const unlockedStr = localStorage.getItem(`fitonze_unlocked_${user.id}`)
-    if (unlockedStr) {
-      setUnlockedSalons(new Set(JSON.parse(unlockedStr)))
-    }
-    
-    // Check view stats
-    if (subscription?.status === 'approved') {
-      const stats = canViewMoreShops(user.id)
-      setViewStats({ remaining: stats.remaining, total: stats.total })
     }
     
     loadJobs()
