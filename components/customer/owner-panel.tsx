@@ -5,7 +5,7 @@ import { Plus, Briefcase, Users, Settings, LogOut, Edit2, Trash2, Eye, ChevronRi
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
-import { getMessagesForOwner, getAllJobs, getUnreadMessageCount, getApplicationsBySalonId, getAllJobSeekers, isCandidateUnlocked, deductSalonCredit, getSalonProfileByOwnerId } from '@/lib/data-store'
+import { getMessagesForOwner, getAllJobs, getUnreadMessageCount, getApplicationsBySalonId, getAllJobSeekers, isCandidateUnlocked, deductSalonCredit, getSalonProfileByOwnerId, getJobSeekersForSalonOwners } from '@/lib/data-store'
 import type { Job, Application, CONTACT_CREDIT_PACKS } from '@/lib/types'
 import type { JobSeeker } from '@/lib/data-store'
 import { BrandingBanner } from './branding-banner'
@@ -112,9 +112,10 @@ export function OwnerPanel() {
     const myApplications = getApplicationsBySalonId(user.id)
     setApplications(myApplications)
     
-    // Get all job seekers (candidates)
-    const allCandidates = getAllJobSeekers()
-    setCandidates(allCandidates)
+    // Get job seekers visible to this salon owner
+    // Only show: 1) Those who applied to this salon's jobs, OR 2) Those who are "looking_for_work"
+    const visibleCandidates = getJobSeekersForSalonOwners(user.id)
+    setCandidates(visibleCandidates)
     
     // Get unread messages
     setUnreadMessages(getUnreadMessageCount(user.id))
@@ -631,15 +632,29 @@ export function OwnerPanel() {
                           <User className="w-6 h-6 text-primary" />
                         </div>
                         <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold">{candidate.name}</h3>
-                            {candidate.availabilityStatus === 'not_looking' && (
-                              <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">
-                                <EyeOff className="w-3 h-3" />
-                                Not looking
-                              </span>
-                            )}
-                          </div>
+  <div className="flex items-center gap-2">
+  <h3 className="font-semibold">{candidate.name}</h3>
+  {/* Job Preference Badge */}
+  {candidate.jobPreference === 'looking_for_work' && (
+  <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">
+  <Check className="w-3 h-3" />
+  Looking
+  </span>
+  )}
+  {candidate.jobPreference === 'not_looking_for_job' && (
+  <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400">
+  <EyeOff className="w-3 h-3" />
+  Not looking
+  </span>
+  )}
+  {/* Fallback to old availability status */}
+  {!candidate.jobPreference && candidate.availabilityStatus === 'not_looking' && (
+  <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">
+  <EyeOff className="w-3 h-3" />
+  Not looking
+  </span>
+  )}
+  </div>
                           <p className="text-sm text-primary">{candidate.role}</p>
                           <div className="flex flex-wrap gap-2 mt-2">
                             <span className="text-xs px-2 py-1 rounded-full bg-secondary/80">

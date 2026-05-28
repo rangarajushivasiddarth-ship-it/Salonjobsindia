@@ -286,7 +286,7 @@ export function approvePayment(paymentId: string, adminId: string): Payment | nu
         if (!job.salonLogo && salonProfile.logoUrl) {
           job.salonLogo = salonProfile.logoUrl
         }
-        job.isVerified = salonProfile.isVerified && salonProfile.verifiedUntil && new Date(salonProfile.verifiedUntil) > new Date()
+        job.isVerified = !!(salonProfile.isVerified && salonProfile.verifiedUntil && new Date(salonProfile.verifiedUntil) > new Date())
       }
       
       localStorage.setItem(JOBS_KEY, JSON.stringify(jobs))
@@ -528,6 +528,7 @@ export interface JobSeeker {
     area?: string
   }
   availabilityStatus: 'actively_looking' | 'open_to_opportunities' | 'not_looking'
+  jobPreference: 'looking_for_work' | 'not_looking_for_job'
   resumeUrl?: string
   createdAt: Date
   updatedAt: Date
@@ -560,6 +561,35 @@ export function saveJobSeeker(jobSeeker: JobSeeker): void {
   
   localStorage.setItem(JOB_SEEKERS_KEY, JSON.stringify(jobSeekers))
   dispatchDataUpdate(JOB_SEEKERS_KEY)
+}
+
+export function updateJobSeekerPreference(userId: string, jobPreference: 'looking_for_work' | 'not_looking_for_job'): JobSeeker | null {
+  const jobSeekers = getAllJobSeekers()
+  const jobSeeker = jobSeekers.find(js => js.userId === userId)
+  
+  if (jobSeeker) {
+    jobSeeker.jobPreference = jobPreference
+    jobSeeker.updatedAt = new Date()
+    localStorage.setItem(JOB_SEEKERS_KEY, JSON.stringify(jobSeekers))
+    dispatchDataUpdate(JOB_SEEKERS_KEY)
+    return jobSeeker
+  }
+  return null
+}
+
+export function getJobSeekersForSalonOwners(salonOwnerId: string): JobSeeker[] {
+  const jobSeekers = getAllJobSeekers()
+  const applications = getApplicationsBySalonId(salonOwnerId)
+  
+  // Return job seekers who:
+  // 1. Have applied to this salon's jobs, OR
+  // 2. Are "looking_for_work" (visible to all salon owners with permission)
+  const applicantIds = applications.map(a => a.candidateId)
+  
+  return jobSeekers.filter(js => 
+    applicantIds.includes(js.userId) || 
+    js.jobPreference === 'looking_for_work'
+  )
 }
 
 // ============== SUBSCRIPTIONS ==============

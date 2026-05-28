@@ -5,7 +5,7 @@ import { ArrowLeft, User, Briefcase, Clock, DollarSign, MapPin, Navigation, X, P
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
-import { saveJobAlert, type JobAlert } from '@/lib/data-store'
+import { saveJobAlert, saveJobSeeker, type JobAlert, type JobSeeker } from '@/lib/data-store'
 import type { Resume } from '@/lib/types'
 import { BEAUTY_ROLES, ROLE_CATEGORIES } from '@/lib/types'
 
@@ -298,6 +298,31 @@ export function ResumeBuilder() {
     }
     
     saveJobAlert(jobAlert)
+    
+    // Also save to job seekers data store for visibility to salon owners
+    const jobSeekerData: JobSeeker = {
+      id: crypto.randomUUID(),
+      userId: user?.id || '',
+      name: formData.name,
+      phone: user?.phone,
+      email: user?.email,
+      photoUrl: formData.passportPhoto.preview || undefined,
+      role: formData.role,
+      experience: formData.experience,
+      skills: formData.skills,
+      salaryExpectation: formData.salaryExpectation,
+      location: {
+        lat: formData.location.lat,
+        lng: formData.location.lng,
+        address: formData.location.address,
+      },
+      availabilityStatus: 'actively_looking',
+      jobPreference: 'looking_for_work', // Default to looking for work on registration
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    
+    saveJobSeeker(jobSeekerData)
     
     setResume(resume)
     setIsLoading(false)

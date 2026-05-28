@@ -5,8 +5,8 @@ import { Search, MapPin, Building2, User, Phone, Briefcase, DollarSign, Clock, H
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
-import { getAllJobs } from '@/lib/data-store'
-import type { Job } from '@/lib/types'
+import { getAllJobs, saveApplication, getJobSeekerByUserId } from '@/lib/data-store'
+import type { Job, Application } from '@/lib/types'
 import { BrandingBanner } from './branding-banner'
 
 export function JobResults() {
@@ -310,6 +310,37 @@ export function JobResults() {
                 </Button>
                 <Button
                   onClick={() => {
+                    if (!user?.id) return
+                    
+                    // Get job seeker profile for application details
+                    const jobSeekerProfile = getJobSeekerByUserId(user.id)
+                    
+                    // Create application record with full details
+                    const application: Application = {
+                      id: crypto.randomUUID(),
+                      jobId: selectedJob.id,
+                      jobRole: selectedJob.role,
+                      salonId: selectedJob.salonId,
+                      salonName: selectedJob.salonName,
+                      candidateId: user.id,
+                      candidateName: jobSeekerProfile?.name || user.name || user.email?.split('@')[0] || 'Unknown',
+                      candidatePhoto: jobSeekerProfile?.photoUrl,
+                      candidatePhone: user.phone || jobSeekerProfile?.phone,
+                      candidateExperience: jobSeekerProfile?.experience || 'Not specified',
+                      candidateSkills: jobSeekerProfile?.skills || [],
+                      candidateLocation: jobSeekerProfile?.location?.address || 'Not specified',
+                      candidateAvailability: jobSeekerProfile?.availabilityStatus,
+                      resumeId: jobSeekerProfile?.id,
+                      status: 'applied',
+                      isContactUnlocked: false,
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                    }
+                    
+                    // Save application to data store
+                    saveApplication(application)
+                    
+                    // Also track in local state
                     applyToJob(selectedJob.id)
                     setSelectedJob(null)
                   }}

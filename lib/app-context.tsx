@@ -301,6 +301,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         type: '',
         verified: false,
       },
+      jobPreference: 'looking_for_work', // Default to looking for work on registration
     })
     
     setState(prev => ({

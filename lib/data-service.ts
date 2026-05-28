@@ -50,6 +50,7 @@ export interface JobSeeker {
     verified: boolean
   }
   passportPhotoUrl?: string
+  jobPreference?: 'looking_for_work' | 'not_looking_for_job'
   createdAt: string
   updatedAt: string
 }

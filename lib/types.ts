@@ -28,6 +28,9 @@ export interface User {
 // JOB SEEKER TYPES
 // ==========================================
 
+// Job preference status for job seekers
+export type JobPreferenceStatus = 'looking_for_work' | 'not_looking_for_job'
+
 export interface Resume {
   id: string
   userId: string
@@ -55,6 +58,7 @@ export interface Resume {
   videoIntro?: string
   isActive?: boolean
   availabilityStatus?: 'actively_looking' | 'open_to_opportunities' | 'not_looking'
+  jobPreference?: JobPreferenceStatus
   createdAt: Date
   updatedAt: Date
 }

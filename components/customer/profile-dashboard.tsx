@@ -1,9 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import { ArrowLeft, User, Crown, Calendar, Heart, Briefcase, LogOut, ChevronRight, MapPin, Building2, Settings, Bell, Shield, TrendingUp, Eye, Clock, Download, FileText } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { ArrowLeft, User, Crown, Calendar, Heart, Briefcase, LogOut, ChevronRight, MapPin, Building2, Settings, Bell, Shield, TrendingUp, Eye, Clock, Download, FileText, Search as SearchIcon, CheckCircle2, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
+import { getJobSeekerByUserId, updateJobSeekerPreference, getAllJobs, getApplicationsByCandidateId, type JobSeeker } from '@/lib/data-store'
+import type { Application, Job } from '@/lib/types'
+import { BrandingBanner } from './branding-banner'
 
 type TabType = 'overview' | 'saved' | 'applied'
 
@@ -11,6 +14,60 @@ export function ProfileDashboard() {
   const { user, subscription, savedJobs, appliedJobs, goToStep, logout, resume } = useApp()
   const [activeTab, setActiveTab] = useState<TabType>('overview')
   const [isDownloading, setIsDownloading] = useState(false)
+  const [jobPreference, setJobPreference] = useState<'looking_for_work' | 'not_looking_for_job'>('looking_for_work')
+  const [isUpdatingPreference, setIsUpdatingPreference] = useState(false)
+  const [jobSeeker, setJobSeeker] = useState<JobSeeker | null>(null)
+  const [applications, setApplications] = useState<Application[]>([])
+  const [jobs, setJobs] = useState<Job[]>([])
+
+  // Load job seeker data and applications
+  const loadData = useCallback(() => {
+    if (!user?.id) return
+    
+    // Get job seeker profile
+    const seekerProfile = getJobSeekerByUserId(user.id)
+    if (seekerProfile) {
+      setJobSeeker(seekerProfile)
+      setJobPreference(seekerProfile.jobPreference || 'looking_for_work')
+    }
+    
+    // Get user's applications
+    const userApplications = getApplicationsByCandidateId(user.id)
+    setApplications(userApplications)
+    
+    // Get all jobs for reference
+    const allJobs = getAllJobs()
+    setJobs(allJobs)
+  }, [user?.id])
+
+  useEffect(() => {
+    loadData()
+    
+    // Poll for updates every 10 seconds
+    const interval = setInterval(loadData, 10000)
+    return () => clearInterval(interval)
+  }, [loadData])
+
+  // Handle job preference update
+  const handlePreferenceUpdate = async (newPreference: 'looking_for_work' | 'not_looking_for_job') => {
+    if (!user?.id) return
+    
+    setIsUpdatingPreference(true)
+    try {
+      const updated = updateJobSeekerPreference(user.id, newPreference)
+      if (updated) {
+        setJobPreference(newPreference)
+        setJobSeeker(updated)
+      }
+    } finally {
+      setIsUpdatingPreference(false)
+    }
+  }
+
+  // Get job details for an application
+  const getJobForApplication = (jobId: string) => {
+    return jobs.find(j => j.id === jobId)
+  }
 
   // Calculate days remaining from subscription or user's subscription expiry
   const expiryDate = subscription?.expiresAt || user?.subscriptionExpiry
@@ -260,6 +317,112 @@ export function ProfileDashboard() {
         </div>
       )}
       
+      {/* Job Preference Section - Duplicated Block for Job Seekers */}
+      {user?.role === 'job_seeker' && (
+        <div className="relative z-10 px-4 mb-4">
+          {/* Branding Banner */}
+          <div className="mb-4 py-2 bg-gradient-to-r from-background via-secondary/30 to-background rounded-xl border border-border/30">
+            <BrandingBanner section="job_seeker" />
+          </div>
+          
+          {/* Job Preference Card */}
+          <div className="p-5 glass-card rounded-2xl border-2 border-primary/30">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <SearchIcon className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Job Preference</h3>
+                <p className="text-xs text-muted-foreground">Set your current job search status</p>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              {/* Looking for Work Option */}
+              <button
+                onClick={() => handlePreferenceUpdate('looking_for_work')}
+                disabled={isUpdatingPreference}
+                className={`w-full p-4 rounded-xl flex items-center justify-between transition-all ${
+                  jobPreference === 'looking_for_work'
+                    ? 'bg-green-500/20 border-2 border-green-500/50'
+                    : 'bg-secondary/30 border-2 border-transparent hover:border-green-500/30'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    jobPreference === 'looking_for_work' ? 'bg-green-500/30' : 'bg-secondary/50'
+                  }`}>
+                    <CheckCircle2 className={`w-5 h-5 ${
+                      jobPreference === 'looking_for_work' ? 'text-green-400' : 'text-muted-foreground'
+                    }`} />
+                  </div>
+                  <div className="text-left">
+                    <p className={`font-medium ${
+                      jobPreference === 'looking_for_work' ? 'text-green-400' : 'text-foreground'
+                    }`}>
+                      Looking for Work
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Salon owners can see your profile
+                    </p>
+                  </div>
+                </div>
+                {jobPreference === 'looking_for_work' && (
+                  <span className="px-2 py-1 text-xs rounded-full bg-green-500/30 text-green-400">Active</span>
+                )}
+              </button>
+              
+              {/* Not Looking for Job Option */}
+              <button
+                onClick={() => handlePreferenceUpdate('not_looking_for_job')}
+                disabled={isUpdatingPreference}
+                className={`w-full p-4 rounded-xl flex items-center justify-between transition-all ${
+                  jobPreference === 'not_looking_for_job'
+                    ? 'bg-amber-500/20 border-2 border-amber-500/50'
+                    : 'bg-secondary/30 border-2 border-transparent hover:border-amber-500/30'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    jobPreference === 'not_looking_for_job' ? 'bg-amber-500/30' : 'bg-secondary/50'
+                  }`}>
+                    <XCircle className={`w-5 h-5 ${
+                      jobPreference === 'not_looking_for_job' ? 'text-amber-400' : 'text-muted-foreground'
+                    }`} />
+                  </div>
+                  <div className="text-left">
+                    <p className={`font-medium ${
+                      jobPreference === 'not_looking_for_job' ? 'text-amber-400' : 'text-foreground'
+                    }`}>
+                      Not Looking for Job
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Hide your profile from salon owners
+                    </p>
+                  </div>
+                </div>
+                {jobPreference === 'not_looking_for_job' && (
+                  <span className="px-2 py-1 text-xs rounded-full bg-amber-500/30 text-amber-400">Hidden</span>
+                )}
+              </button>
+            </div>
+            
+            {/* Status Info */}
+            <div className={`mt-4 p-3 rounded-lg ${
+              jobPreference === 'looking_for_work' 
+                ? 'bg-green-500/10 border border-green-500/20' 
+                : 'bg-amber-500/10 border border-amber-500/20'
+            }`}>
+              <p className="text-xs text-center">
+                {jobPreference === 'looking_for_work' 
+                  ? 'Your profile is visible to salon owners who have approved subscriptions'
+                  : 'Your profile is hidden. Only salons you applied to can see your details'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Tabs */}
       <div className="relative z-10 px-4 mb-4">
         <div className="flex gap-2 p-1 bg-secondary/30 rounded-xl">
@@ -441,30 +604,96 @@ export function ProfileDashboard() {
         
         {activeTab === 'applied' && (
           <div className="space-y-3 animate-slide-up">
-            {appliedJobs.length > 0 ? (
-              appliedJobs.map((jobId) => (
-                <div key={jobId} className="p-4 glass-card rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                        <Briefcase className="w-5 h-5 text-primary" />
+            {/* Real Applications from Data Store */}
+            {applications.length > 0 ? (
+              applications.map((app) => {
+                const job = getJobForApplication(app.jobId)
+                return (
+                  <div key={app.id} className="p-4 glass-card rounded-xl">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                          <Briefcase className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold">{app.jobRole || job?.role || 'Job Application'}</h4>
+                          <p className="text-xs text-muted-foreground">{app.salonName || job?.salonName}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-semibold">Job Application</h4>
-                        <p className="text-xs text-muted-foreground">Application ID: {jobId.slice(0, 8)}</p>
-                      </div>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        app.status === 'applied' ? 'bg-blue-500/20 text-blue-400' :
+                        app.status === 'viewed' ? 'bg-amber-500/20 text-amber-400' :
+                        app.status === 'shortlisted' ? 'bg-primary/20 text-primary' :
+                        app.status === 'selected' ? 'bg-green-500/20 text-green-400' :
+                        app.status === 'rejected' ? 'bg-red-500/20 text-red-400' :
+                        'bg-secondary text-muted-foreground'
+                      }`}>
+                        {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                      </span>
                     </div>
-                    <span className="px-2 py-1 text-xs rounded-full bg-primary/20 text-primary">
-                      Pending
-                    </span>
+                    
+                    {/* Application Details */}
+                    <div className="space-y-2 mb-3">
+                      {job && (
+                        <>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <MapPin className="w-3 h-3" />
+                            <span>{job.location?.address || job.location?.area || 'Location not specified'}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Clock className="w-3 h-3" />
+                            <span>Applied {new Date(app.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    
+                    {/* Contact Unlocked Info */}
+                    {app.isContactUnlocked && (
+                      <div className="p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
+                        <p className="text-xs text-green-400 text-center">
+                          Salon owner has unlocked your contact details
+                        </p>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))
+                )
+              })
+            ) : appliedJobs.length > 0 ? (
+              // Fallback to local applied jobs if no applications in data store
+              appliedJobs.map((jobId) => {
+                const job = jobs.find(j => j.id === jobId)
+                return (
+                  <div key={jobId} className="p-4 glass-card rounded-xl">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                          <Briefcase className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold">{job?.role || 'Job Application'}</h4>
+                          <p className="text-xs text-muted-foreground">{job?.salonName || `Application ID: ${jobId.slice(0, 8)}`}</p>
+                        </div>
+                      </div>
+                      <span className="px-2 py-1 text-xs rounded-full bg-primary/20 text-primary">
+                        Pending
+                      </span>
+                    </div>
+                  </div>
+                )
+              })
             ) : (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <Briefcase className="w-12 h-12 text-muted-foreground mb-4" />
                 <h3 className="font-semibold text-lg mb-2">No applications yet</h3>
                 <p className="text-sm text-muted-foreground">Your job applications will appear here</p>
+                <Button 
+                  onClick={() => goToStep('results')} 
+                  className="mt-4"
+                  variant="outline"
+                >
+                  Browse Jobs
+                </Button>
               </div>
             )}
           </div>
