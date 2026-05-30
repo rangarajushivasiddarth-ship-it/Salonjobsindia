@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Lock, MapPin, Building2, User, Unlock, Filter, ChevronRight, MessageCircle, Phone, X, Send, Crown, Briefcase, DollarSign, Clock, Star, Navigation } from 'lucide-react'
+import { Search, Lock, MapPin, Building2, User, Unlock, Filter, ChevronRight, MessageCircle, Phone, X, Send, Crown, Briefcase, DollarSign, Clock, Star, Navigation, BadgeCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
@@ -18,6 +18,7 @@ interface SalonWithDetails {
   ownerPhone: string
   rating?: number
   reviewCount?: number
+  isVerified?: boolean
   job?: {
     role: BeautyRole
     salary: string
@@ -102,6 +103,7 @@ export function JobDiscovery() {
           name: job.salonName,
           ownerId: job.salonId || job.id,
           ownerPhone: job.salonMobile || job.contact || '',
+          isVerified: job.isVerified,
           job: {
             role: job.role as BeautyRole,
             salary: job.salary,
@@ -393,7 +395,12 @@ export function JobDiscovery() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h3 className="font-semibold text-base">{salon.name}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-base">{salon.name}</h3>
+                          {salon.isVerified && (
+                            <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-500" />
+                          )}
+                        </div>
                         {salon.job && (
                           <p className="text-sm text-primary font-medium">{salon.job.role}</p>
                         )}
@@ -407,6 +414,12 @@ export function JobDiscovery() {
                     
                     {/* Quick Info */}
                     <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                      {salon.isVerified && (
+                        <span className="flex items-center gap-1 text-blue-500">
+                          <BadgeCheck className="w-3 h-3" />
+                          Verified
+                        </span>
+                      )}
                       {salon.rating && (
                         <span className="flex items-center gap-1">
                           <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
