@@ -52,7 +52,7 @@ const defaultStats: AdminStats = {
 }
 
 const defaultSettings: AppSettings = {
-  qrCodeUrl: '/images/payment-qr.jpg',
+  qrCodeUrl: '/images/payment-qr.png',
   radiusKm: 20,
   paymentInstructions: 'Scan the QR code and complete payment. Upload screenshot for verification.',
   subscriptionDurationDays: 30,
