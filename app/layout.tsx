@@ -11,24 +11,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'Salon Jobs India - Find Your Perfect Salon Career',
   description: 'India\'s premier salon job marketplace connecting job seekers with salon owners. Powered by FItonze Private Limited.',
-  generator: 'v0.app',
-  icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
-  },
+  generator: 'Salon Jobs India',
 }
 
 export const viewport: Viewport = {
