@@ -12,8 +12,19 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'Salon Jobs India - Find Your Perfect Salon Career',
   description: 'India\'s premier salon job marketplace connecting job seekers with salon owners. Powered by FItonze Private Limited.',
-  generator: 'v0.app',
+  keywords: ['salon jobs', 'salon recruitment', 'job search', 'salon careers', 'India'],
   manifest: '/manifest.json',
+  openGraph: {
+    title: 'Salon Jobs India',
+    description: 'Find your perfect salon career',
+    type: 'website',
+    locale: 'en_IN',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Salon Jobs India',
+    description: 'Find your perfect salon career',
+  },
   icons: {
     icon: [
       {
