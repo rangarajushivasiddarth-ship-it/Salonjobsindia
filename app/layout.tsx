@@ -122,6 +122,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark bg-background">
       <head>
+        <meta name="title" content="Salon Jobs India - Find Your Perfect Salon Career" />
+        <meta name="application-name" content="Salon Jobs India" />
+        <meta name="apple-mobile-web-app-title" content="Salon Jobs India" />
+        <meta property="og:site_name" content="Salon Jobs India" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}

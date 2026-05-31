@@ -40,9 +40,16 @@ export function JobResults() {
   const isJobSaved = (jobId: string) => savedJobs.includes(jobId)
   const isJobApplied = (jobId: string) => appliedJobs.includes(jobId)
 
-  const getDistance = () => {
-    // In production, calculate actual distance from user location
-    return `${(Math.random() * 15 + 2).toFixed(1)} km away`
+  const getDistance = (jobId: string) => {
+    // Use a deterministic distance based on jobId hash for SSR consistency
+    // This creates a consistent "random" distance for each job
+    let hash = 0
+    for (let i = 0; i < jobId.length; i++) {
+      hash = ((hash << 5) - hash) + jobId.charCodeAt(i)
+      hash = hash & hash
+    }
+    const distance = (Math.abs(hash) % 130 + 20) / 10 // 2.0 to 15.0 km
+    return `${distance.toFixed(1)} km away`
   }
 
   return (
@@ -131,7 +138,7 @@ export function JobResults() {
                     </div>
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
                       <MapPin className="w-3 h-3" />
-                      {getDistance()} · {job.location.area}
+                      {getDistance(job.id)} · {job.location.area}
                     </p>
                   </div>
                 </div>
@@ -242,7 +249,7 @@ export function JobResults() {
                   </div>
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
                     <MapPin className="w-3 h-3" />
-                    {getDistance()} · {selectedJob.location.address}
+                    {getDistance(selectedJob.id)} · {selectedJob.location.address}
                   </p>
                 </div>
                 <button

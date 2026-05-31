@@ -32,13 +32,15 @@ interface BrandingLogosConfig {
 }
 
 export function getBrandingLogos(): BrandingLogosConfig {
-  if (typeof window === 'undefined') {
-    return {
-      job_seeker: DEFAULT_LOGOS,
-      salon_owner: DEFAULT_LOGOS
-    }
+  // Always return default logos for SSR consistency
+  // Client-side will update via useEffect
+  return {
+    job_seeker: DEFAULT_LOGOS,
+    salon_owner: DEFAULT_LOGOS
   }
-  
+}
+
+export function getClientBrandingLogos(): BrandingLogosConfig {
   try {
     const stored = localStorage.getItem(BRANDING_LOGOS_KEY)
     if (stored) {
@@ -55,17 +57,22 @@ export function getBrandingLogos(): BrandingLogosConfig {
 }
 
 export function saveBrandingLogos(config: BrandingLogosConfig) {
-  if (typeof window !== 'undefined') {
+  try {
     localStorage.setItem(BRANDING_LOGOS_KEY, JSON.stringify(config))
+  } catch {
+    // Ignore errors
   }
 }
 
 export function BrandingBanner({ section, className = '' }: BrandingBannerProps) {
   const [logos, setLogos] = useState<BrandingLogo[]>(DEFAULT_LOGOS)
+  const [mounted, setMounted] = useState(false)
   
   useEffect(() => {
+    setMounted(true)
+    
     const loadLogos = () => {
-      const config = getBrandingLogos()
+      const config = getClientBrandingLogos()
       const sectionLogos = config[section]
       if (sectionLogos && sectionLogos.length > 0) {
         setLogos(sectionLogos)
