@@ -113,10 +113,10 @@ export function AdminLogin() {
           </Button>
         </form>
         
-        {/* Demo Credentials */}
+        {/* Admin Notice */}
         <div className="mt-6 p-4 glass-card rounded-xl text-center animate-slide-up" style={{ animationDelay: '200ms' }}>
-          <p className="text-sm text-muted-foreground mb-2">Demo credentials:</p>
-          <p className="text-xs font-mono text-primary">admin@salonjobsindia.com / admin123</p>
+          <p className="text-sm text-muted-foreground">Admin credentials are configured in your backend authentication system.</p>
+          <p className="text-xs text-muted-foreground/70 mt-2">Contact your system administrator for access.</p>
         </div>
       </div>
     </div>

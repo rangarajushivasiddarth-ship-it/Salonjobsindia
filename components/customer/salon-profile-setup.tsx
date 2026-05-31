@@ -67,12 +67,30 @@ export function SalonProfileSetup() {
       }
 
       const reader = new FileReader()
-      reader.onloadend = () => {
-        const result = reader.result as string
-        setLogoPreview(result)
-        setFormData(prev => ({ ...prev, logoUrl: result }))
-        setErrors(prev => ({ ...prev, logo: '' }))
+      
+      reader.onerror = () => {
+        setErrors(prev => ({ ...prev, logo: 'Failed to read file. Please try again.' }))
+        console.error('[v0] FileReader error:', reader.error)
       }
+      
+      reader.onabort = () => {
+        setErrors(prev => ({ ...prev, logo: 'File reading was cancelled.' }))
+      }
+      
+      reader.onloadend = () => {
+        try {
+          const result = reader.result as string
+          if (result) {
+            setLogoPreview(result)
+            setFormData(prev => ({ ...prev, logoUrl: result }))
+            setErrors(prev => ({ ...prev, logo: '' }))
+          }
+        } catch (err) {
+          setErrors(prev => ({ ...prev, logo: 'Error processing image. Please try another file.' }))
+          console.error('[v0] Logo processing error:', err)
+        }
+      }
+      
       reader.readAsDataURL(file)
     }
   }

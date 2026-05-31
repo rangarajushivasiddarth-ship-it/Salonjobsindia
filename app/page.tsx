@@ -2,6 +2,7 @@
 
 import { AppProvider, useApp } from '@/lib/app-context'
 import { LanguageProvider } from '@/lib/language-context'
+import { ErrorBoundary } from '@/components/error-boundary'
 import { SplashScreen } from '@/components/customer/splash-screen'
 import { AuthScreen } from '@/components/customer/auth-screen'
 import { RoleSelection } from '@/components/customer/role-selection'
@@ -106,12 +107,14 @@ function CustomerApp() {
 
 export default function Home() {
   return (
-    <LanguageProvider>
-      <AppProvider>
-        <main className="min-h-screen">
-          <CustomerApp />
-        </main>
-      </AppProvider>
-    </LanguageProvider>
+    <ErrorBoundary>
+      <LanguageProvider>
+        <AppProvider>
+          <main className="min-h-screen">
+            <CustomerApp />
+          </main>
+        </AppProvider>
+      </LanguageProvider>
+    </ErrorBoundary>
   )
 }
