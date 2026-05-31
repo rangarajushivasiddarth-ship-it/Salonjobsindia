@@ -178,15 +178,12 @@ if (event.key === 'salonjobsindia_subscriptions' ||
   const login = useCallback(async (email: string, password: string) => {
     await new Promise(resolve => setTimeout(resolve, 500))
     
-    // Admin credentials (in production, this would be a real auth check)
-    if (email === 'admin@salonjobsindia.com' && password === 'admin123') {
-      // Save session with 24-hour expiry
-      const session = {
-        isAuthenticated: true,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      }
-      localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session))
-      
+    // Admin credentials validation (production: use real authentication system)
+    // For now, reject all logins - use proper admin auth
+    if (email && password) {
+      // This is a placeholder. In production, connect to real admin database
+      console.error('[v0] Admin login attempted - no valid credentials configured')
+      return false
       setState(prev => ({
         ...prev,
         isAuthenticated: true,

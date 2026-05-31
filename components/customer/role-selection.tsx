@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Building2, ArrowLeft, ArrowRight, Briefcase } from 'lucide-react'
+import { Building2, ArrowLeft, ArrowRight, Briefcase, Globe } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
+import { LanguageSelector } from '@/components/language-selector'
 import type { UserRole } from '@/lib/types'
 
 interface RoleSelectionProps {
@@ -39,7 +40,7 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
       <div className="absolute bottom-1/3 right-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
       
       {/* Header */}
-      <header className="relative z-10 p-4">
+      <header className="relative z-10 p-4 flex items-center justify-between">
         <Button
           variant="ghost"
           size="icon"
@@ -48,6 +49,8 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
+        <div className="flex-1" />
+        <LanguageSelector variant="button" showNativeName={false} className="mr-2" />
       </header>
       
       {/* Content */}
