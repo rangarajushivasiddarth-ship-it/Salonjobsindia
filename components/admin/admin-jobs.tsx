@@ -105,25 +105,34 @@ export function AdminJobs() {
       salonId: payment.salonOwnerId,
       salonName: payment.salonName,
       salonLogo: salonProfile?.logoUrl,
+      salonMobile: payment.salonMobile,
       role: payment.jobRole,
-      salary: (jobDetails as Record<string, unknown>)?.salary as string || 'Negotiable',
-      experience: (jobDetails as Record<string, unknown>)?.experience as string || 'Any',
-      description: (jobDetails as Record<string, unknown>)?.description as string || '',
-      location: (jobDetails as Record<string, unknown>)?.location as { lat: number; lng: number; address: string; area?: string; city?: string } || {
+      skills: [],
+      salaryType: 'fixed',
+      salaryFixed: 'Negotiable',
+      experience: 'Any',
+      jobType: 'full_time',
+      description: '',
+      location: {
         lat: 0,
         lng: 0,
         address: 'Location not specified',
-        area: '',
+        state: '',
         city: '',
+        area: '',
+        locality: '',
       },
       contact: payment.salonMobile,
-      isActive: true,
-      isVerified: isVerified,
       status: 'live',
-      postedAt: new Date(),
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      editsUsed: 0,
+      maxEdits: 3,
+      viewsCount: 0,
+      applicationsCount: 0,
+      isVerified: isVerified,
       paymentApprovedAt: new Date(),
-      applicants: [],
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      isActive: true,
     }
     
     // Save job to the main jobs list
@@ -424,7 +433,7 @@ export function AdminJobs() {
                       <div className="flex flex-wrap gap-3">
                         <span className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-full bg-primary/10 text-primary">
                           <DollarSign className="w-4 h-4" />
-                          {job.salary}
+                          {job.salaryFixed || job.salaryRange || 'Negotiable'}
                         </span>
                         <span className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-full bg-secondary text-foreground">
                           <Clock className="w-4 h-4" />

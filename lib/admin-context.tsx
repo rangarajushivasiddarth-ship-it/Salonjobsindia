@@ -44,7 +44,7 @@ const defaultStats: AdminStats = {
   totalJobs: 0,
   activeJobs: 0,
   totalApplications: 0,
-  pendingSubscriptions: 0,
+  pendingPayments: 0,
   pendingApprovals: 0,
   activeSubscriptions: 0,
   totalRevenue: 0,
@@ -52,7 +52,8 @@ const defaultStats: AdminStats = {
 }
 
 const defaultSettings: AppSettings = {
-  qrCodeUrl: '/images/payment-qr.png',
+  qrCodeUrl: '/images/payment-qr.jpg',
+  upiId: '9100609609@upi',
   radiusKm: 20,
   paymentInstructions: 'Scan the QR code and complete payment. Upload screenshot for verification.',
   subscriptionDurationDays: 30,
@@ -235,7 +236,7 @@ if (event.key === 'salonjobsindia_subscriptions' ||
       if (userPhone) {
         const phone = userPhone.replace(/\D/g, '')
         const message = encodeURIComponent(
-          `🎉 Congratulations! Your Salon Jobs India ${planName} subscription has been activated successfully!\n\n✅ You now have full access to premium features.\n\nThank you for subscribing!\n\n- Team Salon Jobs India`
+          `🎉 Congratulations! Your FITONZE ${planName} subscription has been activated!\n\n✅ You now have full access to premium features.\n\nThank you for subscribing!\n\n- Team FITONZE`
         )
         window.open(`https://wa.me/91${phone}?text=${message}`, '_blank')
       }

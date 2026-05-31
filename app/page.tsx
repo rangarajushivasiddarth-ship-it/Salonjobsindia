@@ -16,6 +16,7 @@ import { MessagesScreen } from '@/components/customer/messages-screen'
 import { NotificationsScreen } from '@/components/customer/notifications-screen'
 import { SettingsScreen } from '@/components/customer/settings-screen'
 import { AboutUsScreen } from '@/components/customer/about-us-screen'
+import { ContactUsScreen } from '@/components/customer/contact-us-screen'
 import { CreditPayment } from '@/components/customer/credit-payment'
 import { SalonProfileSetup } from '@/components/customer/salon-profile-setup'
 import { BottomNav } from '@/components/customer/bottom-nav'
@@ -77,6 +78,8 @@ function CustomerApp() {
         return <SettingsScreen />
       case 'about':
         return <AboutUsScreen />
+      case 'contact':
+        return <ContactUsScreen />
       case 'credit-payment':
         return <CreditPayment />
       case 'salon-profile':
@@ -91,7 +94,7 @@ function CustomerApp() {
   }
 
   // Show bottom nav only on main app screens (not auth flow)
-  const showBottomNav = ['discovery', 'results', 'messages', 'notifications', 'profile', 'owner-panel', 'create-job', 'about'].includes(currentStep)
+  const showBottomNav = ['discovery', 'results', 'messages', 'notifications', 'profile', 'owner-panel', 'create-job', 'about', 'contact'].includes(currentStep)
   
   return (
     <>

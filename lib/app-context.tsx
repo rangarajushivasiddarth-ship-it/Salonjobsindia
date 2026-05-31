@@ -9,6 +9,8 @@ import { checkAndExpireJobs, checkAndExpireVerifiedBadges } from './data-store'
 function jobSeekerToResume(jobSeeker: ReturnType<typeof JobSeekerService.getByUserId>): Resume | null {
   if (!jobSeeker) return null
   return {
+    id: jobSeeker.id,
+    userId: jobSeeker.userId,
     name: jobSeeker.name,
     role: jobSeeker.role,
     dateOfBirth: jobSeeker.dateOfBirth,
@@ -16,6 +18,8 @@ function jobSeekerToResume(jobSeeker: ReturnType<typeof JobSeekerService.getByUs
     skills: jobSeeker.skills,
     salaryExpectation: jobSeeker.salaryExpectation,
     location: jobSeeker.location,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   }
 }
 
@@ -28,7 +32,7 @@ interface AppState {
   isAuthenticated: boolean
   isLoading: boolean
   unreadNotifications: number
-  currentStep: 'splash' | 'auth' | 'role' | 'resume' | 'discovery' | 'subscription' | 'results' | 'profile' | 'create-job' | 'owner-panel' | 'messages' | 'notifications' | 'settings' | 'about' | 'credit-payment' | 'salon-profile'
+  currentStep: 'splash' | 'auth' | 'role' | 'resume' | 'discovery' | 'subscription' | 'results' | 'profile' | 'create-job' | 'owner-panel' | 'messages' | 'notifications' | 'settings' | 'about' | 'contact' | 'credit-payment' | 'salon-profile'
 }
 
 interface AppContextType extends AppState {

@@ -158,7 +158,7 @@ export function JobResults() {
               <div className="flex flex-wrap gap-2 mb-4">
                 <span className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-full bg-primary/10 text-primary">
                   <DollarSign className="w-3 h-3" />
-                  {job.salary}
+                  {job.salaryFixed || job.salaryRange || 'Negotiable'}
                 </span>
                 <span className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-full bg-secondary/80 text-foreground">
                   <Clock className="w-3 h-3" />
@@ -261,7 +261,7 @@ export function JobResults() {
                 <div className="flex flex-wrap gap-2">
                   <span className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-full bg-primary/10 text-primary">
                     <DollarSign className="w-4 h-4" />
-                    {selectedJob.salary}
+                    {selectedJob.salaryFixed || selectedJob.salaryRange || 'Negotiable'}
                   </span>
                   <span className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-full bg-secondary/80 text-foreground">
                     <Clock className="w-4 h-4" />

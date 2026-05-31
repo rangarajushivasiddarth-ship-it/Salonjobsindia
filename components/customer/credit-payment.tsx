@@ -233,11 +233,13 @@ export function CreditPayment() {
               <p className="font-mono font-semibold">{PAYMENT_CONFIG.upiId}</p>
             </div>
             
-            {/* QR Code Placeholder */}
+            {/* QR Code Image */}
             <div className="p-4 bg-white rounded-xl flex items-center justify-center">
-              <div className="w-40 h-40 bg-gray-100 rounded-lg flex items-center justify-center">
-                <p className="text-gray-500 text-xs text-center px-2">QR Code<br/>Scan to Pay</p>
-              </div>
+              <img 
+                src="/images/payment-qr.jpg" 
+                alt="UPI QR Code" 
+                className="w-40 h-40 object-cover rounded-lg"
+              />
             </div>
             
             <div className="flex gap-3">

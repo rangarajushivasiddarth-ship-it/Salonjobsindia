@@ -1,13 +1,13 @@
 'use client'
 
-import { Home, Search, MessageCircle, Bell, User, Briefcase, Building2, Info } from 'lucide-react'
+import { Home, Search, MessageCircle, Bell, User, Briefcase, Building2, Info, Phone } from 'lucide-react'
 import { useApp } from '@/lib/app-context'
 
 type NavItem = {
   id: string
   label: string
   icon: typeof Home
-  step: 'discovery' | 'results' | 'messages' | 'notifications' | 'profile' | 'owner-panel' | 'create-job' | 'about'
+  step: 'discovery' | 'results' | 'messages' | 'notifications' | 'profile' | 'owner-panel' | 'create-job' | 'about' | 'contact'
   badge?: number
 }
 
@@ -25,8 +25,8 @@ export function BottomNav({ unreadMessages = 0, unreadNotifications = 0 }: Botto
   const jobSeekerNav: NavItem[] = [
     { id: 'home', label: 'Jobs', icon: Home, step: user?.isSubscribed ? 'results' : 'discovery' },
     { id: 'about', label: 'About Us', icon: Info, step: 'about' },
+    { id: 'contact', label: 'Contact', icon: Phone, step: 'contact' },
     { id: 'messages', label: 'Chats', icon: MessageCircle, step: 'messages', badge: unreadMessages },
-    { id: 'notifications', label: 'Alerts', icon: Bell, step: 'notifications', badge: unreadNotifications },
     { id: 'profile', label: 'Profile', icon: User, step: 'profile' },
   ]
   
@@ -34,6 +34,7 @@ export function BottomNav({ unreadMessages = 0, unreadNotifications = 0 }: Botto
     { id: 'home', label: 'Dashboard', icon: Building2, step: 'owner-panel' },
     { id: 'post', label: 'Post Job', icon: Briefcase, step: 'create-job' },
     { id: 'about', label: 'About Us', icon: Info, step: 'about' },
+    { id: 'contact', label: 'Contact', icon: Phone, step: 'contact' },
     { id: 'messages', label: 'Chats', icon: MessageCircle, step: 'messages', badge: unreadMessages },
     { id: 'profile', label: 'Profile', icon: User, step: 'profile' },
   ]
@@ -52,6 +53,9 @@ export function BottomNav({ unreadMessages = 0, unreadNotifications = 0 }: Botto
     }
     if (item.id === 'about') {
       return currentStep === 'about'
+    }
+    if (item.id === 'contact') {
+      return currentStep === 'contact'
     }
     return currentStep === item.step
   }
