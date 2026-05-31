@@ -92,9 +92,6 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         <p className="text-sm text-muted-foreground tracking-wider">
           Powered by <span className="text-amber-400 font-medium">FItonze Private Limited</span>
         </p>
-        <p className="text-[10px] text-muted-foreground/60 mt-1">
-          Developed by Rangaraju Shiva Siddarth
-        </p>
       </div>
 
       {/* Loading dots */}
