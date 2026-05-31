@@ -74,9 +74,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Run expiry checks on app load
-        checkAndExpireJobs()
-        checkAndExpireVerifiedBadges()
+        // Run expiry checks on app load with error handling
+        try {
+          checkAndExpireJobs()
+        } catch (expireJobsError) {
+          console.warn('[v0] Job expiry check failed:', expireJobsError)
+        }
+        
+        try {
+          checkAndExpireVerifiedBadges()
+        } catch (expireBadgesError) {
+          console.warn('[v0] Badge expiry check failed:', expireBadgesError)
+        }
         
         const currentUser = UserService.getCurrentUser()
         
@@ -116,7 +125,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return
         }
       } catch (error) {
-        console.error('Auth check failed:', error)
+        console.error('[v0] Auth check failed:', error)
       }
       
       setState(prev => ({ ...prev, isLoading: false }))
