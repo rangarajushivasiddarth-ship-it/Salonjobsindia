@@ -57,16 +57,22 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   // Initialize Google Translate
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    
     // Load saved language preference
-    const savedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) as LanguageCode
-    if (savedLang && SUPPORTED_LANGUAGES.some(l => l.code === savedLang)) {
-      setCurrentLanguageState(savedLang)
+    try {
+      const savedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) as LanguageCode
+      if (savedLang && SUPPORTED_LANGUAGES.some(l => l.code === savedLang)) {
+        setCurrentLanguageState(savedLang)
+      }
+    } catch (e) {
+      console.warn('[v0] Could not load saved language:', e)
     }
 
     // Initialize Google Translate widget
     const initGoogleTranslate = () => {
-      if (window.google?.translate?.TranslateElement) {
-        try {
+      try {
+        if (window.google?.translate?.TranslateElement) {
           new window.google.translate.TranslateElement(
             {
               pageLanguage: 'en',
@@ -77,25 +83,41 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
             'google_translate_element'
           )
           setIsInitialized(true)
-        } catch (error) {
-          console.error('[v0] Google Translate init error:', error)
         }
+      } catch (error) {
+        console.error('[v0] Google Translate initialization error:', error)
+        setIsInitialized(true) // Still mark as initialized even on error
       }
     }
 
     window.googleTranslateElementInit = initGoogleTranslate
 
+    // Only load script if not already loaded
     if (!document.getElementById('google-translate-script')) {
-      const script = document.createElement('script')
-      script.id = 'google-translate-script'
-      script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'
-      script.async = true
-      script.onerror = () => {
-        console.error('[v0] Failed to load Google Translate')
+      try {
+        const script = document.createElement('script')
+        script.id = 'google-translate-script'
+        script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'
+        script.async = true
+        script.onerror = () => {
+          console.warn('[v0] Google Translate script failed to load (may be blocked or unavailable)')
+          setIsInitialized(true) // Still mark as initialized
+        }
+        document.body.appendChild(script)
+      } catch (error) {
+        console.error('[v0] Error loading Google Translate script:', error)
+        setIsInitialized(true)
       }
-      document.body.appendChild(script)
-    } else if (window.google?.translate) {
+    } else if (window.google?.translate?.TranslateElement) {
+      // Script already loaded, initialize immediately
       initGoogleTranslate()
+    }
+
+    // Cleanup
+    return () => {
+      if (window.googleTranslateElementInit) {
+        delete window.googleTranslateElementInit
+      }
     }
   }, [])
 
@@ -106,30 +128,42 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       const selectElement = document.querySelector('.goog-te-combo') as HTMLSelectElement
       
       if (!selectElement) {
-        console.warn('[v0] Google Translate select element not found')
-        setIsTranslating(false)
+        console.warn('[v0] Google Translate select not ready, trying again...')
+        // Retry after a short delay
+        setTimeout(() => {
+          const retrySelectElement = document.querySelector('.goog-te-combo') as HTMLSelectElement
+          if (retrySelectElement) {
+            if (langCode === 'en') {
+              retrySelectElement.value = ''
+            } else {
+              const langObj = SUPPORTED_LANGUAGES.find(l => l.code === langCode)
+              if (langObj) {
+                retrySelectElement.value = langObj.googleCode
+              }
+            }
+            retrySelectElement.dispatchEvent(new Event('change', { bubbles: true }))
+          }
+          setTimeout(() => setIsTranslating(false), 600)
+        }, 300)
         return
       }
 
+      // Set the language value
       if (langCode === 'en') {
-        // Reset to English
         selectElement.value = ''
         selectElement.dispatchEvent(new Event('change', { bubbles: true }))
-        
-        // Clear cookies
+        // Clear translation cookies
         document.cookie = 'googtrans=; max-age=0; path=/;'
         document.cookie = `googtrans=; max-age=0; domain=${window.location.hostname}; path=/;`
       } else {
-        // Get Google language code
         const langObj = SUPPORTED_LANGUAGES.find(l => l.code === langCode)
-        const googleLangCode = langObj?.googleCode || langCode
-
-        // Set the language
-        selectElement.value = googleLangCode
-        selectElement.dispatchEvent(new Event('change', { bubbles: true }))
+        if (langObj) {
+          selectElement.value = langObj.googleCode
+          selectElement.dispatchEvent(new Event('change', { bubbles: true }))
+        }
       }
 
-      // Stop translating after animation completes
+      // Stop translating after animation
       setTimeout(() => {
         setIsTranslating(false)
       }, 800)

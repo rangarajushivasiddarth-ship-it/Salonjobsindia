@@ -10,32 +10,52 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Salon Jobs India - Find Your Perfect Salon Career',
-  description: 'India\'s premier salon job marketplace connecting job seekers with salon owners. Powered by FItonze Private Limited.',
-  keywords: ['salon jobs', 'salon recruitment', 'job search', 'salon careers', 'India', 'salon professionals', 'beauty industry jobs'],
+  title: 'Salon Jobs India - Find Your Perfect Salon Career | Premium Salon Recruitment Platform',
+  description: 'Salon Jobs India is India\'s premier salon job marketplace connecting talented beauty professionals with top salons. Browse thousands of salon positions, build your profile, and launch your dream career in the beauty industry. Salon owners can post jobs and find qualified staff. FItonze Private Limited - Beauty Industry Employment Solutions.',
+  keywords: ['salon jobs', 'salon recruitment', 'beauty salon jobs', 'salon careers', 'beauty jobs India', 'salon staff hiring', 'salon employment', 'job search', 'salon professionals', 'beauty industry jobs', 'job opportunities'],
   manifest: '/manifest.json',
   robots: {
     index: true,
     follow: true,
     nocache: false,
-    googleBot: 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1',
+    'max-snippet': -1,
+    'max-image-preview': 'large',
+    'max-video-preview': -1,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-snippet': -1,
+      'max-image-preview': 'large',
+      'max-video-preview': -1,
+    }
   },
   alternates: {
     canonical: 'https://saloonjobsindia.com',
   },
   openGraph: {
-    title: 'Salon Jobs India - Find Your Perfect Salon Career',
-    description: 'India\'s premier salon job marketplace connecting job seekers with salon owners',
+    title: 'Salon Jobs India - Premium Salon Recruitment Platform',
+    description: 'Connect with thousands of salon jobs and beauty career opportunities in India. Salon Jobs India - Where Beauty Professionals Meet Dream Salons.',
     type: 'website',
     locale: 'en_IN',
     url: 'https://saloonjobsindia.com',
     siteName: 'Salon Jobs India',
+    images: [
+      {
+        url: '/images/logo.png',
+        width: 1200,
+        height: 630,
+        alt: 'Salon Jobs India - Beauty Job Marketplace',
+        type: 'image/png',
+      }
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Salon Jobs India',
-    description: 'Find your perfect salon career',
+    title: 'Salon Jobs India - Salon Recruitment Platform',
+    description: 'Find salon jobs or post salon positions on Salon Jobs India',
     creator: '@saloonjobsindia',
+    site: '@saloonjobsindia',
+    images: ['/images/logo.png'],
   },
   icons: {
     icon: [
@@ -62,6 +82,7 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
+  authors: [{ name: 'FItonze Private Limited', url: 'https://saloonjobsindia.com' }],
 }
 
 export const viewport: Viewport = {
