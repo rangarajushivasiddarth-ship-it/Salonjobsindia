@@ -10,6 +10,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://saloonjobsindia.com'),
   title: 'Salon Jobs India - Find Your Perfect Salon Career | Premium Salon Recruitment Platform',
   description: 'Salon Jobs India is India\'s premier salon job marketplace connecting talented beauty professionals with top salons. Browse thousands of salon positions, build your profile, and launch your dream career in the beauty industry. Salon owners can post jobs and find qualified staff. FItonze Private Limited - Beauty Industry Employment Solutions.',
   keywords: ['salon jobs', 'salon recruitment', 'beauty salon jobs', 'salon careers', 'beauty jobs India', 'salon staff hiring', 'salon employment', 'job search', 'salon professionals', 'beauty industry jobs', 'job opportunities'],
