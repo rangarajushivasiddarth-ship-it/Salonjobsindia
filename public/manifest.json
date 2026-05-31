@@ -1,0 +1,83 @@
+{
+  "name": "Salon Jobs India - Find Your Perfect Salon Career",
+  "short_name": "Salon Jobs",
+  "description": "Find your perfect salon career. Post jobs, hire professionals, and grow your salon business. Powered by FItonze Private Limited.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#D4AF37",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Find Jobs",
+      "short_name": "Jobs",
+      "description": "Browse salon job listings",
+      "url": "/?shortcut=jobs",
+      "icons": [
+        {
+          "src": "/images/logo.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Post a Job",
+      "short_name": "Post Job",
+      "description": "Post a new job listing",
+      "url": "/?shortcut=post-job",
+      "icons": [
+        {
+          "src": "/images/logo.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "icons": [
+    {
+      "src": "/images/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/images/logo.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Browse salon jobs near you"
+    },
+    {
+      "src": "/images/logo.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Connect with top salons and professionals"
+    }
+  ],
+  "categories": ["business", "lifestyle", "productivity"],
+  "developers": [
+    {
+      "name": "FItonze Private Limited",
+      "url": "https://saloonjobsindia.com",
+      "email": "Saloonjobsindia@gmail.com"
+    }
+  ]
+}

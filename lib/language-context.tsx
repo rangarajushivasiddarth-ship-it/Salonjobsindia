@@ -116,19 +116,29 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const langObj = SUPPORTED_LANGUAGES.find(l => l.code === langCode)
     const googleLangCode = langObj?.googleCode || langCode
 
+    // Clear all translation cookies completely
+    const clearCookies = () => {
+      // Clear from root
+      document.cookie = 'googtrans=; max-age=0; path=/;'
+      // Clear from current domain
+      document.cookie = `googtrans=; max-age=0; path=/; domain=${window.location.hostname};`
+      // Clear from parent domain  
+      document.cookie = `googtrans=; max-age=0; path=/; domain=.${window.location.hostname};`
+      // Also try clearing the _ga and other cookies
+      const domain = window.location.hostname
+      document.cookie = `googtrans=; max-age=0; domain=${domain}; path=/;`
+      document.cookie = `googtrans=; max-age=0; domain=.${domain}; path=/;`
+    }
+
     // Method 1: Try using the hidden Google Translate select element
     const selectElement = document.querySelector('.goog-te-combo') as HTMLSelectElement
     
     if (selectElement) {
       if (langCode === 'en') {
-        // Reset to English - clear the translation
+        // Reset to English - clear the translation completely
+        clearCookies()
         selectElement.value = ''
         selectElement.dispatchEvent(new Event('change', { bubbles: true }))
-        
-        // Also clear cookies to ensure reset
-        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + window.location.hostname
-        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + window.location.hostname
         
         // Reload to apply English
         setTimeout(() => {
@@ -138,18 +148,21 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         // Set the language in the select dropdown
         selectElement.value = googleLangCode
         selectElement.dispatchEvent(new Event('change', { bubbles: true }))
+        
+        // Reload to trigger translation
+        setTimeout(() => {
+          window.location.reload()
+        }, 500)
       }
     } else {
       // Method 2: Set cookies directly if select not found
-      const langPair = langCode === 'en' ? '' : `/en/${googleLangCode}`
-      
-      // Clear existing cookies first
-      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + window.location.hostname
-      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + window.location.hostname
-      
-      if (langCode !== 'en') {
-        // Set new translation cookie
+      if (langCode === 'en') {
+        // Full reset for English
+        clearCookies()
+      } else {
+        // Clear first, then set new language
+        clearCookies()
+        const langPair = `/en/${googleLangCode}`
         document.cookie = `googtrans=${langPair}; path=/`
         document.cookie = `googtrans=${langPair}; path=/; domain=${window.location.hostname}`
         document.cookie = `googtrans=${langPair}; path=/; domain=.${window.location.hostname}`
@@ -168,12 +181,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const setLanguage = useCallback((code: LanguageCode) => {
-    if (code === currentLanguage) return
-
     setCurrentLanguage(code)
     localStorage.setItem(LANGUAGE_STORAGE_KEY, code)
     triggerLanguageChange(code)
-  }, [currentLanguage, triggerLanguageChange])
+  }, [triggerLanguageChange])
 
   return (
     <LanguageContext.Provider

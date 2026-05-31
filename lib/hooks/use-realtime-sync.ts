@@ -99,8 +99,6 @@ export function useAdminSync(pollInterval = 3000) {
           isLoading: false,
           error: null,
         }))
-        
-        console.log(`[Realtime Sync] Admin fetched - Total pending: ${data.totalPending}`)
       }
     } catch (error) {
       console.error('[Realtime Sync] Admin fetch error:', error)
@@ -113,8 +111,6 @@ export function useAdminSync(pollInterval = 3000) {
   }, [])
   
   const approveSubscription = useCallback(async (id: string, adminId: string = 'admin') => {
-    console.log(`[Realtime Sync] Approving subscription ${id}`)
-    
     try {
       const response = await fetch('/api/sync', {
         method: 'PUT',
@@ -130,7 +126,6 @@ export function useAdminSync(pollInterval = 3000) {
       const data = await response.json()
       
       if (data.success) {
-        console.log(`[Realtime Sync] Subscription ${id} approved successfully`)
         // Immediately refresh
         await fetchPending()
         return { success: true }
@@ -144,8 +139,6 @@ export function useAdminSync(pollInterval = 3000) {
   }, [fetchPending])
   
   const rejectSubscription = useCallback(async (id: string, adminId: string = 'admin', reason?: string) => {
-    console.log(`[Realtime Sync] Rejecting subscription ${id}`)
-    
     try {
       const response = await fetch('/api/sync', {
         method: 'PUT',
@@ -173,8 +166,6 @@ export function useAdminSync(pollInterval = 3000) {
   }, [fetchPending])
   
   const approveJobPayment = useCallback(async (id: string, adminId: string = 'admin') => {
-    console.log(`[Realtime Sync] Approving job payment ${id}`)
-    
     try {
       const response = await fetch('/api/sync', {
         method: 'PUT',
@@ -327,7 +318,6 @@ export function useApprovalStatus(userId: string | undefined, pollInterval = 200
       const data = await response.json()
       
       if (data.success && data.approved) {
-        console.log(`[Realtime Sync] User ${userId} is APPROVED!`, data.data)
         setIsApproved(true)
         setApprovalData(data.data)
         
@@ -383,13 +373,12 @@ function createJobFromApproval(salonId: string, approvalData: Record<string, unk
     const jobs = jobsStr ? JSON.parse(jobsStr) : []
     
     // Check if job already exists
-    const existingJob = jobs.find((j: { id?: string; salonId?: string }) => 
+    const existingJob = jobs.find((j: any) => 
       j.id === approvalData.orderId || 
       (j.salonId === salonId && j.salonName === jobDetails.salonName && j.role === (jobDetails.role || jobDetails.customRole))
     )
     
     if (existingJob) {
-      console.log('[Realtime Sync] Job already exists, skipping creation')
       return
     }
     
@@ -423,13 +412,10 @@ function createJobFromApproval(salonId: string, approvalData: Record<string, unk
     if (profile && (!profile.contactCredits || profile.contactCredits === 0)) {
       profile.contactCredits = 30 // First job gets 30 free credits
       localStorage.setItem('salonjobsindia_salon_profiles', JSON.stringify(profiles))
-      console.log('[Realtime Sync] Added 30 free credits to salon profile')
     }
     
     // Dispatch update event
     window.dispatchEvent(new CustomEvent('salonjobsindia_data_updated', { detail: { key: 'salonjobsindia_jobs' } }))
-    
-    console.log('[Realtime Sync] Created job from approval:', newJob.id)
   } catch (error) {
     console.error('[Realtime Sync] Error creating job from approval:', error)
   }

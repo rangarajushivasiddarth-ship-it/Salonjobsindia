@@ -20,11 +20,6 @@ const DEFAULT_LOGOS: BrandingLogo[] = [
     id: 'fitonze-1',
     url: '/images/fitonze-logo.jpeg',
     alt: 'FITONZE - Born to Shine'
-  },
-  {
-    id: 'fitonze-2',
-    url: '/images/fitonze-banner.png',
-    alt: 'FITONZE Men\'s Salon'
   }
 ]
 

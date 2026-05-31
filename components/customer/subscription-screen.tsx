@@ -99,7 +99,6 @@ export function SubscriptionScreen() {
     setSubscription(subscription)
     
     // IMPORTANT: Submit to cloud sync API for cross-device real-time sync
-    console.log('[Subscription] Submitting to cloud sync...')
     const cloudResult = await submitSubscriptionPayment({
       userId: user.id,
       userName: user.name || user.email,
@@ -114,7 +113,7 @@ export function SubscriptionScreen() {
     })
     
     if (cloudResult.success) {
-      console.log('[Subscription] Successfully submitted to cloud!')
+      // Successfully submitted to cloud
     } else {
       console.error('[Subscription] Cloud sync failed:', cloudResult.error)
     }
@@ -152,7 +151,6 @@ export function SubscriptionScreen() {
   // Check if approved via cloud
   useEffect(() => {
     if (cloudApproved && approvalData) {
-      console.log('[Subscription] APPROVED via cloud sync!', approvalData)
       // Update local state
       if (user) {
         const approvedSub: Subscription = {

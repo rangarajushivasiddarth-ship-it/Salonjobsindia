@@ -112,6 +112,12 @@ export function AdminLogin() {
             )}
           </Button>
         </form>
+        
+        {/* Demo Credentials */}
+        <div className="mt-6 p-4 glass-card rounded-xl text-center animate-slide-up" style={{ animationDelay: '200ms' }}>
+          <p className="text-sm text-muted-foreground mb-2">Demo credentials:</p>
+          <p className="text-xs font-mono text-primary">admin@salonjobsindia.com / admin123</p>
+        </div>
       </div>
     </div>
   )

@@ -246,7 +246,6 @@ export function CreateJob() {
     localStorage.setItem(`salonjobsindia_pending_jobs_${user?.id}`, JSON.stringify(jobs))
     
     // IMPORTANT: Submit to cloud sync API for cross-device real-time sync
-    console.log('[CreateJob] Submitting to cloud sync...')
     const cloudResult = await submitJobPayment({
       salonId: user?.id || '',
       salonName: formData.salonName,
@@ -267,7 +266,7 @@ export function CreateJob() {
     })
     
     if (cloudResult.success) {
-      console.log('[CreateJob] Successfully submitted to cloud!')
+      // Successfully submitted to cloud
     } else {
       console.error('[CreateJob] Cloud sync failed:', cloudResult.error)
     }
@@ -283,7 +282,7 @@ export function CreateJob() {
       <PendingApprovalScreen 
         savedJob={savedJob} 
         user={user} 
-        goToStep={goToStep}
+        goToStep={(step) => setCurrentStep(step as Step)}
         formData={formData}
       />
     )
