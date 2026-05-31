@@ -148,6 +148,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         // Set the language in the select dropdown
         selectElement.value = googleLangCode
         selectElement.dispatchEvent(new Event('change', { bubbles: true }))
+        
+        // Reload to trigger translation
+        setTimeout(() => {
+          window.location.reload()
+        }, 500)
       }
     } else {
       // Method 2: Set cookies directly if select not found
@@ -176,12 +181,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const setLanguage = useCallback((code: LanguageCode) => {
-    if (code === currentLanguage) return
-
     setCurrentLanguage(code)
     localStorage.setItem(LANGUAGE_STORAGE_KEY, code)
     triggerLanguageChange(code)
-  }, [currentLanguage, triggerLanguageChange])
+  }, [triggerLanguageChange])
 
   return (
     <LanguageContext.Provider
