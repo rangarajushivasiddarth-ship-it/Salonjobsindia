@@ -12,9 +12,6 @@ export function AppFooter({ variant = 'default', className = '' }: AppFooterProp
         <p className="text-[10px] text-muted-foreground/60">
           © 2026 FItonze Private Limited. All Rights Reserved.
         </p>
-        <p className="text-[9px] text-muted-foreground/40 mt-1">
-          Developed by Rangaraju Shiva Siddarth
-        </p>
       </footer>
     )
   }
@@ -25,9 +22,6 @@ export function AppFooter({ variant = 'default', className = '' }: AppFooterProp
         <p className="text-xs text-muted-foreground mb-1">
           © 2026 FItonze Private Limited. All Rights Reserved.
         </p>
-        <p className="text-[10px] text-muted-foreground/60">
-          Application developed by Rangaraju Shiva Siddarth
-        </p>
       </footer>
     )
   }
@@ -36,9 +30,6 @@ export function AppFooter({ variant = 'default', className = '' }: AppFooterProp
     <footer className={`px-4 py-6 border-t border-border/30 text-center ${className}`}>
       <p className="text-xs text-muted-foreground mb-1">
         © 2026 FItonze Private Limited. All Rights Reserved.
-      </p>
-      <p className="text-[10px] text-muted-foreground/60">
-        Application developed by Rangaraju Shiva Siddarth
       </p>
     </footer>
   )

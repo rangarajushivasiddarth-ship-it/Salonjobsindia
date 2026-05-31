@@ -435,9 +435,6 @@ export function SettingsScreen() {
           <p className="text-xs text-muted-foreground mt-1">
             © 2026 FItonze Private Limited. All Rights Reserved.
           </p>
-          <p className="text-[10px] text-muted-foreground/60 mt-1">
-            Application developed by Rangaraju Shiva Siddarth
-          </p>
         </div>
       </div>
     </div>
