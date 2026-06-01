@@ -16,7 +16,7 @@ export function LanguageSelector({
   showNativeName = true,
   className = '' 
 }: LanguageSelectorProps) {
-  const { currentLanguage, setLanguage, isTranslating, isGoogleTranslateAvailable } = useLanguage()
+  const { currentLanguage, setLanguage, isTranslating } = useLanguage()
   const [isOpen, setIsOpen] = useState(false)
 
   const currentLangObj = SUPPORTED_LANGUAGES.find(l => l.code === currentLanguage)
