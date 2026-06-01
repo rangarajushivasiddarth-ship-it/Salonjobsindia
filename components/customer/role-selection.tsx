@@ -72,11 +72,11 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
             <span className="text-base">{t('language')}</span>
           </Button>
           {showLanguageMenu && (
-            <div className="absolute top-full right-0 mt-2 w-48 bg-background border-2 border-primary rounded-lg shadow-2xl z-50">
+            <div className="absolute top-full right-0 mt-2 w-48 bg-black border-2 border-yellow-500 rounded-lg shadow-2xl z-50">
               {[
                 { code: 'en', name: 'English' },
-                { code: 'hi', name: 'Hindi' },
-                { code: 'te', name: 'Telugu' },
+                { code: 'hi', name: 'हिन्दी' },
+                { code: 'te', name: 'తెలుగు' },
               ].map(lang => (
                 <button
                   key={lang.code}
@@ -84,7 +84,7 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
                     setLanguage(lang.code as any)
                     setShowLanguageMenu(false)
                   }}
-                  className="w-full px-4 py-3 text-left hover:bg-primary hover:text-primary-foreground transition-all text-base font-medium"
+                  className="w-full px-4 py-3 text-left hover:bg-yellow-500/20 hover:text-yellow-500 transition-all text-base font-medium text-white border-b border-white/10 last:border-b-0"
                 >
                   {lang.name}
                 </button>

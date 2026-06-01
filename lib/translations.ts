@@ -85,9 +85,6 @@ export const translations = {
     // Contact Us
     'contactUs': 'Contact Us',
     'getInTouch': 'Get In Touch',
-    'phone': 'Phone',
-    'email': 'Email',
-    'address': 'Address',
     'followUs': 'Follow Us',
     'sendMessage': 'Send Message',
   },
@@ -177,9 +174,6 @@ export const translations = {
     // Contact Us
     'contactUs': 'हमसे संपर्क करें',
     'getInTouch': 'संपर्क में रहें',
-    'phone': 'फोन',
-    'email': 'ईमेल',
-    'address': 'पता',
     'followUs': 'हमें फॉलो करें',
     'sendMessage': 'संदेश भेजें',
   },
@@ -269,9 +263,6 @@ export const translations = {
     // Contact Us
     'contactUs': 'మమ్మల్ని సంప్రదించండి',
     'getInTouch': 'సంప్రదింపులో ఉండండి',
-    'phone': 'ఫోన్',
-    'email': 'ఇమెయిల్',
-    'address': 'చిరునామా',
     'followUs': 'మమ్మల్ని అనుసరించండి',
     'sendMessage': 'సందేశం పంపండి',
   },
