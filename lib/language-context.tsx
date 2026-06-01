@@ -94,16 +94,20 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const initGoogleTranslate = () => {
       try {
         if (window.google?.translate?.TranslateElement) {
-          new window.google.translate.TranslateElement(
-            {
-              pageLanguage: 'en',
-              includedLanguages: 'hi,te,ta,ml,kn,ur,gu,bn',
-              autoDisplay: false,
-              layout: 0,
-            },
-            'google_translate_element'
-          )
-          setIsGoogleTranslateAvailable(true)
+          try {
+            new window.google.translate.TranslateElement(
+              {
+                pageLanguage: 'en',
+                includedLanguages: 'hi,te,ta,ml,kn,ur,gu,bn',
+                autoDisplay: false,
+                layout: 0,
+              },
+              'google_translate_element'
+            )
+            setIsGoogleTranslateAvailable(true)
+          } catch (e) {
+            setIsGoogleTranslateAvailable(false)
+          }
         }
       } catch (error) {
         setIsGoogleTranslateAvailable(false)
@@ -118,18 +122,33 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         script.id = 'google-translate-script'
         script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'
         script.async = true
+        script.defer = true
+        
         script.onerror = () => {
           setIsGoogleTranslateAvailable(false)
         }
+        
         script.onload = () => {
           setTimeout(() => {
-            if (window.google?.translate?.TranslateElement) {
-              setIsGoogleTranslateAvailable(true)
+            try {
+              if (window.google?.translate?.TranslateElement) {
+                setIsGoogleTranslateAvailable(true)
+              }
+            } catch (e) {
+              setIsGoogleTranslateAvailable(false)
             }
           }, 500)
         }
+        
         document.body.appendChild(script)
       } catch (error) {
+        setIsGoogleTranslateAvailable(false)
+      }
+    } else {
+      // Script already loaded, try to init
+      try {
+        initGoogleTranslate()
+      } catch (e) {
         setIsGoogleTranslateAvailable(false)
       }
     }
