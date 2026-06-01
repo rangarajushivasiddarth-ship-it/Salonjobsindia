@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Building2, ArrowLeft, ArrowRight, Briefcase, Globe } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { LanguageSelector } from '@/components/language-selector'
+import { useLanguage } from '@/lib/language-context'
 import type { UserRole } from '@/lib/types'
 
 interface RoleSelectionProps {
@@ -14,6 +14,8 @@ interface RoleSelectionProps {
 
 export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null)
+  const { setLanguage } = useLanguage()
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
 
   const roles = [
     {
@@ -49,7 +51,43 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <div className="flex-1" />
+        <div className="flex items-center gap-3 relative">
+          <Button
+            variant="default"
+            size="lg"
+            onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+            className="flex items-center gap-2 bg-yellow-500 text-black hover:bg-yellow-600 font-bold"
+          >
+            <Globe className="w-5 h-5" />
+            <span className="text-base">Language</span>
+          </Button>
+          {showLanguageMenu && (
+            <div className="absolute top-full right-0 mt-2 w-48 bg-background border-2 border-primary rounded-lg shadow-2xl z-50">
+              {[
+                { code: 'en', name: 'English' },
+                { code: 'hi', name: 'Hindi' },
+                { code: 'te', name: 'Telugu' },
+                { code: 'ta', name: 'Tamil' },
+                { code: 'ml', name: 'Malayalam' },
+                { code: 'kn', name: 'Kannada' },
+                { code: 'ur', name: 'Urdu' },
+                { code: 'gu', name: 'Gujarati' },
+                { code: 'bn', name: 'Bengali' },
+              ].map(lang => (
+                <button
+                  key={lang.code}
+                  onClick={() => {
+                    setLanguage(lang.code as any)
+                    setShowLanguageMenu(false)
+                  }}
+                  className="w-full px-4 py-3 text-left hover:bg-primary hover:text-primary-foreground transition-all text-base font-medium"
+                >
+                  {lang.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </header>
       
       {/* Content */}
@@ -143,10 +181,6 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
         </div>
       </div>
       
-      {/* Language Selector - Bottom Right */}
-      <div className="absolute bottom-6 right-6 z-50">
-        <LanguageSelector variant="button" showNativeName={false} />
-      </div>
     </div>
   )
 }
