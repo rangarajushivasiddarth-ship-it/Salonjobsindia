@@ -270,18 +270,18 @@ export function OwnerPanel() {
               <p className="text-sm text-muted-foreground">{user?.name || user?.email}</p>
             </div>
           </div>
-<div className="flex items-center gap-2 relative">
+<div className="flex items-center gap-3 relative">
             <Button
-              variant="outline"
-              size="sm"
+              variant="default"
+              size="lg"
               onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-              className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+              className="flex items-center gap-2 bg-yellow-500 text-black hover:bg-yellow-600 font-bold"
             >
-              <Globe className="w-4 h-4" />
-              <span>Language</span>
+              <Globe className="w-5 h-5" />
+              <span className="text-base">Language</span>
             </Button>
             {showLanguageMenu && (
-              <div className="absolute top-full right-0 mt-2 w-40 bg-background border border-border rounded-lg shadow-lg z-50">
+              <div className="absolute top-full right-0 mt-2 w-48 bg-background border-2 border-primary rounded-lg shadow-2xl z-50">
                 {[
                   { code: 'en', name: 'English' },
                   { code: 'hi', name: 'Hindi' },
@@ -296,10 +296,11 @@ export function OwnerPanel() {
                   <button
                     key={lang.code}
                     onClick={() => {
+                      console.log('[v0] Clicked language:', lang.code)
                       setLanguage(lang.code as any)
                       setShowLanguageMenu(false)
                     }}
-                    className="w-full px-4 py-2 text-left hover:bg-secondary transition-colors text-sm"
+                    className="w-full px-4 py-3 text-left hover:bg-primary hover:text-primary-foreground transition-all text-base font-medium"
                   >
                     {lang.name}
                   </button>
@@ -308,7 +309,7 @@ export function OwnerPanel() {
             )}
             <button
               onClick={() => goToStep('messages')}
-              className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center relative"
+              className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center relative hover:bg-secondary transition-colors"
             >
               <MessageCircle className="w-5 h-5 text-foreground" />
               {unreadMessages > 0 && (
@@ -317,7 +318,7 @@ export function OwnerPanel() {
             </button>
             <button
               onClick={() => goToStep('notifications')}
-              className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center relative"
+              className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center relative hover:bg-secondary transition-colors"
             >
               <Bell className="w-5 h-5 text-foreground" />
             </button>
