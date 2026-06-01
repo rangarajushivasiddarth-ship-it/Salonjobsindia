@@ -7,6 +7,8 @@ import { useApp } from '@/lib/app-context'
 import { getJobSeekerByUserId, updateJobSeekerPreference, getAllJobs, getApplicationsByCandidateId, type JobSeeker } from '@/lib/data-store'
 import type { Application, Job } from '@/lib/types'
 import { BrandingBanner } from './branding-banner'
+import { useTranslation } from '@/lib/use-translation'
+import { useLanguage } from '@/lib/language-context'
 
 type TabType = 'overview' | 'saved' | 'applied'
 
@@ -19,6 +21,8 @@ export function ProfileDashboard() {
   const [jobSeeker, setJobSeeker] = useState<JobSeeker | null>(null)
   const [applications, setApplications] = useState<Application[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
+  const { t } = useTranslation()
+  const { currentLanguage } = useLanguage()
 
   // Load job seeker data and applications
   const loadData = useCallback(() => {

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from '@/lib/use-translation'
+import { useLanguage } from '@/lib/language-context'
 import { ArrowLeft, QrCode, Upload, Check, Clock, Shield, MapPin, Phone, FileText, X, Image as ImageIcon, Crown, Sparkles, Star, Zap, Building2 } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'

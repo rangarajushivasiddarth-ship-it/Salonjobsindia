@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslation } from '@/lib/use-translation'
+import { useLanguage } from '@/lib/language-context'
 import { ArrowLeft, Bell, Briefcase, Crown, MessageCircle, CheckCircle, Clock, Trash2, Settings, CreditCard, X, Check } from 'lucide-react'
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'

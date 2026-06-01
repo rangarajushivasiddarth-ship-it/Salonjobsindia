@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from '@/lib/use-translation'
+import { useLanguage } from '@/lib/language-context'
 import { Search, MapPin, Building2, User, Phone, Briefcase, DollarSign, Clock, Heart, HeartOff, Filter, ChevronRight, Navigation, Star, Lock, Crown, BadgeCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

@@ -5,6 +5,8 @@ import { ArrowLeft, Send, Building2, Search, Phone, MoreVertical, Check, CheckCh
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
+import { useTranslation } from '@/lib/use-translation'
+import { useLanguage } from '@/lib/language-context'
 
 interface Message {
   id: string
@@ -48,6 +50,8 @@ export function MessagesScreen() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showContactCard, setShowContactCard] = useState(false)
   const [copiedPhone, setCopiedPhone] = useState(false)
+  const { t } = useTranslation()
+  const { currentLanguage } = useLanguage()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   
   const filteredConversations = conversations.filter(c => 

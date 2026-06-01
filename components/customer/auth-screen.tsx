@@ -6,6 +6,8 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
+import { useTranslation } from '@/lib/use-translation'
+import { useLanguage } from '@/lib/language-context'
 
 type AuthMode = 'signin' | 'signup'
 
@@ -27,26 +29,28 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [apiError, setApiError] = useState<string | null>(null)
+  const { t } = useTranslation()
+  const { currentLanguage } = useLanguage()
 
   const validateSignInForm = () => {
     const newErrors: Record<string, string> = {}
     
     if (!email) {
-      newErrors.email = 'Email is required'
+      newErrors.email = 'Email ' + t('isRequired')
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Please enter a valid email'
+      newErrors.email = t('invalidEmail')
     }
     
     if (!phone) {
-      newErrors.phone = 'Phone number is required'
+      newErrors.phone = 'Phone ' + t('isRequired')
     } else if (!/^\d{10}$/.test(phone.replace(/\D/g, ''))) {
-      newErrors.phone = 'Please enter a valid 10-digit phone number'
+      newErrors.phone = t('invalidPhone')
     }
     
     if (!password) {
-      newErrors.password = 'Password is required'
+      newErrors.password = t('password') + ' ' + t('isRequired')
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters'
+      newErrors.password = t('passwordMin')
     }
     
     setErrors(newErrors)
