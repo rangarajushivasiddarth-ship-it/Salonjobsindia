@@ -270,7 +270,7 @@ export function OwnerPanel() {
               <p className="text-sm text-muted-foreground">{user?.name || user?.email}</p>
             </div>
           </div>
-<div className="flex items-center gap-2">
+<div className="flex items-center gap-2 relative">
             <Button
               variant="outline"
               size="sm"

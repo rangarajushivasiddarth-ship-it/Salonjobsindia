@@ -232,7 +232,7 @@ export function JobDiscovery() {
               {filteredSalons.length} openings near you
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 relative">
             <Button
               variant="outline"
               size="sm"
