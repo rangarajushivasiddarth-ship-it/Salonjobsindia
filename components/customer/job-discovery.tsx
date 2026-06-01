@@ -5,7 +5,7 @@ import { Search, Lock, MapPin, Building2, User, Unlock, Filter, ChevronRight, Me
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
-import { useLanguage } from '@/lib/language-context'
+import { useLanguage, type LanguageCode } from '@/lib/language-context'
 import { useTranslation } from '@/lib/use-translation'
 import { getAllJobs, canViewMoreShops, incrementShopsViewed, sendMessage, getSubscriptionByUserId, syncApprovedJobsFromCloud } from '@/lib/data-store'
 import type { Job, BeautyRole } from '@/lib/types'

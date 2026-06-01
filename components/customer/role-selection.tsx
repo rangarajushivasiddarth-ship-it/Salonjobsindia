@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { Building2, ArrowLeft, ArrowRight, Briefcase, Globe } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { useLanguage } from '@/lib/language-context'
+import { useLanguage, type LanguageCode } from '@/lib/language-context'
 import { useTranslation } from '@/lib/use-translation'
 import type { UserRole } from '@/lib/types'
 
@@ -74,14 +74,14 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
           {showLanguageMenu && (
             <div className="absolute top-full right-0 mt-2 w-48 bg-black border-2 border-yellow-500 rounded-lg shadow-2xl z-50">
               {[
-                { code: 'en', name: 'English' },
-                { code: 'hi', name: 'हिन्दी' },
-                { code: 'te', name: 'తెలుగు' },
+                { code: 'en' as LanguageCode, name: 'English' },
+                { code: 'hi' as LanguageCode, name: 'हिन्दी' },
+                { code: 'te' as LanguageCode, name: 'తెలుగు' },
               ].map(lang => (
                 <button
                   key={lang.code}
                   onClick={() => {
-                    setLanguage(lang.code as any)
+                    setLanguage(lang.code)
                     setShowLanguageMenu(false)
                   }}
                   className="w-full px-4 py-3 text-left hover:bg-yellow-500/20 hover:text-yellow-500 transition-all text-base font-medium text-white border-b border-white/10 last:border-b-0"
