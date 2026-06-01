@@ -82,19 +82,25 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === 'undefined' || isInitialized) return
     
-    // Load saved language from localStorage
+    // ALWAYS start with English - clear any previous language settings
+    eraseCookie(GOOGLETRANS_COOKIE)
+    
+    // Load saved language from localStorage only if user explicitly saved one
     try {
       const savedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) as LanguageCode
-      if (savedLang && SUPPORTED_LANGUAGES.some(l => l.code === savedLang)) {
+      // Only use saved language if it was explicitly set by user, otherwise use English
+      if (savedLang && SUPPORTED_LANGUAGES.some(l => l.code === savedLang) && savedLang !== 'en') {
         setCurrentLanguageState(savedLang)
       } else {
-        // Default to English if nothing saved
+        // Default to English
         setCurrentLanguageState('en')
-        localStorage.setItem(LANGUAGE_STORAGE_KEY, 'en')
+        // Clear localStorage to ensure clean state
+        localStorage.removeItem(LANGUAGE_STORAGE_KEY)
       }
     } catch (e) {
       // If localStorage fails, just use English
       setCurrentLanguageState('en')
+      eraseCookie(GOOGLETRANS_COOKIE)
     }
 
     // Load Google Translate script
