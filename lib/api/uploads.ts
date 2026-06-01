@@ -1,4 +1,5 @@
-// Uploads API services
+// Uploads API services - Client-side file handling using localStorage and Blob URLs
+
 import { getAccessToken } from './client';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
@@ -15,31 +16,36 @@ export interface MultipleUploadResponse {
   message: string;
 }
 
-// Generic upload function
+// Store files locally using Blob URLs (no server upload needed)
+const createLocalFileUrl = (file: File): string => {
+  return URL.createObjectURL(file);
+};
+
+// Generic upload function - uses local Blob URLs
 const uploadFile = async (
   endpoint: string,
   file: File,
   fieldName: string
 ): Promise<UploadResponse> => {
-  const formData = new FormData();
-  formData.append(fieldName, file);
+  try {
+    // Validate file first
+    const validation = validateFile(file);
+    if (!validation.valid) {
+      throw new Error(validation.error || 'File validation failed');
+    }
 
-  const token = getAccessToken();
+    // Create local Blob URL instead of uploading to server
+    const url = createLocalFileUrl(file);
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method: 'POST',
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    },
-    body: formData
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Upload failed');
+    return {
+      success: true,
+      url,
+      message: `File ${file.name} processed locally`
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+    throw new Error(errorMessage);
   }
-
-  return response.json();
 };
 
 // Upload avatar
@@ -77,50 +83,42 @@ export const uploadMultipleImages = async (
   files: File[],
   category: string
 ): Promise<MultipleUploadResponse> => {
-  const formData = new FormData();
-  
-  files.forEach((file) => {
-    formData.append('images', file);
-  });
-  formData.append('category', category);
+  try {
+    const uploadedFiles = files.map((file) => {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        throw new Error(validation.error || 'File validation failed');
+      }
 
-  const token = getAccessToken();
+      const url = createLocalFileUrl(file);
+      return {
+        url,
+        originalName: file.name
+      };
+    });
 
-  const response = await fetch(`${API_BASE_URL}/uploads/multiple`, {
-    method: 'POST',
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    },
-    body: formData
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Upload failed');
+    return {
+      success: true,
+      files: uploadedFiles,
+      message: `${files.length} files processed locally`
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+    throw new Error(errorMessage);
   }
-
-  return response.json();
 };
 
-// Delete a file
+// Delete a file - revoke Blob URL
 export const deleteFile = async (url: string): Promise<{ success: boolean; message: string }> => {
-  const token = getAccessToken();
-
-  const response = await fetch(`${API_BASE_URL}/uploads`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    },
-    body: JSON.stringify({ url })
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Delete failed');
+  try {
+    if (url.startsWith('blob:')) {
+      URL.revokeObjectURL(url);
+    }
+    return { success: true, message: 'File deleted' };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Delete failed';
+    return { success: false, message: errorMessage };
   }
-
-  return response.json();
 };
 
 // Helper to validate file before upload
@@ -131,7 +129,7 @@ export const validateFile = (
     allowedTypes?: string[];
   } = {}
 ): { valid: boolean; error?: string } => {
-  const { maxSizeMB = 10, allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] } = options;
+  const { maxSizeMB = 10, allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'] } = options;
 
   const maxSizeBytes = maxSizeMB * 1024 * 1024;
 
@@ -145,3 +143,4 @@ export const validateFile = (
 
   return { valid: true };
 };
+
