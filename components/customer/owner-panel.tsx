@@ -286,17 +286,10 @@ export function OwnerPanel() {
                   { code: 'en', name: 'English' },
                   { code: 'hi', name: 'Hindi' },
                   { code: 'te', name: 'Telugu' },
-                  { code: 'ta', name: 'Tamil' },
-                  { code: 'ml', name: 'Malayalam' },
-                  { code: 'kn', name: 'Kannada' },
-                  { code: 'ur', name: 'Urdu' },
-                  { code: 'gu', name: 'Gujarati' },
-                  { code: 'bn', name: 'Bengali' },
                 ].map(lang => (
                   <button
                     key={lang.code}
                     onClick={() => {
-                      console.log('[v0] Clicked language:', lang.code)
                       setLanguage(lang.code as any)
                       setShowLanguageMenu(false)
                     }}

@@ -2,25 +2,18 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
 
-export type LanguageCode = 'en' | 'hi' | 'te' | 'ta' | 'ml' | 'kn' | 'ur' | 'gu' | 'bn'
+export type LanguageCode = 'en' | 'hi' | 'te'
 
 export interface Language {
   code: LanguageCode
   name: string
   nativeName: string
-  googleCode?: string
 }
 
 export const SUPPORTED_LANGUAGES: Language[] = [
-  { code: 'en', name: 'English', nativeName: 'English', googleCode: 'en' },
-  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', googleCode: 'hi' },
-  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు', googleCode: 'te' },
-  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', googleCode: 'ta' },
-  { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം', googleCode: 'ml' },
-  { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ', googleCode: 'kn' },
-  { code: 'ur', name: 'Urdu', nativeName: 'اردو', googleCode: 'ur' },
-  { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી', googleCode: 'gu' },
-  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', googleCode: 'bn' },
+  { code: 'en', name: 'English', nativeName: 'English' },
+  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी' },
+  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు' },
 ]
 
 interface LanguageContextType {
@@ -110,7 +103,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
           new (window as any).google.translate.TranslateElement(
             {
               pageLanguage: 'en',
-              includedLanguages: 'en,hi,te,ta,ml,kn,ur,gu,bn',
+              includedLanguages: 'en,hi,te',
               autoDisplay: false,
             },
             'google_translate_element'
@@ -143,56 +136,24 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
 
     if (code === 'en') {
-      // Reset to English - erase translation
+      // Reset to English - clear all translation cookies
       eraseCookie(GOOGLETRANS_COOKIE)
+      // Reload page to ensure clean English state
+      if (typeof window !== 'undefined') {
+        window.location.reload()
+      }
       return
     }
 
-    setIsTranslating(true)
-
-    // For all other languages, use direct approach with Google Translate
-    const translatePage = (attempts = 0) => {
-      const selectElement = document.querySelector('.goog-te-combo') as HTMLSelectElement
-      
-      if (selectElement && selectElement.options && selectElement.options.length > 0) {
-        try {
-          // Find the option with the matching language code
-          for (let i = 0; i < selectElement.options.length; i++) {
-            const option = selectElement.options[i]
-            
-            if (option.value === code) {
-              selectElement.selectedIndex = i
-              break
-            }
-          }
-          
-          // Dispatch all necessary events
-          const event = new Event('change', { bubbles: true, cancelable: true })
-          selectElement.dispatchEvent(event)
-          selectElement.dispatchEvent(new Event('input', { bubbles: true }))
-          selectElement.dispatchEvent(new Event('click', { bubbles: true }))
-          
-          // Also set the cookie for persistence
-          setCookie(GOOGLETRANS_COOKIE, `/en/${code}`)
-          
-          setTimeout(() => {
-            setIsTranslating(false)
-          }, 800)
-          return
-        } catch (e) {
-          // ignore
-        }
-      }
-      
-      // Retry
-      if (attempts < 20) {
-        setTimeout(() => translatePage(attempts + 1), 200)
-      } else {
-        setIsTranslating(false)
-      }
+    // For Hindi and Telugu, set the cookie and reload
+    setCookie(GOOGLETRANS_COOKIE, `/en/${code}`)
+    
+    // Reload page after setting cookie
+    if (typeof window !== 'undefined') {
+      setTimeout(() => {
+        window.location.reload()
+      }, 200)
     }
-
-    translatePage()
   }, [])
 
   const value: LanguageContextType = {
