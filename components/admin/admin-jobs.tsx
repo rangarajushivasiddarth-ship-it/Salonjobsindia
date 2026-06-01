@@ -24,6 +24,7 @@ interface JobPaymentRequest {
   submittedAt: Date
   processedAt?: Date
   rejectionReason?: string
+  jobDetails?: Record<string, unknown>
 }
 
 type TabType = 'all' | 'pending_payments'
@@ -38,13 +39,54 @@ export function AdminJobs() {
   const [confirmAction, setConfirmAction] = useState<{ payment: JobPaymentRequest; action: 'approve' | 'reject' } | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
 
-  // Load pending job payments from localStorage
+  // Load pending job payments from API (Blob storage)
   useEffect(() => {
-    const loadPendingPayments = () => {
-      const stored = localStorage.getItem('fitonze_admin_job_payments')
-      if (stored) {
-        const payments: JobPaymentRequest[] = JSON.parse(stored)
-        setPendingPayments(payments.filter(p => p.status === 'pending'))
+    const loadPendingPayments = async () => {
+      try {
+        // Fetch from the sync API that reads from Blob storage
+        const response = await fetch('/api/sync?type=pending-job-payments')
+        if (response.ok) {
+          const result = await response.json()
+          if (result.success && result.data) {
+            // Transform API data to match our interface
+            const payments: JobPaymentRequest[] = result.data.map((p: {
+              id: string
+              salonId: string
+              salonName: string
+              ownerName: string
+              ownerPhone: string
+              jobTitle: string
+              jobDetails: Record<string, unknown>
+              planPrice: number
+              screenshotUrl?: string
+              status: string
+              createdAt: string
+            }) => ({
+              id: p.id,
+              jobId: p.id,
+              salonOwnerId: p.salonId,
+              salonOwnerName: p.ownerName,
+              salonOwnerPhone: p.ownerPhone,
+              salonName: p.salonName,
+              salonMobile: p.ownerPhone,
+              jobRole: p.jobTitle,
+              amount: p.planPrice,
+              screenshotUrl: p.screenshotUrl,
+              status: p.status as 'pending' | 'approved' | 'rejected',
+              submittedAt: new Date(p.createdAt),
+              jobDetails: p.jobDetails,
+            }))
+            setPendingPayments(payments.filter(p => p.status === 'pending'))
+          }
+        }
+      } catch (error) {
+        console.error('[AdminJobs] Error loading pending payments:', error)
+        // Fallback to localStorage for backwards compatibility
+        const stored = localStorage.getItem('fitonze_admin_job_payments')
+        if (stored) {
+          const payments: JobPaymentRequest[] = JSON.parse(stored)
+          setPendingPayments(payments.filter(p => p.status === 'pending'))
+        }
       }
     }
     
@@ -65,8 +107,28 @@ export function AdminJobs() {
     setShowDeleteConfirm(null)
   }
 
-  const handleApprovePayment = (payment: JobPaymentRequest) => {
-    // Update payment status
+  const handleApprovePayment = async (payment: JobPaymentRequest) => {
+    try {
+      // Call API to approve the payment in Blob storage
+      const response = await fetch('/api/sync', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'job-payment',
+          id: payment.id,
+          action: 'approve',
+          adminId: 'admin',
+        }),
+      })
+      
+      if (!response.ok) {
+        console.error('[AdminJobs] Failed to approve payment via API')
+      }
+    } catch (error) {
+      console.error('[AdminJobs] Error approving payment:', error)
+    }
+    
+    // Also update localStorage for backwards compatibility
     const stored = localStorage.getItem('fitonze_admin_job_payments')
     if (stored) {
       const payments: JobPaymentRequest[] = JSON.parse(stored)
@@ -81,13 +143,11 @@ export function AdminJobs() {
     // Update job status in pending jobs and get job details
     const pendingJobsKey = `fitonze_pending_jobs_${payment.salonOwnerId}`
     const pendingJobs = localStorage.getItem(pendingJobsKey)
-    let jobDetails: Record<string, unknown> | null = null
     
     if (pendingJobs) {
       const jobs = JSON.parse(pendingJobs)
       const updated = jobs.map((j: { id: string; status: string }) => {
         if (j.id === payment.jobId) {
-          jobDetails = j
           return { ...j, status: 'live' }
         }
         return j
@@ -99,21 +159,24 @@ export function AdminJobs() {
     const salonProfile = getSalonProfileByOwnerId(payment.salonOwnerId)
     const isVerified = !!(salonProfile?.isVerified && salonProfile.verifiedUntil && new Date(salonProfile.verifiedUntil) > new Date())
     
+    // Extract job details from payment if available
+    const jobDetails = payment.jobDetails || {}
+    
     // IMPORTANT: Actually publish the job to the main jobs list
     const newJob: Job = {
       id: payment.jobId,
       salonId: payment.salonOwnerId,
-      salonName: payment.salonName,
-      salonLogo: salonProfile?.logoUrl,
-      salonMobile: payment.salonMobile,
-      role: payment.jobRole,
-      skills: [],
-      salaryType: 'fixed',
-      salaryFixed: 'Negotiable',
-      experience: 'Any',
-      jobType: 'full_time',
-      description: '',
-      location: {
+      salonName: payment.salonName || (jobDetails.salonName as string) || 'Unknown Salon',
+      salonLogo: salonProfile?.logoUrl || (jobDetails.salonLogo as string),
+      salonMobile: payment.salonMobile || (jobDetails.salonMobile as string) || '',
+      role: payment.jobRole || (jobDetails.role as string) || 'Not Specified',
+      skills: (jobDetails.skills as string[]) || [],
+      salaryType: (jobDetails.salaryType as 'fixed' | 'range') || 'fixed',
+      salaryFixed: (jobDetails.salary as string) || (jobDetails.salaryFixed as string) || 'Negotiable',
+      experience: (jobDetails.experience as string) || 'Any',
+      jobType: (jobDetails.jobType as 'full_time' | 'part_time') || 'full_time',
+      description: (jobDetails.description as string) || '',
+      location: (jobDetails.location as { lat: number; lng: number; address: string; state: string; city: string; area: string; locality: string }) || {
         lat: 0,
         lng: 0,
         address: 'Location not specified',
@@ -122,7 +185,7 @@ export function AdminJobs() {
         area: '',
         locality: '',
       },
-      contact: payment.salonMobile,
+      contact: payment.salonMobile || (jobDetails.salonMobile as string) || '',
       status: 'live',
       editsUsed: 0,
       maxEdits: 3,
@@ -170,8 +233,29 @@ export function AdminJobs() {
     setConfirmAction(null)
   }
 
-  const handleRejectPayment = (payment: JobPaymentRequest) => {
-    // Update payment status
+  const handleRejectPayment = async (payment: JobPaymentRequest) => {
+    try {
+      // Call API to reject the payment in Blob storage
+      const response = await fetch('/api/sync', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'job-payment',
+          id: payment.id,
+          action: 'reject',
+          adminId: 'admin',
+          reason: rejectionReason,
+        }),
+      })
+      
+      if (!response.ok) {
+        console.error('[AdminJobs] Failed to reject payment via API')
+      }
+    } catch (error) {
+      console.error('[AdminJobs] Error rejecting payment:', error)
+    }
+    
+    // Also update localStorage for backwards compatibility
     const stored = localStorage.getItem('fitonze_admin_job_payments')
     if (stored) {
       const payments: JobPaymentRequest[] = JSON.parse(stored)
