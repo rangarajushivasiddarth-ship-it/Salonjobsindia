@@ -662,9 +662,17 @@ export function OwnerPanel() {
                       className="p-4 glass-card rounded-2xl"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                          <User className="w-6 h-6 text-primary" />
-                        </div>
+                        {candidate.photoUrl ? (
+                          <img
+                            src={candidate.photoUrl}
+                            alt={candidate.name}
+                            className="w-12 h-12 rounded-full object-cover border border-border/30"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                            <User className="w-6 h-6 text-primary" />
+                          </div>
+                        )}
                         <div className="flex-1">
   <div className="flex items-center gap-2">
   <h3 className="font-semibold">{candidate.name}</h3>

@@ -8,5 +8,6 @@ export function useTranslation() {
     return translations[currentLanguage][key] || translations.en[key] || key
   }
 
-  return { t, language: currentLanguage }
+  return { t, language: currentLanguage, currentLanguage }
 }
+
