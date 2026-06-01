@@ -11,9 +11,9 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://saloonjobsindia.com'),
-  title: 'Salon Jobs India - Find Your Perfect Salon Career | Premium Salon Recruitment Platform',
-  description: 'Salon Jobs India is India\'s premier salon job marketplace connecting talented beauty professionals with top salons. Browse thousands of salon positions, build your profile, and launch your dream career in the beauty industry. Salon owners can post jobs and find qualified staff. FItonze Private Limited - Beauty Industry Employment Solutions.',
-  keywords: ['salon jobs', 'salon recruitment', 'beauty salon jobs', 'salon careers', 'beauty jobs India', 'salon staff hiring', 'salon employment', 'job search', 'salon professionals', 'beauty industry jobs', 'job opportunities'],
+  title: 'Salon Jobs India - India\'s #1 Salon Job Marketplace for Beauty Professionals',
+  description: 'Salon Jobs India is India\'s leading salon and beauty job marketplace. Job seekers: Browse thousands of salon positions, beauty roles, and haircare jobs. Salon owners: Post jobs and hire qualified staff. Connect with beauty professionals and salons nationwide. Free job search platform by FItonze Private Limited.',
+  keywords: ['salon jobs India', 'beauty jobs', 'salon recruitment', 'haircare jobs', 'beauty professionals', 'salon careers', 'job search India', 'salon staff', 'beauty industry jobs', 'salon employment'],
   manifest: '/manifest.json',
   robots: {
     index: true,
@@ -34,8 +34,8 @@ export const metadata: Metadata = {
     canonical: 'https://saloonjobsindia.com',
   },
   openGraph: {
-    title: 'Salon Jobs India - Premium Salon Recruitment Platform',
-    description: 'Connect with thousands of salon jobs and beauty career opportunities in India. Salon Jobs India - Where Beauty Professionals Meet Dream Salons.',
+    title: 'Salon Jobs India - Salon Recruitment & Beauty Jobs Platform',
+    description: 'Search salon jobs and beauty careers in India. Post salon positions and hire beauty professionals. Salon Jobs India connects salons with talented beauty staff.',
     type: 'website',
     locale: 'en_IN',
     url: 'https://saloonjobsindia.com',
@@ -45,15 +45,15 @@ export const metadata: Metadata = {
         url: '/images/logo.png',
         width: 1200,
         height: 630,
-        alt: 'Salon Jobs India - Beauty Job Marketplace',
+        alt: 'Salon Jobs India - Beauty Professional Job Marketplace',
         type: 'image/png',
       }
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Salon Jobs India - Salon Recruitment Platform',
-    description: 'Find salon jobs or post salon positions on Salon Jobs India',
+    title: 'Salon Jobs India - Beauty & Salon Recruitment',
+    description: 'Find salon jobs, beauty careers, and salon staff. Post salon positions on India\'s top salon job platform.',
     creator: '@saloonjobsindia',
     site: '@saloonjobsindia',
     images: ['/images/logo.png'],
@@ -122,10 +122,24 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark bg-background">
       <head>
-        <meta name="title" content="Salon Jobs India - Find Your Perfect Salon Career" />
+        {/* Explicit branding tags to override any cached content */}
+        <meta name="title" content="Salon Jobs India - India's #1 Salon Job Marketplace" />
+        <meta name="description" content="Salon Jobs India: Search salon jobs, beauty careers, and hire salon staff in India. Free job marketplace by FItonze Private Limited." />
         <meta name="application-name" content="Salon Jobs India" />
         <meta name="apple-mobile-web-app-title" content="Salon Jobs India" />
         <meta property="og:site_name" content="Salon Jobs India" />
+        <meta property="og:title" content="Salon Jobs India - Salon Recruitment Platform" />
+        <meta property="og:description" content="India's leading salon and beauty job marketplace connecting job seekers with salon owners." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://saloonjobsindia.com" />
+        
+        {/* Cache busting - force Google to re-crawl */}
+        <meta httpEquiv="cache-control" content="no-cache, no-store, must-revalidate" />
+        <meta httpEquiv="pragma" content="no-cache" />
+        <meta httpEquiv="expires" content="0" />
+        <meta name="last-modified" content={new Date().toISOString()} />
+        
+        {/* Schema.org structured data */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
