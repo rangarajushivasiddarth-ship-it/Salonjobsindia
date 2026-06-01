@@ -2,9 +2,20 @@ export const translations = {
   en: {
     // Navigation & Role Selection
     'role.jobSeeker': 'Job Seeker',
+    'role.jobSeekerDesc': 'Looking for job opportunities in your area',
+    'role.jobSeekerFeature1': 'Create your professional profile',
+    'role.jobSeekerFeature2': 'Discover nearby opportunities',
+    'role.jobSeekerFeature3': 'Apply to job openings',
+    
     'role.salonOwner': 'Salon Owner',
+    'role.salonOwnerDesc': 'Find talented professionals for your business',
+    'role.salonOwnerFeature1': 'Post job openings',
+    'role.salonOwnerFeature2': 'Review applications',
+    'role.salonOwnerFeature3': 'Connect with talent',
+    
     'selectRole': 'Select Your Role',
     'selectRoleDesc': 'Choose how you want to use Salonjobsindia',
+    'next': 'Continue',
     'language': 'Language',
     'english': 'English',
     'hindi': 'Hindi',
@@ -65,7 +76,6 @@ export const translations = {
     'delete': 'Delete',
     'edit': 'Edit',
     'back': 'Back',
-    'next': 'Next',
     'done': 'Done',
     'error': 'Error',
     'success': 'Success',
@@ -73,9 +83,20 @@ export const translations = {
   hi: {
     // Navigation & Role Selection
     'role.jobSeeker': 'नौकरी चाहने वाला',
+    'role.jobSeekerDesc': 'अपने क्षेत्र में नौकरी के अवसर ढूंढ रहे हैं',
+    'role.jobSeekerFeature1': 'अपना व्यावसायिक प्रोफ़ाइल बनाएं',
+    'role.jobSeekerFeature2': 'पास के अवसरों की खोज करें',
+    'role.jobSeekerFeature3': 'नौकरी के आवेदन करें',
+    
     'role.salonOwner': 'सैलून मालिक',
+    'role.salonOwnerDesc': 'अपने व्यवसाय के लिए प्रतिभाशाली पेशेवर खोजें',
+    'role.salonOwnerFeature1': 'नौकरी की घोषणा करें',
+    'role.salonOwnerFeature2': 'आवेदनों की समीक्षा करें',
+    'role.salonOwnerFeature3': 'प्रतिभा से जुड़ें',
+    
     'selectRole': 'अपनी भूमिका चुनें',
     'selectRoleDesc': 'चुनें कि आप Salonjobsindia का उपयोग कैसे करना चाहते हैं',
+    'next': 'जारी रखें',
     'language': 'भाषा',
     'english': 'English',
     'hindi': 'हिन्दी',
@@ -136,7 +157,6 @@ export const translations = {
     'delete': 'हटाएं',
     'edit': 'संपादित करें',
     'back': 'पीछे',
-    'next': 'अगला',
     'done': 'पूर्ण',
     'error': 'त्रुटि',
     'success': 'सफलता',
@@ -144,9 +164,20 @@ export const translations = {
   te: {
     // Navigation & Role Selection
     'role.jobSeeker': 'ఉద్యోగ చేత',
+    'role.jobSeekerDesc': 'మీ ప్రాంతంలో ఉద్యోగ అవకాశాలను చేస్కోవటానికి',
+    'role.jobSeekerFeature1': 'మీ వృత్తిపరమైన ప్రొఫైల్‌ను సృష్టించండి',
+    'role.jobSeekerFeature2': 'సమీపంలోని అవకాశాలను కనుగొనండి',
+    'role.jobSeekerFeature3': 'ఉద్యోగ తెరవకు సమర్పించండి',
+    
     'role.salonOwner': 'సెలూన్ యజమాని',
+    'role.salonOwnerDesc': 'మీ వ్యాపారం కోసం ప్రతిభాశాలి నిపుణులను కనుగొనండి',
+    'role.salonOwnerFeature1': 'ఉద్యోగ ఖాళీలను పోస్ట్ చేయండి',
+    'role.salonOwnerFeature2': 'దరఖాస్తులను సమీక్షించండి',
+    'role.salonOwnerFeature3': 'ప్రతిభతో కనెక్ట్ చేయండి',
+    
     'selectRole': 'మీ పాత్రను ఎంచుకోండి',
     'selectRoleDesc': 'మీరు Salonjobsindiaని ఎలా ఉపయోగించాలనుకుంటున్నారో ఎంచుకోండి',
+    'next': 'కొనసాగించండి',
     'language': 'భాష',
     'english': 'English',
     'hindi': 'हिन्दी',
@@ -187,7 +218,7 @@ export const translations = {
     'email': 'ఇమెయిల్',
     'phone': 'ఫోన్',
     'address': 'చిరునామా',
-    'city': 'నగరం',
+    'city': 'నగ���ం',
     'state': 'రాష్ట్రం',
     'logout': 'లాగ్‌అవుట్',
     
@@ -207,7 +238,6 @@ export const translations = {
     'delete': 'తొలగించండి',
     'edit': 'సవరించండి',
     'back': 'వెనుకకు',
-    'next': 'తరువాత',
     'done': 'పూర్తి',
     'error': 'లోపం',
     'success': 'విజయం',

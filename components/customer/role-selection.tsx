@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Building2, ArrowLeft, ArrowRight, Briefcase, Globe } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
@@ -15,26 +15,34 @@ interface RoleSelectionProps {
 
 export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null)
-  const { setLanguage } = useLanguage()
+  const { setLanguage, currentLanguage } = useLanguage()
   const { t } = useTranslation()
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
 
-  const roles = [
+  const roles = useMemo(() => [
     {
       id: 'job_seeker' as UserRole,
       title: t('role.jobSeeker'),
-      description: 'Looking for job opportunities in your area',
+      description: t('role.jobSeekerDesc'),
       icon: Briefcase,
-      features: ['Create your professional profile', 'Discover nearby opportunities', 'Apply to job openings'],
+      features: [
+        t('role.jobSeekerFeature1'),
+        t('role.jobSeekerFeature2'),
+        t('role.jobSeekerFeature3'),
+      ],
     },
     {
       id: 'employer' as UserRole,
       title: t('role.salonOwner'),
-      description: 'Find talented professionals for your business',
+      description: t('role.salonOwnerDesc'),
       icon: Building2,
-      features: ['Post job openings', 'Review applications', 'Connect with talent'],
+      features: [
+        t('role.salonOwnerFeature1'),
+        t('role.salonOwnerFeature2'),
+        t('role.salonOwnerFeature3'),
+      ],
     },
-  ]
+  ], [t, currentLanguage])
 
   return (
     <div className="relative min-h-screen flex flex-col overflow-hidden">
