@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Globe, Check, ChevronDown, Loader2 } from 'lucide-react'
+import { Globe, Check, ChevronDown, Loader2, AlertCircle } from 'lucide-react'
 import { useLanguage, SUPPORTED_LANGUAGES, type LanguageCode } from '@/lib/language-context'
 import { Button } from '@/components/ui/button'
 
@@ -16,12 +16,16 @@ export function LanguageSelector({
   showNativeName = true,
   className = '' 
 }: LanguageSelectorProps) {
-  const { currentLanguage, setLanguage, isTranslating } = useLanguage()
+  const { currentLanguage, setLanguage, isTranslating, isGoogleTranslateAvailable } = useLanguage()
   const [isOpen, setIsOpen] = useState(false)
 
   const currentLangObj = SUPPORTED_LANGUAGES.find(l => l.code === currentLanguage)
 
   const handleLanguageSelect = (code: LanguageCode) => {
+    if (code === currentLanguage) {
+      setIsOpen(false)
+      return
+    }
     setLanguage(code)
     setIsOpen(false)
   }
