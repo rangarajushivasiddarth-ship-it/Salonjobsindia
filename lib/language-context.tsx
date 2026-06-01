@@ -33,173 +33,149 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 const LANGUAGE_STORAGE_KEY = 'salonjobsindia_language'
+const GOOGLETRANS_COOKIE = 'googtrans'
+
+function getCookie(name: string): string {
+  if (typeof document === 'undefined') return ''
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || ''
+  return ''
+}
+
+function setCookie(name: string, value: string, days: number = 365) {
+  if (typeof document === 'undefined') return
+  const date = new Date()
+  date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000)
+  const expires = `expires=${date.toUTCString()}`
+  document.cookie = `${name}=${value};${expires};path=/`
+}
+
+function eraseCookie(name: string) {
+  if (typeof document === 'undefined') return
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`
+}
 
 // Suppress Google Translate console errors
-const originalConsoleError = typeof console !== 'undefined' ? console.error : null
-
-function shouldSuppressError(message: unknown): boolean {
-  if (typeof message !== 'string') return false
-  return (
-    message.includes('translate.google.com') ||
-    message.includes('googleTranslate') ||
-    message.includes('goog-te-') ||
-    message.includes('element.js') ||
-    (typeof message === 'string' && message.includes('Uncaught') && message.includes('translate'))
-  )
+if (typeof window !== 'undefined') {
+  const originalError = console.error
+  console.error = function(...args: any[]) {
+    const message = args[0]?.toString() || ''
+    if (
+      message.includes('translate.google') ||
+      message.includes('goog-te-') ||
+      message.includes('element.js') ||
+      message.includes('googleTranslate')
+    ) {
+      return
+    }
+    originalError.apply(console, args)
+  }
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [currentLanguage, setCurrentLanguageState] = useState<LanguageCode>('en')
   const [isTranslating, setIsTranslating] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
-  const [googleTranslateReady, setGoogleTranslateReady] = useState(false)
 
-  // Override console.error to suppress Google Translate errors
+  // Initialize language from storage and load Google Translate
   useEffect(() => {
-    if (typeof window === 'undefined' || !originalConsoleError) return
+    if (typeof window === 'undefined') return
 
-    const suppressedError = function(message: unknown, ...args: unknown[]) {
-      if (!shouldSuppressError(message)) {
-        originalConsoleError.apply(console, [message, ...args])
-      }
-    }
-
-    console.error = suppressedError as any
-    
-    return () => {
-      console.error = originalConsoleError
-    }
-  }, [])
-
-  // Initialize language from storage
-  useEffect(() => {
+    // Load saved language
     try {
       const savedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) as LanguageCode
       if (savedLang && SUPPORTED_LANGUAGES.some(l => l.code === savedLang)) {
         setCurrentLanguageState(savedLang)
       }
-    } catch (error) {
+    } catch (e) {
       // ignore
     }
+
+    // Load Google Translate script
+    (window as any).googleTranslateElementInit = function() {
+      try {
+        if ((window as any).google?.translate?.TranslateElement && document.getElementById('google_translate_element')) {
+          new (window as any).google.translate.TranslateElement(
+            {
+              pageLanguage: 'en',
+              includedLanguages: 'en,hi,te,ta,ml,kn,ur,gu,bn',
+              autoDisplay: false,
+            },
+            'google_translate_element'
+          )
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    // Load the script only once
+    if (!document.getElementById('google-translate-script')) {
+      const script = document.createElement('script')
+      script.id = 'google-translate-script'
+      script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'
+      script.async = true
+      document.head.appendChild(script)
+    }
+
     setIsInitialized(true)
   }, [])
 
-  // Load Google Translate script
-  useEffect(() => {
-    if (typeof window === 'undefined' || !isInitialized) return
-
-    const loadGoogleTranslate = () => {
-      if (document.getElementById('google-translate-script')) return
-
-      try {
-        // Define the callback BEFORE loading the script
-        (window as any).googleTranslateElementInit = function() {
-          try {
-            if ((window as any).google?.translate?.TranslateElement && document.getElementById('google_translate_element')) {
-              new (window as any).google.translate.TranslateElement(
-                {
-                  pageLanguage: 'en',
-                  includedLanguages: 'hi,te,ta,ml,kn,ur,gu,bn',
-                  autoDisplay: false,
-                  layout: (window as any).google.translate.TranslateElement.InlineLayout.SIMPLE,
-                },
-                'google_translate_element'
-              )
-              setGoogleTranslateReady(true)
-            }
-          } catch (error) {
-            // Silently ignore
-          }
-        }
-
-        // Load Google Translate script
-        const script = document.createElement('script')
-        script.id = 'google-translate-script'
-        script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'
-        script.async = true
-        script.defer = true
-        script.onerror = () => {
-          setGoogleTranslateReady(false)
-        }
-        script.onload = () => {
-          setTimeout(() => {
-            if ((window as any).google?.translate?.TranslateElement) {
-              setGoogleTranslateReady(true)
-            }
-          }, 500)
-        }
-        document.body.appendChild(script)
-      } catch (error) {
-        // Silently ignore
-      }
-    }
-
-    loadGoogleTranslate()
-
-    return () => {
-      if ((window as any).googleTranslateElementInit) {
-        delete (window as any).googleTranslateElementInit
-      }
-    }
-  }, [isInitialized])
-
   const setLanguage = useCallback((code: LanguageCode) => {
-    // Update local state immediately
     setCurrentLanguageState(code)
     
-    // Persist to localStorage
     try {
       localStorage.setItem(LANGUAGE_STORAGE_KEY, code)
-    } catch (error) {
+    } catch (e) {
       // ignore
     }
 
-    // Handle English - reset translation
-    if (code === 'en') {
-      try {
-        const selectElement = document.querySelector('.goog-te-combo') as HTMLSelectElement
-        if (selectElement) {
-          selectElement.value = ''
+    setIsTranslating(true)
+
+    // Find the Google Translate select element
+    const findAndTranslate = (attempts = 0) => {
+      const selectElement = document.querySelector('.goog-te-combo') as HTMLSelectElement
+      
+      if (selectElement) {
+        try {
+          if (code === 'en') {
+            // Reset to English
+            selectElement.value = 'en'
+          } else {
+            selectElement.value = code
+          }
+          
           selectElement.dispatchEvent(new Event('change', { bubbles: true }))
           selectElement.dispatchEvent(new Event('input', { bubbles: true }))
-        }
-      } catch (error) {
-        // Silently ignore
-      }
-      setIsTranslating(false)
-      return
-    }
-
-    // For other languages, trigger Google Translate with retries
-    setIsTranslating(true)
-    
-    const attemptTranslate = (retries = 0): void => {
-      try {
-        const selectElement = document.querySelector('.goog-te-combo') as HTMLSelectElement
-        if (selectElement && googleTranslateReady) {
-          const langObj = SUPPORTED_LANGUAGES.find(l => l.code === code)
-          if (langObj?.googleCode) {
-            selectElement.value = langObj.googleCode
-            selectElement.dispatchEvent(new Event('change', { bubbles: true }))
-            selectElement.dispatchEvent(new Event('input', { bubbles: true }))
-            setTimeout(() => setIsTranslating(false), 1000)
-            return
+          
+          // Set cookie
+          if (code === 'en') {
+            eraseCookie(GOOGLETRANS_COOKIE)
+          } else {
+            setCookie(GOOGLETRANS_COOKIE, `/en/${code}`)
           }
+          
+          setTimeout(() => {
+            setIsTranslating(false)
+          }, 1000)
+          
+          return
+        } catch (e) {
+          // ignore
         }
-        
-        // Retry if element not found yet or Google Translate not ready
-        if (retries < 8) {
-          setTimeout(() => attemptTranslate(retries + 1), 350)
-        } else {
-          setIsTranslating(false)
-        }
-      } catch (error) {
+      }
+      
+      // Retry if element not found
+      if (attempts < 10) {
+        setTimeout(() => findAndTranslate(attempts + 1), 300)
+      } else {
         setIsTranslating(false)
       }
     }
-    
-    attemptTranslate()
-  }, [googleTranslateReady])
+
+    findAndTranslate()
+  }, [])
 
   const value: LanguageContextType = {
     currentLanguage,
