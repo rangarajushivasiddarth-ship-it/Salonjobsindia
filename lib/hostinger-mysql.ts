@@ -1,6 +1,7 @@
 import mysql from 'mysql2/promise';
 
 // Create a pool of connections using Hostinger database credentials
+// Phase 2 Optimization: Increased from 10 to 30 connections for 500-5,000 users
 const pool = mysql.createPool({
   host: process.env.DATABASE_HOST || process.env.HOSTINGER_DB_HOST || process.env.DB_HOST,
   port: parseInt(process.env.DATABASE_PORT || process.env.HOSTINGER_DB_PORT || process.env.DB_PORT || '3306'),
@@ -8,7 +9,7 @@ const pool = mysql.createPool({
   password: process.env.DATABASE_PASSWORD || process.env.HOSTINGER_DB_PASSWORD || process.env.DB_PASSWORD,
   database: process.env.DATABASE_NAME || process.env.HOSTINGER_DB_NAME || process.env.DB_NAME,
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 30, // Phase 2: Increased from 10 to 30
   queueLimit: 0,
   enableKeepAlive: true,
   supportBigNumbers: true,
