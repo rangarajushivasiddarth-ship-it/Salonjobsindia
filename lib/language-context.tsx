@@ -65,8 +65,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       if (savedLang && SUPPORTED_LANGUAGES.some(l => l.code === savedLang)) {
         setCurrentLanguageState(savedLang)
       }
-    } catch (e) {
-      console.warn('[v0] Could not load saved language:', e)
+    } catch {
+      // Silently handle localStorage errors
     }
 
     // Initialize Google Translate widget
@@ -85,8 +85,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
           setIsInitialized(true)
         }
       } catch (error) {
-        console.error('[v0] Google Translate initialization error:', error)
-        setIsInitialized(true) // Still mark as initialized even on error
+        // Silently handle initialization errors
+        setIsInitialized(true)
       }
     }
 
@@ -97,20 +97,28 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       try {
         const script = document.createElement('script')
         script.id = 'google-translate-script'
-        script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'
+        script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'
         script.async = true
         script.onerror = () => {
-          console.warn('[v0] Google Translate script failed to load (may be blocked or unavailable)')
-          setIsInitialized(true) // Still mark as initialized
+          // Silently handle - Google Translate may be blocked by ad blockers or firewalls
+          setIsInitialized(true)
         }
         document.body.appendChild(script)
       } catch (error) {
-        console.error('[v0] Error loading Google Translate script:', error)
         setIsInitialized(true)
       }
     } else if (window.google?.translate?.TranslateElement) {
       // Script already loaded, initialize immediately
       initGoogleTranslate()
+    } else {
+      // Script tag exists but Google Translate not available yet, wait a bit
+      setTimeout(() => {
+        if (window.google?.translate?.TranslateElement) {
+          initGoogleTranslate()
+        } else {
+          setIsInitialized(true)
+        }
+      }, 2000)
     }
 
     // Cleanup
@@ -128,8 +136,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       const selectElement = document.querySelector('.goog-te-combo') as HTMLSelectElement
       
       if (!selectElement) {
-        console.warn('[v0] Google Translate select not ready, trying again...')
-        // Retry after a short delay
+        // Retry after a short delay if Google Translate not ready
         setTimeout(() => {
           const retrySelectElement = document.querySelector('.goog-te-combo') as HTMLSelectElement
           if (retrySelectElement) {
