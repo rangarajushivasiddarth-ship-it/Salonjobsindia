@@ -2,9 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Globe } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { useLanguage } from '@/lib/language-context'
 
 interface SplashScreenProps {
   onComplete: () => void
@@ -12,8 +9,6 @@ interface SplashScreenProps {
 
 export function SplashScreen({ onComplete }: SplashScreenProps) {
   const [phase, setPhase] = useState<'initial' | 'logo' | 'scale' | 'exit'>('initial')
-  const { setLanguage } = useLanguage()
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
 
   useEffect(() => {
     // Phase 1: After 500ms, fade in the logo
@@ -50,46 +45,6 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         phase === 'exit' ? 'opacity-0' : 'opacity-100'
       }`}
     >
-      {/* Language Selector - Top Right */}
-      <div className="absolute top-4 right-4 z-50">
-        <div className="flex items-center gap-3 relative">
-          <Button
-            variant="default"
-            size="lg"
-            onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-            className="flex items-center gap-2 bg-yellow-500 text-black hover:bg-yellow-600 font-bold"
-          >
-            <Globe className="w-5 h-5" />
-            <span className="text-base">Language</span>
-          </Button>
-          {showLanguageMenu && (
-            <div className="absolute top-full right-0 mt-2 w-48 bg-background border-2 border-primary rounded-lg shadow-2xl z-50">
-              {[
-                { code: 'en', name: 'English' },
-                { code: 'hi', name: 'Hindi' },
-                { code: 'te', name: 'Telugu' },
-                { code: 'ta', name: 'Tamil' },
-                { code: 'ml', name: 'Malayalam' },
-                { code: 'kn', name: 'Kannada' },
-                { code: 'ur', name: 'Urdu' },
-                { code: 'gu', name: 'Gujarati' },
-                { code: 'bn', name: 'Bengali' },
-              ].map(lang => (
-                <button
-                  key={lang.code}
-                  onClick={() => {
-                    setLanguage(lang.code as any)
-                    setShowLanguageMenu(false)
-                  }}
-                  className="w-full px-4 py-3 text-left hover:bg-primary hover:text-primary-foreground transition-all text-base font-medium"
-                >
-                  {lang.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
       {/* Logo with premium animation */}
       <div
         className={`relative transition-all duration-1000 ease-out ${
