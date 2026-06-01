@@ -50,7 +50,6 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex-1" />
-        <LanguageSelector variant="button" showNativeName={false} className="mr-2" />
       </header>
       
       {/* Content */}
@@ -142,6 +141,11 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
             <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
         </div>
+      </div>
+      
+      {/* Language Selector - Bottom Right */}
+      <div className="absolute bottom-6 right-6 z-50">
+        <LanguageSelector variant="button" showNativeName={false} />
       </div>
     </div>
   )

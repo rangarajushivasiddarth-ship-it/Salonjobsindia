@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
+import { LanguageSelector } from '@/components/language-selector'
 
 interface SplashScreenProps {
   onComplete: () => void
@@ -45,6 +46,10 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         phase === 'exit' ? 'opacity-0' : 'opacity-100'
       }`}
     >
+      {/* Language Selector - Top Right */}
+      <div className="absolute top-4 right-4 z-50">
+        <LanguageSelector variant="button" showNativeName={false} />
+      </div>
       {/* Logo with premium animation */}
       <div
         className={`relative transition-all duration-1000 ease-out ${
