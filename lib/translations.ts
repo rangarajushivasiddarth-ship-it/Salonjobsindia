@@ -59,6 +59,9 @@ export const translations = {
     'city': 'City',
     'state': 'State',
     'logout': 'Logout',
+    'dashboard': 'Dashboard',
+    'about': 'About Us',
+    'contact': 'Contact Us',
     
     // Messages
     'messages': 'Messages',
@@ -140,6 +143,9 @@ export const translations = {
     'city': 'शहर',
     'state': 'राज्य',
     'logout': 'लॉगआउट',
+    'dashboard': 'डैशबोर्ड',
+    'about': 'हमारे बारे में',
+    'contact': 'हमसे संपर्क करें',
     
     // Messages
     'messages': 'संदेश',
@@ -218,9 +224,12 @@ export const translations = {
     'email': 'ఇమెయిల్',
     'phone': 'ఫోన్',
     'address': 'చిరునామా',
-    'city': 'నగ���ం',
+    'city': 'నగరం',
     'state': 'రాష్ట్రం',
     'logout': 'లాగ్‌అవుట్',
+    'dashboard': 'డ్యాష్‌బోర్డ్',
+    'about': 'ఆమె గురించి',
+    'contact': 'మమ్మల్ని సంప్రదించండి',
     
     // Messages
     'messages': 'సందేశాలు',
