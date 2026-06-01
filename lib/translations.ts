@@ -105,6 +105,10 @@ export const translations = {
     'getInTouch': 'Get In Touch',
     'followUs': 'Follow Us',
     'sendMessage': 'Send Message',
+    'contactShared': 'Contact Shared',
+    'phoneNumber': 'Phone Number',
+    'chatOnWhatsApp': 'Chat on WhatsApp',
+    'noMessagesYet': 'No messages yet',
   },
   hi: {
     // Navigation & Role Selection
@@ -209,9 +213,13 @@ export const translations = {
     
     // Contact Us
     'contactUs': 'हमसे संपर्क करें',
-    'getInTouch': '��ंपर्क में रहें',
+    'getInTouch': 'संपर्क में रहें',
     'followUs': 'हमें फॉलो करें',
     'sendMessage': 'संदेश भेजें',
+    'contactShared': 'संपर्क साझा किया गया',
+    'phoneNumber': 'फोन नंबर',
+    'chatOnWhatsApp': 'WhatsApp पर चैट करें',
+    'noMessagesYet': 'अभी तक कोई संदेश नहीं',
   },
   te: {
     // Navigation & Role Selection
@@ -312,13 +320,17 @@ export const translations = {
     'ourMission': 'మన ఉద్దేశ్యం',
     'ourVision': 'మన దృష్టి',
     'ourTeam': 'మన సమూహం',
-    'awards': 'పురస్కారాలు & గుర్తింపు',
+    'awards': 'పు���స్కారాలు & గుర్తింపు',
     
     // Contact Us
     'contactUs': 'మమ్మల్ని సంప్రదించండి',
     'getInTouch': 'సంప్రదింపులో ఉండండి',
     'followUs': 'మమ్మల్ని అనుసరించండి',
     'sendMessage': 'సందేశం పంపండి',
+    'contactShared': 'సంపర్కం భాగస్వామ్యం చేయబడింది',
+    'phoneNumber': 'ఫోన్ నంబర్',
+    'chatOnWhatsApp': 'WhatsApp లో చాట్ చేయండి',
+    'noMessagesYet': 'ఇంకా సందేశాలు లేవు',
   },
 } as const
 
