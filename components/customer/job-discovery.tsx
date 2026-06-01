@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Lock, MapPin, Building2, User, Unlock, Filter, ChevronRight, MessageCircle, Phone, X, Send, Crown, Briefcase, DollarSign, Clock, Star, Navigation } from 'lucide-react'
+import { Search, Lock, MapPin, Building2, User, Unlock, Filter, ChevronRight, MessageCircle, Phone, X, Send, Crown, Briefcase, DollarSign, Clock, Star, Navigation, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
+import { useLanguage } from '@/lib/language-context'
 import { useTranslation } from '@/lib/use-translation'
 import { getAllJobs, canViewMoreShops, incrementShopsViewed, sendMessage, getSubscriptionByUserId, syncApprovedJobsFromCloud } from '@/lib/data-store'
 import type { Job, BeautyRole } from '@/lib/types'
@@ -34,6 +35,7 @@ interface SalonWithDetails {
 
 export function JobDiscovery() {
   const { user, goToStep, resume } = useApp()
+  const { setLanguage } = useLanguage()
   const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState('')
   const [showUnlockPrompt, setShowUnlockPrompt] = useState(false)
@@ -52,6 +54,7 @@ export function JobDiscovery() {
   const [salaryFilter, setSalaryFilter] = useState<string>('')
   const [sortBy, setSortBy] = useState<'distance' | 'salary' | 'rating' | 'newest'>('distance')
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
 
   // Get user location
   useEffect(() => {
@@ -232,6 +235,35 @@ export function JobDiscovery() {
             </p>
           </div>
           <div className="flex items-center gap-3 relative">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+              className="flex items-center gap-2 bg-yellow-500 text-black hover:bg-yellow-600 font-bold"
+            >
+              <Globe className="w-4 h-4" />
+              <span className="text-sm">{t('language')}</span>
+            </Button>
+            {showLanguageMenu && (
+              <div className="absolute top-full right-0 mt-2 w-48 bg-black border-2 border-yellow-500 rounded-lg shadow-2xl z-50">
+                {[
+                  { code: 'en' as const, name: 'English' },
+                  { code: 'hi' as const, name: 'हिन्दी' },
+                  { code: 'te' as const, name: 'తెలుగు' },
+                ].map(lang => (
+                  <button
+                    key={lang.code}
+                    onClick={() => {
+                      setLanguage(lang.code)
+                      setShowLanguageMenu(false)
+                    }}
+                    className="w-full px-4 py-3 text-left hover:bg-yellow-500/20 hover:text-yellow-500 transition-all text-sm font-medium text-white border-b border-white/10 last:border-b-0"
+                  >
+                    {lang.name}
+                  </button>
+                ))}
+              </div>
+            )}
             <button
               onClick={() => goToStep('profile')}
               className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center hover:bg-primary/30 transition-colors"
