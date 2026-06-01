@@ -1,10 +1,13 @@
 'use client'
 
-import { ArrowLeft, Phone, Mail, MapPin, MessageCircle, Facebook, Instagram } from 'lucide-react'
+import { ArrowLeft, Phone, Mail, MapPin, MessageCircle, Facebook, Instagram, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
+import { useLanguage } from '@/lib/language-context'
+import { useTranslation } from '@/lib/use-translation'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
+import { useState } from 'react'
 
 // Animation variants
 const fadeUp = {
@@ -102,6 +105,9 @@ function SocialLink({
 
 export function ContactUsScreen() {
   const { goToStep, user } = useApp()
+  const { setLanguage } = useLanguage()
+  const { t } = useTranslation()
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
   const isOwner = user?.role === 'salon_owner' || user?.role === 'employer'
 
   const phoneNumbers = [
@@ -153,7 +159,39 @@ export function ContactUsScreen() {
               className="object-contain"
             />
           </div>
-          <h1 className="font-bold text-lg text-white">Contact Us</h1>
+          <h1 className="font-bold text-lg text-white">{t('contactUs')}</h1>
+        </div>
+        
+        <div className="flex items-center gap-3 relative">
+          <Button
+            variant="default"
+            size="lg"
+            onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+            className="flex items-center gap-2 bg-yellow-500 text-black hover:bg-yellow-600 font-bold"
+          >
+            <Globe className="w-5 h-5" />
+            <span className="text-base hidden sm:inline">{t('language')}</span>
+          </Button>
+          {showLanguageMenu && (
+            <div className="absolute top-full right-0 mt-2 w-48 bg-black border-2 border-[#D4AF37] rounded-lg shadow-2xl z-50">
+              {[
+                { code: 'en' as const, name: 'English' },
+                { code: 'hi' as const, name: 'हिन्दी' },
+                { code: 'te' as const, name: 'తెలుగు' },
+              ].map(lang => (
+                <button
+                  key={lang.code}
+                  onClick={() => {
+                    setLanguage(lang.code)
+                    setShowLanguageMenu(false)
+                  }}
+                  className="w-full px-4 py-3 text-left hover:bg-[#D4AF37]/20 hover:text-[#D4AF37] transition-all text-base font-medium text-white"
+                >
+                  {lang.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </header>
 
@@ -169,7 +207,7 @@ export function ContactUsScreen() {
           variants={fadeUp}
           className="text-3xl md:text-4xl font-bold mb-4 text-white"
         >
-          Get in Touch
+          {t('getInTouch')}
         </motion.h1>
         
         <motion.p
