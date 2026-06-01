@@ -40,11 +40,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       const savedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) as LanguageCode
       if (savedLang && SUPPORTED_LANGUAGES.some(l => l.code === savedLang)) {
         setCurrentLanguageState(savedLang)
+        // Set HTML lang attribute immediately on initialization
+        document.documentElement.lang = savedLang
+        document.documentElement.dir = 'ltr'
       } else {
         setCurrentLanguageState('en')
+        document.documentElement.lang = 'en'
+        document.documentElement.dir = 'ltr'
       }
     } catch (e) {
       setCurrentLanguageState('en')
+      document.documentElement.lang = 'en'
+      document.documentElement.dir = 'ltr'
     }
 
     setIsInitialized(true)
