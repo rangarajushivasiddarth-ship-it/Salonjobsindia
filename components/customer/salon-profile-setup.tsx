@@ -255,7 +255,7 @@ export function SalonProfileSetup() {
                   className="w-20 h-20 rounded-xl border-2 border-dashed border-border/50 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
                 >
                   <Upload className="w-6 h-6 text-muted-foreground mb-1" />
-                  <span className="text-[10px] text-muted-foreground">Upload</span>
+                  <span className="text-sm text-muted-foreground">Upload</span>
                 </div>
               )}
               

@@ -86,15 +86,15 @@ export function BottomNav({ unreadMessages = 0, unreadNotifications = 0 }: Botto
               {/* Icon with badge */}
               <div className="relative">
                 <item.icon className={`w-5 h-5 transition-transform ${active ? 'scale-110' : ''}`} />
-                {item.badge && item.badge > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 flex items-center justify-center text-[10px] font-bold bg-destructive text-destructive-foreground rounded-full">
+              {item.badge && item.badge > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 flex items-center justify-center text-xs font-bold bg-destructive text-destructive-foreground rounded-full">
                     {item.badge > 99 ? '99+' : item.badge}
                   </span>
                 )}
               </div>
               
               {/* Label */}
-              <span className={`text-[10px] mt-1 font-medium ${active ? 'text-primary' : ''}`}>
+              <span className={`text-sm mt-1 font-medium ${active ? 'text-primary' : ''}`}>
                 {item.label}
               </span>
             </button>

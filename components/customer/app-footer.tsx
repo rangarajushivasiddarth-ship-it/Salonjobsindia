@@ -9,7 +9,7 @@ export function AppFooter({ variant = 'default', className = '' }: AppFooterProp
   if (variant === 'minimal') {
     return (
       <footer className={`py-4 text-center ${className}`}>
-        <p className="text-[10px] text-muted-foreground/60">
+        <p className="text-sm text-muted-foreground/60">
           © 2026 FItonze Private Limited. All Rights Reserved.
         </p>
       </footer>
