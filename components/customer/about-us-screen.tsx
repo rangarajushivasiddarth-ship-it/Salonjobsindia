@@ -3,7 +3,6 @@
 import { ArrowLeft, Phone, MessageCircle, Award, Users, MapPin, Clock, CheckCircle, Quote, Target, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
-import { LanguageSelector } from '@/components/language-selector'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { useEffect, useState, useRef } from 'react'
@@ -245,7 +244,6 @@ export function AboutUsScreen() {
           </div>
           <h1 className="font-bold text-lg text-white">About Us</h1>
         </div>
-        <LanguageSelector variant="button" showNativeName={false} />
       </header>
 
       {/* Hero Section */}

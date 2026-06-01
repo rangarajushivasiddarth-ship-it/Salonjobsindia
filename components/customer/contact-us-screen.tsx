@@ -3,7 +3,6 @@
 import { ArrowLeft, Phone, Mail, MapPin, MessageCircle, Facebook, Instagram } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
-import { LanguageSelector } from '@/components/language-selector'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 
@@ -156,7 +155,6 @@ export function ContactUsScreen() {
           </div>
           <h1 className="font-bold text-lg text-white">Contact Us</h1>
         </div>
-        <LanguageSelector variant="button" showNativeName={false} />
       </header>
 
       {/* Hero Section */}
