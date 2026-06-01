@@ -1,9 +1,8 @@
 'use client'
 
-import { ArrowLeft, Phone, MessageCircle, Award, Users, MapPin, Clock, CheckCircle, Quote, Target, Eye, Globe } from 'lucide-react'
+import { ArrowLeft, Phone, MessageCircle, Award, Users, MapPin, Clock, CheckCircle, Quote, Target, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
-import { useLanguage } from '@/lib/language-context'
 import { useTranslation } from '@/lib/use-translation'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
@@ -168,9 +167,7 @@ function AwardBadge({ label }: { label: string }) {
 
 export function AboutUsScreen() {
   const { goToStep, user } = useApp()
-  const { setLanguage } = useLanguage()
   const { t } = useTranslation()
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
   const isOwner = user?.role === 'salon_owner' || user?.role === 'employer'
 
   const stats = [
@@ -248,38 +245,6 @@ export function AboutUsScreen() {
             />
           </div>
           <h1 className="font-bold text-lg text-white">{t('aboutUs')}</h1>
-        </div>
-        
-        <div className="flex items-center gap-3 relative">
-          <Button
-            variant="default"
-            size="lg"
-            onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-            className="flex items-center gap-2 bg-yellow-500 text-black hover:bg-yellow-600 font-bold"
-          >
-            <Globe className="w-5 h-5" />
-            <span className="text-base hidden sm:inline">{t('language')}</span>
-          </Button>
-          {showLanguageMenu && (
-            <div className="absolute top-full right-0 mt-2 w-48 bg-black border-2 border-[#D4AF37] rounded-lg shadow-2xl z-50">
-              {[
-                { code: 'en' as const, name: 'English' },
-                { code: 'hi' as const, name: 'हिन्दी' },
-                { code: 'te' as const, name: 'తెలుగు' },
-              ].map(lang => (
-                <button
-                  key={lang.code}
-                  onClick={() => {
-                    setLanguage(lang.code)
-                    setShowLanguageMenu(false)
-                  }}
-                  className="w-full px-4 py-3 text-left hover:bg-[#D4AF37]/20 hover:text-[#D4AF37] transition-all text-base font-medium text-white"
-                >
-                  {lang.name}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       </header>
 
