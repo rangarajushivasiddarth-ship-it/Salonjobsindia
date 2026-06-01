@@ -1,16 +1,18 @@
 import mysql from 'mysql2/promise';
 
-// Create a pool of connections
+// Create a pool of connections using Hostinger database credentials
 const pool = mysql.createPool({
-  host: process.env.HOSTINGER_DB_HOST || process.env.DB_HOST,
-  port: parseInt(process.env.HOSTINGER_DB_PORT || process.env.DB_PORT || '3306'),
-  user: process.env.HOSTINGER_DB_USER || process.env.DB_USER,
-  password: process.env.HOSTINGER_DB_PASSWORD || process.env.DB_PASSWORD,
-  database: process.env.HOSTINGER_DB_NAME || process.env.DB_NAME,
+  host: process.env.DATABASE_HOST || process.env.HOSTINGER_DB_HOST || process.env.DB_HOST,
+  port: parseInt(process.env.DATABASE_PORT || process.env.HOSTINGER_DB_PORT || process.env.DB_PORT || '3306'),
+  user: process.env.DATABASE_USER || process.env.HOSTINGER_DB_USER || process.env.DB_USER,
+  password: process.env.DATABASE_PASSWORD || process.env.HOSTINGER_DB_PASSWORD || process.env.DB_PASSWORD,
+  database: process.env.DATABASE_NAME || process.env.HOSTINGER_DB_NAME || process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
   enableKeepAlive: true,
+  supportBigNumbers: true,
+  bigNumberStrings: true,
 });
 
 /**
@@ -30,12 +32,17 @@ export async function getConnection() {
  * Execute a query on the database
  */
 export async function executeQuery<T = any>(sql: string, values?: any[]): Promise<T[]> {
-  const connection = await getConnection();
   try {
-    const [results] = await connection.execute(sql, values || []);
-    return results as T[];
-  } finally {
-    connection.release();
+    const connection = await getConnection();
+    try {
+      const [results] = await connection.execute(sql, values || []);
+      return results as T[];
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('[v0] Query execution failed:', error);
+    throw error;
   }
 }
 
@@ -43,12 +50,17 @@ export async function executeQuery<T = any>(sql: string, values?: any[]): Promis
  * Execute an insert query and return inserted ID
  */
 export async function executeInsert(sql: string, values?: any[]) {
-  const connection = await getConnection();
   try {
-    const [result] = await connection.execute(sql, values || []);
-    return result;
-  } finally {
-    connection.release();
+    const connection = await getConnection();
+    try {
+      const [result] = await connection.execute(sql, values || []);
+      return result;
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('[v0] Insert execution failed:', error);
+    throw error;
   }
 }
 
@@ -56,12 +68,17 @@ export async function executeInsert(sql: string, values?: any[]) {
  * Execute update or delete query
  */
 export async function executeUpdate(sql: string, values?: any[]) {
-  const connection = await getConnection();
   try {
-    const [result] = await connection.execute(sql, values || []);
-    return result;
-  } finally {
-    connection.release();
+    const connection = await getConnection();
+    try {
+      const [result] = await connection.execute(sql, values || []);
+      return result;
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('[v0] Update execution failed:', error);
+    throw error;
   }
 }
 

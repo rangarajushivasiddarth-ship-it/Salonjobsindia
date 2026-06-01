@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { executeQuery } from '@/lib/hostinger-mysql';
+import { testConnection, executeQuery } from '@/lib/hostinger-mysql';
 import { getSchemaQueries } from '@/lib/database-schema';
 
 /**
@@ -9,15 +9,15 @@ import { getSchemaQueries } from '@/lib/database-schema';
  */
 export async function POST(request: NextRequest) {
   try {
-    // Security check - verify admin token if available
-    const authHeader = request.headers.get('authorization');
-    const adminToken = process.env.DB_INIT_TOKEN;
-
-    if (adminToken && authHeader !== `Bearer ${adminToken}`) {
+    // Test connection first
+    console.log('[v0] Testing database connection...');
+    const connectionOk = await testConnection();
+    
+    if (!connectionOk) {
       return NextResponse.json({
         success: false,
-        message: 'Unauthorized - Invalid token'
-      }, { status: 401 });
+        message: 'Database connection failed'
+      }, { status: 500 });
     }
 
     const schemaQueries = getSchemaQueries();
@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
     const errors: string[] = [];
 
     console.log('[v0] Starting database initialization...');
+    console.log(`[v0] Creating ${schemaQueries.length} tables...`);
 
     // Execute each schema query
     for (const query of schemaQueries) {
@@ -38,16 +39,17 @@ export async function POST(request: NextRequest) {
         results.push(`✓ Table '${tableName}' created/verified`);
         console.log(`[v0] Created table: ${tableName}`);
       } catch (error) {
-        const errorMsg = `✗ Error creating table: ${String(error)}`;
-        errors.push(errorMsg);
-        console.error('[v0]', errorMsg);
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        const errorEntry = `✗ Error: ${errorMsg}`;
+        errors.push(errorEntry);
+        console.error('[v0]', errorEntry);
       }
     }
 
     // Summary
     const summary = {
-      totalTables: results.length,
-      successful: results.length - errors.length,
+      totalTables: schemaQueries.length,
+      successful: results.length,
       failed: errors.length,
       results,
       errors: errors.length > 0 ? errors : undefined
@@ -56,13 +58,15 @@ export async function POST(request: NextRequest) {
     if (errors.length > 0) {
       return NextResponse.json({
         success: false,
+        message: 'Database initialization completed with errors',
         ...summary
       }, { status: 207 }); // 207 Multi-Status
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Database initialization completed successfully',
+      message: 'Database initialized successfully',
+      timestamp: new Date().toISOString(),
       ...summary
     });
 
@@ -71,7 +75,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: false,
       message: 'Database initialization failed',
-      error: String(error)
+      error: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
 }
@@ -82,6 +86,16 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    // Test connection
+    const connectionOk = await testConnection();
+    
+    if (!connectionOk) {
+      return NextResponse.json({
+        success: false,
+        message: 'Database connection failed'
+      }, { status: 500 });
+    }
+
     // Check if tables exist
     const result = await executeQuery(
       `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES 
@@ -90,15 +104,27 @@ export async function GET(request: NextRequest) {
     ) as any[];
 
     const tables = result.map((row: any) => row.TABLE_NAME);
+    const requiredTables = [
+      'users', 'jobs', 'subscriptions', 'messages', 
+      'applications', 'notifications', 'salon_profiles', 
+      'payments', 'job_alerts', 'audit_logs'
+    ];
+    
+    const allTablesCreated = requiredTables.every(table => 
+      tables.includes(table)
+    );
 
     return NextResponse.json({
       success: true,
       message: 'Database status retrieved',
       data: {
+        connected: true,
+        database: process.env.DATABASE_NAME || 'unknown',
         tablesCreated: tables.length,
+        requiredTables: requiredTables.length,
+        allTablesCreated,
         tables: tables,
-        database: process.env.HOSTINGER_DB_NAME,
-        initialized: tables.length > 0
+        timestamp: new Date().toISOString()
       }
     });
   } catch (error) {
@@ -106,7 +132,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: false,
       message: 'Failed to check database status',
-      error: String(error)
+      error: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
 }
