@@ -173,7 +173,7 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
         
         {/* Title */}
         <h1 className="text-2xl md:text-3xl font-bold mb-2 animate-slide-up">
-          {mode === 'signin' ? 'Welcome Back' : 'Create Account'}
+          {mode === 'signin' ? t('welcomeBack') : t('createAccount')}
         </h1>
         <p className="text-muted-foreground mb-6 animate-slide-up text-center" style={{ animationDelay: '100ms' }}>
           {mode === 'signin' 
@@ -198,7 +198,7 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder="Full Name"
+                  placeholder={t('name')}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all"
@@ -216,7 +216,7 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type="email"
-                placeholder="Email address"
+                placeholder={t('email')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all"
@@ -233,7 +233,7 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
               <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type="tel"
-                placeholder="10-digit phone number"
+                placeholder={t('phone')}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all"
@@ -250,7 +250,7 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Password"
+                placeholder={t('password')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="h-14 pl-12 pr-12 bg-secondary/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all"
@@ -275,7 +275,7 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Confirm Password"
+                  placeholder={t('confirmPassword')}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all"
@@ -296,7 +296,7 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
                   onCheckedChange={(checked) => setRememberMe(checked === true)}
                   className="border-muted-foreground data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                 />
-                <span className="text-sm text-muted-foreground">Remember me</span>
+                <span className="text-sm text-muted-foreground">{t('rememberMe')}</span>
               </label>
               <button 
                 type="button" 
@@ -322,16 +322,16 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
             {isLoading ? (
               <div className="w-6 h-6 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
             ) : (
-              mode === 'signin' ? 'Sign In' : 'Create Account'
+              mode === 'signin' ? t('signIn') : t('createAccount')
             )}
           </Button>
         </form>
         
         {/* Switch Mode Link */}
         <p className="mt-6 text-sm text-muted-foreground animate-slide-up" style={{ animationDelay: mode === 'signup' ? '450ms' : '350ms' }}>
-          {mode === 'signin' ? "Don't have an account? " : "Already have an account? "}
+          {mode === 'signin' ? t('dontHaveAccount') + ' ' : t('alreadyHaveAccount') + ' '}
           <button onClick={switchMode} className="text-primary hover:underline font-medium">
-            {mode === 'signin' ? 'Sign up' : 'Sign in'}
+            {mode === 'signin' ? t('signUp') : t('signIn')}
           </button>
         </p>
         
