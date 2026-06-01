@@ -393,6 +393,11 @@ export function SubscriptionScreen() {
               />
             </div>
             
+            <div className="text-center mb-4">
+              <p className="text-sm font-medium text-muted-foreground">Or send payment to:</p>
+              <p className="text-lg font-bold text-primary mt-2">9115123345</p>
+            </div>
+            
             <div className="text-center p-3 bg-primary/10 rounded-xl">
               <p className="text-3xl font-bold text-primary">Rs.{selectedPlanDetails.price}</p>
               <p className="text-sm text-muted-foreground mt-1">{selectedPlanDetails.name} Plan</p>
