@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Briefcase, Users, Settings, LogOut, Edit2, Trash2, Eye, ChevronRight, Building2, MapPin, DollarSign, Clock, Crown, User, Search, Filter, TrendingUp, UserCheck, Bell, BarChart3, MessageCircle, Phone, AlertCircle, Check, X, Rocket, ShoppingCart, BadgeCheck, Shield, EyeOff } from 'lucide-react'
+import { Plus, Briefcase, Users, Settings, LogOut, Edit2, Trash2, Eye, ChevronRight, Building2, MapPin, DollarSign, Clock, Crown, User, Search, Filter, TrendingUp, UserCheck, Bell, BarChart3, MessageCircle, Phone, AlertCircle, Check, X, Rocket, ShoppingCart, BadgeCheck, Shield, EyeOff, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
-import { LanguageSelector } from '@/components/language-selector'
+import { useLanguage, type LanguageCode } from '@/lib/language-context'
+import { useTranslation } from '@/lib/use-translation'
 import { getMessagesForOwner, getAllJobs, getUnreadMessageCount, getApplicationsBySalonId, getAllJobSeekers, isCandidateUnlocked, deductSalonCredit, getSalonProfileByOwnerId, getJobSeekersForSalonOwners } from '@/lib/data-store'
 import type { Job, Application, CONTACT_CREDIT_PACKS } from '@/lib/types'
 import type { JobSeeker } from '@/lib/data-store'
@@ -78,6 +79,8 @@ type TabType = 'dashboard' | 'jobs' | 'applicants' | 'candidates' | 'settings'
 
 export function OwnerPanel() {
   const { user, logout, goToStep } = useApp()
+  const { setLanguage } = useLanguage()
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false)
@@ -87,6 +90,7 @@ export function OwnerPanel() {
   const [selectedApplicant, setSelectedApplicant] = useState<Application | null>(null)
   const [selectedCandidate, setSelectedCandidate] = useState<JobSeeker | null>(null)
   const [showEditJob, setShowEditJob] = useState<Job | null>(null)
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
   
   // Real data state
   const [ownerJobs, setOwnerJobs] = useState<Job[]>([])
@@ -268,11 +272,39 @@ export function OwnerPanel() {
               <p className="text-sm text-muted-foreground">{user?.name || user?.email}</p>
             </div>
           </div>
-<div className="flex items-center gap-2">
-            <LanguageSelector variant="button" showNativeName={false} />
+          <div className="flex items-center gap-3 relative">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+              className="flex items-center gap-2 bg-yellow-500 text-black hover:bg-yellow-600 font-bold"
+            >
+              <Globe className="w-4 h-4" />
+              <span className="text-sm">{t('language')}</span>
+            </Button>
+            {showLanguageMenu && (
+              <div className="absolute top-full right-0 mt-2 w-48 bg-black border-2 border-yellow-500 rounded-lg shadow-2xl z-50">
+                {[
+                  { code: 'en' as const, name: 'English' },
+                  { code: 'hi' as const, name: 'हिन्दी' },
+                  { code: 'te' as const, name: 'తెలుగు' },
+                ].map(lang => (
+                  <button
+                    key={lang.code}
+                    onClick={() => {
+                      setLanguage(lang.code)
+                      setShowLanguageMenu(false)
+                    }}
+                    className="w-full px-4 py-3 text-left hover:bg-yellow-500/20 hover:text-yellow-500 transition-all text-sm font-medium text-white border-b border-white/10 last:border-b-0"
+                  >
+                    {lang.name}
+                  </button>
+                ))}
+              </div>
+            )}
             <button
               onClick={() => goToStep('messages')}
-              className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center relative"
+              className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center relative hover:bg-secondary transition-colors"
             >
               <MessageCircle className="w-5 h-5 text-foreground" />
               {unreadMessages > 0 && (
@@ -281,7 +313,7 @@ export function OwnerPanel() {
             </button>
             <button
               onClick={() => goToStep('notifications')}
-              className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center relative"
+              className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center relative hover:bg-secondary transition-colors"
             >
               <Bell className="w-5 h-5 text-foreground" />
             </button>

@@ -17,9 +17,14 @@ interface BrandingBannerProps {
 // Default logos - will be replaced by admin-managed logos from localStorage
 const DEFAULT_LOGOS: BrandingLogo[] = [
   {
-    id: 'fitonze-1',
-    url: '/images/fitonze-logo.jpeg',
-    alt: 'FITONZE - Born to Shine'
+    id: 'fitonze-mens-salon',
+    url: '/images/fitonze-mens-salon.png',
+    alt: 'FITONZE Men\'s Salon'
+  },
+  {
+    id: 'fitonze-born-to-shine',
+    url: '/images/fitonze-born-to-shine.jpeg',
+    alt: 'FITONZE Born to Shine'
   }
 ]
 

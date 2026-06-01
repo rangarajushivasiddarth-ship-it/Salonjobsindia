@@ -5,6 +5,8 @@ import { ArrowLeft, Send, Building2, Search, Phone, MoreVertical, Check, CheckCh
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
+import { useTranslation } from '@/lib/use-translation'
+import { useLanguage } from '@/lib/language-context'
 
 interface Message {
   id: string
@@ -48,6 +50,8 @@ export function MessagesScreen() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showContactCard, setShowContactCard] = useState(false)
   const [copiedPhone, setCopiedPhone] = useState(false)
+  const { t } = useTranslation()
+  const { currentLanguage } = useLanguage()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   
   const filteredConversations = conversations.filter(c => 
@@ -169,13 +173,13 @@ export function MessagesScreen() {
         <div className="w-8 h-8 rounded-full bg-primary/30 flex items-center justify-center">
           <Phone className="w-4 h-4 text-primary" />
         </div>
-        <span className="text-sm font-medium">Contact Shared</span>
+        <span className="text-sm font-medium">{t('contactShared')}</span>
       </div>
       
       <div className="space-y-2">
         <div className="flex items-center justify-between p-3 bg-background/50 rounded-xl">
           <div>
-            <p className="text-xs text-muted-foreground">Phone Number</p>
+            <p className="text-xs text-muted-foreground">{t('phoneNumber')}</p>
             <p className="font-semibold">{message.contactInfo?.phone}</p>
           </div>
           <div className="flex gap-2">
@@ -204,7 +208,7 @@ export function MessagesScreen() {
             className="w-full h-10 bg-green-600 hover:bg-green-700 text-white"
           >
             <MessageCircle className="w-4 h-4 mr-2" />
-            Chat on WhatsApp
+            {t('chatOnWhatsApp')}
           </Button>
         )}
       </div>
@@ -282,7 +286,7 @@ export function MessagesScreen() {
             </div>
             {selectedConversation.contactShared && (
               <div className="px-2 py-1 bg-green-500/20 text-green-500 text-xs font-medium rounded-full">
-                Contact Shared
+                {t('contactShared')}
               </div>
             )}
           </div>

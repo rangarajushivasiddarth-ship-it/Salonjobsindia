@@ -54,20 +54,26 @@ const refreshAccessToken = async (): Promise<string> => {
     throw new ApiError('No refresh token', 401);
   }
 
-  const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken })
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken })
+    });
 
-  if (!response.ok) {
+    if (!response.ok) {
+      clearTokens();
+      throw new ApiError('Session expired. Please login again.', 401);
+    }
+
+    const data = await response.json();
+    setTokens(data.accessToken, data.refreshToken);
+    return data.accessToken;
+  } catch (error) {
     clearTokens();
-    throw new ApiError('Session expired. Please login again.', 401);
+    const errorMessage = error instanceof Error ? error.message : 'Token refresh failed';
+    throw new ApiError(errorMessage, 401);
   }
-
-  const data = await response.json();
-  setTokens(data.accessToken, data.refreshToken);
-  return data.accessToken;
 };
 
 // Main fetch wrapper
@@ -101,44 +107,53 @@ export const apiFetch = async <T = unknown>(
 
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
 
-  let response = await fetch(url, {
-    ...fetchOptions,
-    headers
-  });
+  try {
+    let response = await fetch(url, {
+      ...fetchOptions,
+      headers
+    });
 
-  // Handle 401 - try to refresh token
-  if (response.status === 401 && auth) {
-    // Prevent multiple simultaneous refresh attempts
-    if (!isRefreshing) {
-      isRefreshing = true;
-      refreshPromise = refreshAccessToken();
+    // Handle 401 - try to refresh token
+    if (response.status === 401 && auth) {
+      // Prevent multiple simultaneous refresh attempts
+      if (!isRefreshing) {
+        isRefreshing = true;
+        refreshPromise = refreshAccessToken();
+      }
+
+      try {
+        const newToken = await refreshPromise;
+        isRefreshing = false;
+        refreshPromise = null;
+
+        // Retry with new token
+        (headers as Record<string, string>)['Authorization'] = `Bearer ${newToken}`;
+        response = await fetch(url, {
+          ...fetchOptions,
+          headers
+        });
+      } catch (error) {
+        isRefreshing = false;
+        refreshPromise = null;
+        throw error;
+      }
     }
 
-    try {
-      const newToken = await refreshPromise;
-      isRefreshing = false;
-      refreshPromise = null;
+    const data = await response.json();
 
-      // Retry with new token
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${newToken}`;
-      response = await fetch(url, {
-        ...fetchOptions,
-        headers
-      });
-    } catch (error) {
-      isRefreshing = false;
-      refreshPromise = null;
+    if (!response.ok) {
+      throw new ApiError(data.error || 'Request failed', response.status, data);
+    }
+
+    return data as T;
+  } catch (error) {
+    if (error instanceof ApiError) {
       throw error;
     }
+    
+    const errorMessage = error instanceof Error ? error.message : 'Network request failed';
+    throw new ApiError(errorMessage, 0);
   }
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new ApiError(data.error || 'Request failed', response.status, data);
-  }
-
-  return data as T;
 };
 
 // Convenience methods

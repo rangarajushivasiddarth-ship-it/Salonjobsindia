@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from '@/lib/use-translation'
+import { useLanguage } from '@/lib/language-context'
 import { Search, MapPin, Building2, User, Phone, Briefcase, DollarSign, Clock, Heart, HeartOff, Filter, ChevronRight, Navigation, Star, Lock, Crown, BadgeCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
-import { LanguageSelector } from '@/components/language-selector'
 import { getAllJobs, saveApplication, getJobSeekerByUserId, syncApprovedJobsFromCloud } from '@/lib/data-store'
 import type { Job, Application } from '@/lib/types'
 import { BrandingBanner } from './branding-banner'
@@ -74,7 +75,6 @@ export function JobResults() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <LanguageSelector variant="button" showNativeName={false} />
             <button 
               onClick={() => goToStep('profile')}
               className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center"

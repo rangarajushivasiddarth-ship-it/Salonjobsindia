@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from '@/lib/use-translation'
+import { useLanguage } from '@/lib/language-context'
 import { ArrowLeft, QrCode, Upload, Check, Clock, Shield, MapPin, Phone, FileText, X, Image as ImageIcon, Crown, Sparkles, Star, Zap, Building2 } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
@@ -389,6 +391,11 @@ export function SubscriptionScreen() {
                 height={180}
                 className="object-contain w-auto h-auto"
               />
+            </div>
+            
+            <div className="text-center mb-4">
+              <p className="text-sm font-medium text-muted-foreground">Or send payment to:</p>
+              <p className="text-lg font-bold text-primary mt-2">9115123345</p>
             </div>
             
             <div className="text-center p-3 bg-primary/10 rounded-xl">

@@ -3,9 +3,10 @@
 import { ArrowLeft, Phone, Mail, MapPin, MessageCircle, Facebook, Instagram } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
-import { LanguageSelector } from '@/components/language-selector'
+import { useTranslation } from '@/lib/use-translation'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
+import { useState } from 'react'
 
 // Animation variants
 const fadeUp = {
@@ -103,6 +104,7 @@ function SocialLink({
 
 export function ContactUsScreen() {
   const { goToStep, user } = useApp()
+  const { t } = useTranslation()
   const isOwner = user?.role === 'salon_owner' || user?.role === 'employer'
 
   const phoneNumbers = [
@@ -154,9 +156,8 @@ export function ContactUsScreen() {
               className="object-contain"
             />
           </div>
-          <h1 className="font-bold text-lg text-white">Contact Us</h1>
+          <h1 className="font-bold text-lg text-white">{t('contactUs')}</h1>
         </div>
-        <LanguageSelector variant="button" showNativeName={false} />
       </header>
 
       {/* Hero Section */}
@@ -171,7 +172,7 @@ export function ContactUsScreen() {
           variants={fadeUp}
           className="text-3xl md:text-4xl font-bold mb-4 text-white"
         >
-          Get in Touch
+          {t('getInTouch')}
         </motion.h1>
         
         <motion.p

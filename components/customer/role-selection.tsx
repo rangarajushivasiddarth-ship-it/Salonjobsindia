@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Building2, ArrowLeft, ArrowRight, Briefcase, Globe } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { LanguageSelector } from '@/components/language-selector'
+import { useLanguage, type LanguageCode } from '@/lib/language-context'
+import { useTranslation } from '@/lib/use-translation'
 import type { UserRole } from '@/lib/types'
 
 interface RoleSelectionProps {
@@ -14,23 +15,34 @@ interface RoleSelectionProps {
 
 export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null)
+  const { setLanguage, currentLanguage } = useLanguage()
+  const { t } = useTranslation()
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
 
-  const roles = [
+  const roles = useMemo(() => [
     {
       id: 'job_seeker' as UserRole,
-      title: 'Apply for Job',
-      description: 'Looking for job opportunities in your area',
+      title: t('role.jobSeeker'),
+      description: t('role.jobSeekerDesc'),
       icon: Briefcase,
-      features: ['Create your professional profile', 'Discover nearby opportunities', 'Apply to job openings'],
+      features: [
+        t('role.jobSeekerFeature1'),
+        t('role.jobSeekerFeature2'),
+        t('role.jobSeekerFeature3'),
+      ],
     },
     {
       id: 'employer' as UserRole,
-      title: 'Create Job',
-      description: 'Find talented professionals for your business',
+      title: t('role.salonOwner'),
+      description: t('role.salonOwnerDesc'),
       icon: Building2,
-      features: ['Post job openings', 'Review applications', 'Connect with talent'],
+      features: [
+        t('role.salonOwnerFeature1'),
+        t('role.salonOwnerFeature2'),
+        t('role.salonOwnerFeature3'),
+      ],
     },
-  ]
+  ], [t, currentLanguage])
 
   return (
     <div className="relative min-h-screen flex flex-col overflow-hidden">
@@ -49,8 +61,37 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <div className="flex-1" />
-        <LanguageSelector variant="button" showNativeName={false} className="mr-2" />
+        <div className="flex items-center gap-3 relative">
+          <Button
+            variant="default"
+            size="lg"
+            onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+            className="flex items-center gap-2 bg-yellow-500 text-black hover:bg-yellow-600 font-bold"
+          >
+            <Globe className="w-5 h-5" />
+            <span className="text-base">{t('language')}</span>
+          </Button>
+          {showLanguageMenu && (
+            <div className="absolute top-full right-0 mt-2 w-48 bg-black border-2 border-yellow-500 rounded-lg shadow-2xl z-50">
+              {[
+                { code: 'en' as LanguageCode, name: 'English' },
+                { code: 'hi' as LanguageCode, name: 'हिन्दी' },
+                { code: 'te' as LanguageCode, name: 'తెలుగు' },
+              ].map(lang => (
+                <button
+                  key={lang.code}
+                  onClick={() => {
+                    setLanguage(lang.code)
+                    setShowLanguageMenu(false)
+                  }}
+                  className="w-full px-4 py-3 text-left hover:bg-yellow-500/20 hover:text-yellow-500 transition-all text-base font-medium text-white border-b border-white/10 last:border-b-0"
+                >
+                  {lang.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </header>
       
       {/* Content */}
@@ -70,10 +111,10 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
         {/* Title */}
         <div className="text-center mb-8">
           <h1 className="text-2xl md:text-3xl font-bold mb-2 animate-slide-up">
-            Choose Your Role
+            {t('selectRole')}
           </h1>
           <p className="text-muted-foreground animate-slide-up" style={{ animationDelay: '100ms' }}>
-            Select how you want to use Salon Jobs India
+            {t('selectRoleDesc')}
           </p>
         </div>
         
@@ -138,11 +179,12 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
             disabled={!selectedRole}
             className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gold-glow transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            Continue
+            {t('next')}
             <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
         </div>
       </div>
+      
     </div>
   )
 }

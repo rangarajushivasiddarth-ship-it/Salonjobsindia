@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Lock, MapPin, Building2, User, Unlock, Filter, ChevronRight, MessageCircle, Phone, X, Send, Crown, Briefcase, DollarSign, Clock, Star, Navigation } from 'lucide-react'
+import { Search, Lock, MapPin, Building2, User, Unlock, Filter, ChevronRight, MessageCircle, Phone, X, Send, Crown, Briefcase, DollarSign, Clock, Star, Navigation, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
-import { LanguageSelector } from '@/components/language-selector'
+import { useLanguage, type LanguageCode } from '@/lib/language-context'
+import { useTranslation } from '@/lib/use-translation'
 import { getAllJobs, canViewMoreShops, incrementShopsViewed, sendMessage, getSubscriptionByUserId, syncApprovedJobsFromCloud } from '@/lib/data-store'
 import type { Job, BeautyRole } from '@/lib/types'
 import { BEAUTY_ROLES, ROLE_CATEGORIES } from '@/lib/types'
@@ -34,6 +35,8 @@ interface SalonWithDetails {
 
 export function JobDiscovery() {
   const { user, goToStep, resume } = useApp()
+  const { setLanguage } = useLanguage()
+  const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState('')
   const [showUnlockPrompt, setShowUnlockPrompt] = useState(false)
   const [selectedSalon, setSelectedSalon] = useState<SalonWithDetails | null>(null)
@@ -51,6 +54,7 @@ export function JobDiscovery() {
   const [salaryFilter, setSalaryFilter] = useState<string>('')
   const [sortBy, setSortBy] = useState<'distance' | 'salary' | 'rating' | 'newest'>('distance')
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
 
   // Get user location
   useEffect(() => {
@@ -220,21 +224,49 @@ export function JobDiscovery() {
         <BrandingBanner section="job_seeker" />
       </div>
       
-{/* Header */}
+      {/* Header */}
       <header className="relative z-10 p-4 glass">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-xl font-bold">Find Jobs</h1>
+            <h1 className="text-xl font-bold">{t('findJobs')}</h1>
             <p className="text-sm text-muted-foreground flex items-center gap-1">
               {userLocation && <Navigation className="w-3 h-3" />}
-              {filteredSalons.length} openings near you
+              {filteredSalons.length} {t('openingsNearYou')}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <LanguageSelector variant="button" showNativeName={false} />
+          <div className="flex items-center gap-3 relative">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+              className="flex items-center gap-2 bg-yellow-500 text-black hover:bg-yellow-600 font-bold"
+            >
+              <Globe className="w-4 h-4" />
+              <span className="text-sm">{t('language')}</span>
+            </Button>
+            {showLanguageMenu && (
+              <div className="absolute top-full right-0 mt-2 w-48 bg-black border-2 border-yellow-500 rounded-lg shadow-2xl z-50">
+                {[
+                  { code: 'en' as const, name: 'English' },
+                  { code: 'hi' as const, name: 'हिन्दी' },
+                  { code: 'te' as const, name: 'తెలుగు' },
+                ].map(lang => (
+                  <button
+                    key={lang.code}
+                    onClick={() => {
+                      setLanguage(lang.code)
+                      setShowLanguageMenu(false)
+                    }}
+                    className="w-full px-4 py-3 text-left hover:bg-yellow-500/20 hover:text-yellow-500 transition-all text-sm font-medium text-white border-b border-white/10 last:border-b-0"
+                  >
+                    {lang.name}
+                  </button>
+                ))}
+              </div>
+            )}
             <button
               onClick={() => goToStep('profile')}
-              className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center"
+              className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center hover:bg-primary/30 transition-colors"
             >
               <User className="w-5 h-5 text-primary" />
             </button>
@@ -245,7 +277,7 @@ export function JobDiscovery() {
         <div className="relative mb-3">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
-            placeholder="Search jobs, salons, roles..."
+            placeholder={t('searchJobsSalonsRoles')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="h-12 pl-12 pr-12 bg-secondary/50 border-border/50"

@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from 'react'
 import { ArrowLeft, User, Crown, Calendar, Heart, Briefcase, LogOut, ChevronRight, MapPin, Building2, Settings, Bell, Shield, TrendingUp, Eye, Clock, Download, FileText, Search as SearchIcon, CheckCircle2, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
-import { LanguageSelector } from '@/components/language-selector'
 import { getJobSeekerByUserId, updateJobSeekerPreference, getAllJobs, getApplicationsByCandidateId, type JobSeeker } from '@/lib/data-store'
 import type { Application, Job } from '@/lib/types'
 import { BrandingBanner } from './branding-banner'
+import { useTranslation } from '@/lib/use-translation'
+import { useLanguage } from '@/lib/language-context'
 
 type TabType = 'overview' | 'saved' | 'applied'
 
@@ -20,6 +21,8 @@ export function ProfileDashboard() {
   const [jobSeeker, setJobSeeker] = useState<JobSeeker | null>(null)
   const [applications, setApplications] = useState<Application[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
+  const { t } = useTranslation()
+  const { currentLanguage } = useLanguage()
 
   // Load job seeker data and applications
   const loadData = useCallback(() => {
@@ -255,7 +258,6 @@ export function ProfileDashboard() {
         </Button>
         <h1 className="font-semibold">Profile</h1>
         <div className="flex items-center gap-2">
-          <LanguageSelector variant="button" showNativeName={false} />
           <Button
             variant="ghost"
             size="icon"

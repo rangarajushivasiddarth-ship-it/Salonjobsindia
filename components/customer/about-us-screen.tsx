@@ -3,7 +3,7 @@
 import { ArrowLeft, Phone, MessageCircle, Award, Users, MapPin, Clock, CheckCircle, Quote, Target, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
-import { LanguageSelector } from '@/components/language-selector'
+import { useTranslation } from '@/lib/use-translation'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { useEffect, useState, useRef } from 'react'
@@ -167,13 +167,14 @@ function AwardBadge({ label }: { label: string }) {
 
 export function AboutUsScreen() {
   const { goToStep, user } = useApp()
+  const { t } = useTranslation()
   const isOwner = user?.role === 'salon_owner' || user?.role === 'employer'
 
   const stats = [
-    { value: 20, label: 'Years Excellence', suffix: '+' },
-    { value: 160, label: 'Expert Team', suffix: '+' },
-    { value: 10, label: 'PAN India', suffix: '+' },
-    { value: 50, label: 'Happy Clients', suffix: 'k+' }
+    { value: 20, label: t('yearsExcellence'), suffix: '+' },
+    { value: 160, label: t('expertTeam'), suffix: '+' },
+    { value: 10, label: t('panIndia'), suffix: '+' },
+    { value: 50, label: t('happyClients'), suffix: 'k+' }
   ]
 
   const founders = [
@@ -243,9 +244,8 @@ export function AboutUsScreen() {
               className="object-contain"
             />
           </div>
-          <h1 className="font-bold text-lg text-white">About Us</h1>
+          <h1 className="font-bold text-lg text-white">{t('aboutUs')}</h1>
         </div>
-        <LanguageSelector variant="button" showNativeName={false} />
       </header>
 
       {/* Hero Section */}
@@ -271,14 +271,14 @@ export function AboutUsScreen() {
           variants={fadeUp}
           className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-[#D4AF37] to-[#F4D03F] bg-clip-text text-transparent"
         >
-          Crafting Beauty Since 2003
+          {t('craftingBeautySince')}
         </motion.h1>
         
         <motion.p
           variants={fadeUp}
           className="text-lg md:text-xl text-white/80 mb-4"
         >
-          From a single salon to India&apos;s trusted unisex salon chain.
+          {t('fromSingleSalon')}
         </motion.p>
         
         <motion.p
