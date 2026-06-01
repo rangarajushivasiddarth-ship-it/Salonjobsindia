@@ -142,87 +142,74 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       console.log('[v0] localStorage error:', e)
     }
 
+    if (code === 'en') {
+      // Reset to English - erase translation
+      eraseCookie(GOOGLETRANS_COOKIE)
+      console.log('[v0] Reset to English')
+      setIsTranslating(false)
+      return
+    }
+
     setIsTranslating(true)
 
-    // Find the Google Translate select element
-    const findAndTranslate = (attempts = 0) => {
-      console.log('[v0] Attempt', attempts, 'to find Google Translate element')
+    // For all other languages, use a more direct approach
+    const translatePage = (attempts = 0) => {
       const selectElement = document.querySelector('.goog-te-combo') as HTMLSelectElement
       
-      if (selectElement) {
-        console.log('[v0] Found Google Translate combo element')
-        console.log('[v0] Available options:', Array.from(selectElement.options).map(o => o.value))
+      if (selectElement && selectElement.options && selectElement.options.length > 0) {
+        console.log('[v0] Found Google Translate combo with', selectElement.options.length, 'options')
         
         try {
-          if (code === 'en') {
-            // Reset to English
-            selectElement.value = 'en'
-            console.log('[v0] Set to English, value:', selectElement.value)
-          } else {
-            // Try to set the language
-            selectElement.value = code
-            console.log('[v0] Set to language:', code, ', actual value:', selectElement.value)
+          // Find the option with the matching language code
+          let found = false
+          for (let i = 0; i < selectElement.options.length; i++) {
+            const option = selectElement.options[i]
+            console.log('[v0] Option', i, ':', option.value, option.text)
             
-            // If value didn't set, try alternative formats
-            if (selectElement.value !== code) {
-              console.log('[v0] Value mismatch, trying alternative formats')
-              // Try with language:country format if needed
-              const altValue = code
-              selectElement.value = altValue
-              console.log('[v0] Tried alt format:', altValue, ', result:', selectElement.value)
+            if (option.value === code) {
+              selectElement.selectedIndex = i
+              found = true
+              console.log('[v0] Found matching option for', code, 'at index', i)
+              break
             }
           }
           
-          // Dispatch change event
-          selectElement.dispatchEvent(new Event('change', { bubbles: true }))
-          selectElement.dispatchEvent(new Event('input', { bubbles: true }))
-          selectElement.dispatchEvent(new Event('click', { bubbles: true }))
-          
-          // Also trigger by setting innerHTML of the element
-          try {
-            const options = selectElement.querySelectorAll('option')
-            options.forEach(option => {
-              if (option.value === code) {
-                option.selected = true
-                console.log('[v0] Selected option:', code)
-              }
-            })
-          } catch (e) {
-            console.log('[v0] Error selecting option:', e)
-          }
-          
-          // Set cookie
-          if (code === 'en') {
-            eraseCookie(GOOGLETRANS_COOKIE)
-            console.log('[v0] Erased Google Translate cookie')
-          } else {
+          if (found) {
+            // Dispatch all necessary events
+            const event = new Event('change', { bubbles: true, cancelable: true })
+            selectElement.dispatchEvent(event)
+            selectElement.dispatchEvent(new Event('input', { bubbles: true }))
+            selectElement.dispatchEvent(new Event('click', { bubbles: true }))
+            
+            // Also set the cookie for persistence
             setCookie(GOOGLETRANS_COOKIE, `/en/${code}`)
-            console.log('[v0] Set Google Translate cookie to:', `/en/${code}`)
+            console.log('[v0] Language changed to:', code)
+            
+            setTimeout(() => {
+              setIsTranslating(false)
+              console.log('[v0] Translation finished')
+            }, 800)
+            return
+          } else {
+            console.log('[v0] Language code not found in options:', code)
           }
-          
-          setTimeout(() => {
-            console.log('[v0] Translation complete, setting isTranslating to false')
-            setIsTranslating(false)
-          }, 1500)
-          
-          return
         } catch (e) {
           console.log('[v0] Error during translation:', e)
         }
       } else {
-        console.log('[v0] Google Translate element not found yet')
+        console.log('[v0] Google Translate element not ready yet, attempt:', attempts)
       }
       
-      // Retry if element not found
-      if (attempts < 15) {
-        setTimeout(() => findAndTranslate(attempts + 1), 250)
+      // Retry
+      if (attempts < 20) {
+        setTimeout(() => translatePage(attempts + 1), 200)
       } else {
-        console.log('[v0] Max attempts reached, giving up')
+        console.log('[v0] Max retries reached for language:', code)
         setIsTranslating(false)
       }
     }
 
-    findAndTranslate()
+    translatePage()
   }, [])
 
   const value: LanguageContextType = {
