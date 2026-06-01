@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Briefcase, Users, Settings, LogOut, Edit2, Trash2, Eye, ChevronRight, Building2, MapPin, DollarSign, Clock, Crown, User, Search, Filter, TrendingUp, UserCheck, Bell, BarChart3, MessageCircle, Phone, AlertCircle, Check, X, Rocket, ShoppingCart, BadgeCheck, Shield, EyeOff } from 'lucide-react'
+import { Plus, Briefcase, Users, Settings, LogOut, Edit2, Trash2, Eye, ChevronRight, Building2, MapPin, DollarSign, Clock, Crown, User, Search, Filter, TrendingUp, UserCheck, Bell, BarChart3, MessageCircle, Phone, AlertCircle, Check, X, Rocket, ShoppingCart, BadgeCheck, Shield, EyeOff, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
-import { LanguageSelector } from '@/components/language-selector'
+import { useLanguage } from '@/lib/language-context'
 import { getMessagesForOwner, getAllJobs, getUnreadMessageCount, getApplicationsBySalonId, getAllJobSeekers, isCandidateUnlocked, deductSalonCredit, getSalonProfileByOwnerId, getJobSeekersForSalonOwners } from '@/lib/data-store'
 import type { Job, Application, CONTACT_CREDIT_PACKS } from '@/lib/types'
 import type { JobSeeker } from '@/lib/data-store'
@@ -78,6 +78,7 @@ type TabType = 'dashboard' | 'jobs' | 'applicants' | 'candidates' | 'settings'
 
 export function OwnerPanel() {
   const { user, logout, goToStep } = useApp()
+  const { setLanguage } = useLanguage()
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false)
@@ -87,6 +88,7 @@ export function OwnerPanel() {
   const [selectedApplicant, setSelectedApplicant] = useState<Application | null>(null)
   const [selectedCandidate, setSelectedCandidate] = useState<JobSeeker | null>(null)
   const [showEditJob, setShowEditJob] = useState<Job | null>(null)
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
   
   // Real data state
   const [ownerJobs, setOwnerJobs] = useState<Job[]>([])
@@ -269,7 +271,41 @@ export function OwnerPanel() {
             </div>
           </div>
 <div className="flex items-center gap-2">
-            <LanguageSelector variant="button" showNativeName={false} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+              className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Globe className="w-4 h-4" />
+              <span>Language</span>
+            </Button>
+            {showLanguageMenu && (
+              <div className="absolute top-full right-0 mt-2 w-40 bg-background border border-border rounded-lg shadow-lg z-50">
+                {[
+                  { code: 'en', name: 'English' },
+                  { code: 'hi', name: 'Hindi' },
+                  { code: 'te', name: 'Telugu' },
+                  { code: 'ta', name: 'Tamil' },
+                  { code: 'ml', name: 'Malayalam' },
+                  { code: 'kn', name: 'Kannada' },
+                  { code: 'ur', name: 'Urdu' },
+                  { code: 'gu', name: 'Gujarati' },
+                  { code: 'bn', name: 'Bengali' },
+                ].map(lang => (
+                  <button
+                    key={lang.code}
+                    onClick={() => {
+                      setLanguage(lang.code as any)
+                      setShowLanguageMenu(false)
+                    }}
+                    className="w-full px-4 py-2 text-left hover:bg-secondary transition-colors text-sm"
+                  >
+                    {lang.name}
+                  </button>
+                ))}
+              </div>
+            )}
             <button
               onClick={() => goToStep('messages')}
               className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center relative"

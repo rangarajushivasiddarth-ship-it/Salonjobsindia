@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Lock, MapPin, Building2, User, Unlock, Filter, ChevronRight, MessageCircle, Phone, X, Send, Crown, Briefcase, DollarSign, Clock, Star, Navigation } from 'lucide-react'
+import { Search, Lock, MapPin, Building2, User, Unlock, Filter, ChevronRight, MessageCircle, Phone, X, Send, Crown, Briefcase, DollarSign, Clock, Star, Navigation, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
-import { LanguageSelector } from '@/components/language-selector'
+import { useLanguage } from '@/lib/language-context'
 import { getAllJobs, canViewMoreShops, incrementShopsViewed, sendMessage, getSubscriptionByUserId, syncApprovedJobsFromCloud } from '@/lib/data-store'
 import type { Job, BeautyRole } from '@/lib/types'
 import { BEAUTY_ROLES, ROLE_CATEGORIES } from '@/lib/types'
@@ -34,6 +34,7 @@ interface SalonWithDetails {
 
 export function JobDiscovery() {
   const { user, goToStep, resume } = useApp()
+  const { setLanguage } = useLanguage()
   const [searchQuery, setSearchQuery] = useState('')
   const [showUnlockPrompt, setShowUnlockPrompt] = useState(false)
   const [selectedSalon, setSelectedSalon] = useState<SalonWithDetails | null>(null)
@@ -51,6 +52,7 @@ export function JobDiscovery() {
   const [salaryFilter, setSalaryFilter] = useState<string>('')
   const [sortBy, setSortBy] = useState<'distance' | 'salary' | 'rating' | 'newest'>('distance')
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
 
   // Get user location
   useEffect(() => {
@@ -231,7 +233,41 @@ export function JobDiscovery() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <LanguageSelector variant="button" showNativeName={false} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+              className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Globe className="w-4 h-4" />
+              <span>Language</span>
+            </Button>
+            {showLanguageMenu && (
+              <div className="absolute top-full right-0 mt-2 w-40 bg-background border border-border rounded-lg shadow-lg z-50">
+                {[
+                  { code: 'en', name: 'English' },
+                  { code: 'hi', name: 'Hindi' },
+                  { code: 'te', name: 'Telugu' },
+                  { code: 'ta', name: 'Tamil' },
+                  { code: 'ml', name: 'Malayalam' },
+                  { code: 'kn', name: 'Kannada' },
+                  { code: 'ur', name: 'Urdu' },
+                  { code: 'gu', name: 'Gujarati' },
+                  { code: 'bn', name: 'Bengali' },
+                ].map(lang => (
+                  <button
+                    key={lang.code}
+                    onClick={() => {
+                      setLanguage(lang.code as any)
+                      setShowLanguageMenu(false)
+                    }}
+                    className="w-full px-4 py-2 text-left hover:bg-secondary transition-colors text-sm"
+                  >
+                    {lang.name}
+                  </button>
+                ))}
+              </div>
+            )}
             <button
               onClick={() => goToStep('profile')}
               className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center"

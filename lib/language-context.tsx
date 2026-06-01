@@ -81,14 +81,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // Initialize language from storage and load Google Translate
   useEffect(() => {
     if (typeof window === 'undefined' || isInitialized) return
-
-    console.log('[v0] Language context initializing')
     
     // Load saved language
     try {
       const savedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) as LanguageCode
       if (savedLang && SUPPORTED_LANGUAGES.some(l => l.code === savedLang)) {
-        console.log('[v0] Loaded saved language:', savedLang)
         setCurrentLanguageState(savedLang)
       }
     } catch (e) {
@@ -97,10 +94,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
     // Load Google Translate script
     (window as any).googleTranslateElementInit = function() {
-      console.log('[v0] googleTranslateElementInit called')
       try {
         if ((window as any).google?.translate?.TranslateElement && document.getElementById('google_translate_element')) {
-          console.log('[v0] Creating Google Translate element')
           new (window as any).google.translate.TranslateElement(
             {
               pageLanguage: 'en',
@@ -111,13 +106,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
           )
         }
       } catch (e) {
-        console.log('[v0] Error in googleTranslateElementInit:', e)
+        // ignore
       }
     }
 
     // Load the script only once
     if (!document.getElementById('google-translate-script')) {
-      console.log('[v0] Loading Google Translate script')
       const script = document.createElement('script')
       script.id = 'google-translate-script'
       script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'

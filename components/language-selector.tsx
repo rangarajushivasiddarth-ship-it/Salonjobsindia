@@ -19,8 +19,6 @@ export function LanguageSelector({
   const { currentLanguage, setLanguage, isTranslating } = useLanguage()
   const [isOpen, setIsOpen] = useState(false)
 
-  console.log('[v0] LanguageSelector rendered - variant:', variant, 'currentLanguage:', currentLanguage)
-
   const currentLangObj = SUPPORTED_LANGUAGES.find(l => l.code === currentLanguage)
 
   const handleLanguageSelect = (code: LanguageCode) => {
