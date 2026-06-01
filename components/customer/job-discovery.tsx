@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Lock, MapPin, Building2, User, Unlock, Filter, ChevronRight, MessageCircle, Phone, X, Send, Crown, Briefcase, DollarSign, Clock, Star, Navigation, Globe } from 'lucide-react'
+import { Search, Lock, MapPin, Building2, User, Unlock, Filter, ChevronRight, MessageCircle, Phone, X, Send, Crown, Briefcase, DollarSign, Clock, Star, Navigation, Globe, BadgeCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
 import { useLanguage, type LanguageCode } from '@/lib/language-context'
 import { useTranslation } from '@/lib/use-translation'
-import { getAllJobs, canViewMoreShops, incrementShopsViewed, sendMessage, getSubscriptionByUserId, syncApprovedJobsFromCloud } from '@/lib/data-store'
+import { getAllJobs, canViewMoreShops, incrementShopsViewed, sendMessage, getSubscriptionByUserId, syncApprovedJobsFromCloud, getSalonProfileByOwnerId } from '@/lib/data-store'
 import type { Job, BeautyRole } from '@/lib/types'
 import { BEAUTY_ROLES, ROLE_CATEGORIES } from '@/lib/types'
 import { BrandingBanner } from './branding-banner'
@@ -19,6 +19,8 @@ interface SalonWithDetails {
   ownerPhone: string
   rating?: number
   reviewCount?: number
+  logoUrl?: string
+  isVerified?: boolean
   job?: {
     role: BeautyRole
     salary: string
@@ -101,11 +103,17 @@ export function JobDiscovery() {
           )
         }
         
+        // Get salon profile for logo and verified status
+        const salonProfile = getSalonProfileByOwnerId(job.salonId || job.id)
+        const isVerified = job.isVerified || !!(salonProfile?.isVerified && salonProfile.verifiedUntil && new Date(salonProfile.verifiedUntil) > new Date())
+        
         return {
           id: job.salonId || job.id,
           name: job.salonName,
           ownerId: job.salonId || job.id,
           ownerPhone: job.salonMobile || job.contact || '',
+          logoUrl: job.salonLogo || salonProfile?.logoUrl,
+          isVerified: isVerified,
           job: {
             role: job.role as BeautyRole,
             salary: job.salaryFixed || job.salaryRange || 'Negotiable',
@@ -410,18 +418,31 @@ export function JobDiscovery() {
                 style={{ animationDelay: `${index * 30}ms` }}
               >
                 <div className="flex items-start gap-4">
-                  {/* Salon Avatar */}
-                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 ${
-                    isUnlocked ? 'bg-primary/20' : 'bg-secondary/80'
-                  }`}>
-                    <Building2 className={`w-7 h-7 ${isUnlocked ? 'text-primary' : 'text-muted-foreground'}`} />
-                  </div>
+                  {/* Salon Avatar / Logo */}
+                  {salon.logoUrl ? (
+                    <img
+                      src={salon.logoUrl}
+                      alt={salon.name}
+                      className="w-14 h-14 rounded-xl object-cover shrink-0 border border-border/30"
+                    />
+                  ) : (
+                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 ${
+                      isUnlocked ? 'bg-primary/20' : 'bg-secondary/80'
+                    }`}>
+                      <Building2 className={`w-7 h-7 ${isUnlocked ? 'text-primary' : 'text-muted-foreground'}`} />
+                    </div>
+                  )}
                   
                   {/* Salon Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h3 className="font-semibold text-base">{salon.name}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-base">{salon.name}</h3>
+                          {salon.isVerified && (
+                            <BadgeCheck className="w-4 h-4 text-blue-400" />
+                          )}
+                        </div>
                         {salon.job && (
                           <p className="text-sm text-primary font-medium">{salon.job.role}</p>
                         )}
@@ -581,11 +602,24 @@ export function JobDiscovery() {
             
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center">
-                <Building2 className="w-8 h-8 text-primary" />
-              </div>
+              {selectedSalon.logoUrl ? (
+                <img
+                  src={selectedSalon.logoUrl}
+                  alt={selectedSalon.name}
+                  className="w-16 h-16 rounded-xl object-cover border border-border/30"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center">
+                  <Building2 className="w-8 h-8 text-primary" />
+                </div>
+              )}
               <div>
-                <h2 className="text-xl font-bold">{selectedSalon.name}</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-bold">{selectedSalon.name}</h2>
+                  {selectedSalon.isVerified && (
+                    <BadgeCheck className="w-5 h-5 text-blue-400" />
+                  )}
+                </div>
                 {selectedSalon.job && (
                   <p className="text-primary font-medium">{selectedSalon.job.role}</p>
                 )}
