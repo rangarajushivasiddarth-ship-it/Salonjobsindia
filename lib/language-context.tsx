@@ -150,23 +150,46 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       const selectElement = document.querySelector('.goog-te-combo') as HTMLSelectElement
       
       if (selectElement) {
-        console.log('[v0] Found Google Translate combo element, setting language to:', code)
+        console.log('[v0] Found Google Translate combo element')
+        console.log('[v0] Available options:', Array.from(selectElement.options).map(o => o.value))
+        
         try {
           if (code === 'en') {
             // Reset to English
             selectElement.value = 'en'
-            console.log('[v0] Set to English')
+            console.log('[v0] Set to English, value:', selectElement.value)
           } else {
-            // Convert language code to Google Translate format
-            const langCode = code
-            selectElement.value = langCode
-            console.log('[v0] Set to language:', langCode)
+            // Try to set the language
+            selectElement.value = code
+            console.log('[v0] Set to language:', code, ', actual value:', selectElement.value)
+            
+            // If value didn't set, try alternative formats
+            if (selectElement.value !== code) {
+              console.log('[v0] Value mismatch, trying alternative formats')
+              // Try with language:country format if needed
+              const altValue = code
+              selectElement.value = altValue
+              console.log('[v0] Tried alt format:', altValue, ', result:', selectElement.value)
+            }
           }
           
           // Dispatch change event
           selectElement.dispatchEvent(new Event('change', { bubbles: true }))
           selectElement.dispatchEvent(new Event('input', { bubbles: true }))
           selectElement.dispatchEvent(new Event('click', { bubbles: true }))
+          
+          // Also trigger by setting innerHTML of the element
+          try {
+            const options = selectElement.querySelectorAll('option')
+            options.forEach(option => {
+              if (option.value === code) {
+                option.selected = true
+                console.log('[v0] Selected option:', code)
+              }
+            })
+          } catch (e) {
+            console.log('[v0] Error selecting option:', e)
+          }
           
           // Set cookie
           if (code === 'en') {
