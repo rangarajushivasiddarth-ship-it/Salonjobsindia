@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
 import { useLanguage } from '@/lib/language-context'
+import { useTranslation } from '@/lib/use-translation'
 import { getMessagesForOwner, getAllJobs, getUnreadMessageCount, getApplicationsBySalonId, getAllJobSeekers, isCandidateUnlocked, deductSalonCredit, getSalonProfileByOwnerId, getJobSeekersForSalonOwners } from '@/lib/data-store'
 import type { Job, Application, CONTACT_CREDIT_PACKS } from '@/lib/types'
 import type { JobSeeker } from '@/lib/data-store'
@@ -79,6 +80,7 @@ type TabType = 'dashboard' | 'jobs' | 'applicants' | 'candidates' | 'settings'
 export function OwnerPanel() {
   const { user, logout, goToStep } = useApp()
   const { setLanguage } = useLanguage()
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false)

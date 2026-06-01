@@ -12,6 +12,9 @@ export const translations = {
     
     // Job Seeker
     'searchJobs': 'Search for Jobs',
+    'searchJobsSalonsRoles': 'Search jobs, salons, roles...',
+    'findJobs': 'Find Jobs',
+    'openingsNearYou': 'openings near you',
     'jobTitle': 'Job Title',
     'location': 'Location',
     'salary': 'Salary',
@@ -79,7 +82,10 @@ export const translations = {
     'telugu': 'తెలుగు',
     
     // Job Seeker
-    'searchJobs': 'नौकरियों की खोज करें',
+    'searchJobs': 'नौकरियों के लिए खोजें',
+    'searchJobsSalonsRoles': 'नौकरियां, सैलून, भूमिकाएं खोजें...',
+    'findJobs': 'नौकरियां खोजें',
+    'openingsNearYou': 'आपके पास खुली स्थান',
     'jobTitle': 'नौकरी का शीर्षक',
     'location': 'स्थान',
     'salary': 'वेतन',
@@ -148,6 +154,9 @@ export const translations = {
     
     // Job Seeker
     'searchJobs': 'ఉద్యోగాల కోసం శోధించండి',
+    'searchJobsSalonsRoles': 'ఉద్యోగాలు, సెలూన్‌లు, భూమికలు శోధించండి...',
+    'findJobs': 'ఉద్యోగాలను కనుగొనండి',
+    'openingsNearYou': 'మీ దగ్గర ఓపెనింగ్‌లు',
     'jobTitle': 'ఉద్యోగం పేరు',
     'location': 'స్థానం',
     'salary': 'జీతం',

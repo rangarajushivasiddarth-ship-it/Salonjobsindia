@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
 import { useLanguage } from '@/lib/language-context'
+import { useTranslation } from '@/lib/use-translation'
 import { getAllJobs, canViewMoreShops, incrementShopsViewed, sendMessage, getSubscriptionByUserId, syncApprovedJobsFromCloud } from '@/lib/data-store'
 import type { Job, BeautyRole } from '@/lib/types'
 import { BEAUTY_ROLES, ROLE_CATEGORIES } from '@/lib/types'
@@ -35,6 +36,7 @@ interface SalonWithDetails {
 export function JobDiscovery() {
   const { user, goToStep, resume } = useApp()
   const { setLanguage } = useLanguage()
+  const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState('')
   const [showUnlockPrompt, setShowUnlockPrompt] = useState(false)
   const [selectedSalon, setSelectedSalon] = useState<SalonWithDetails | null>(null)
@@ -222,14 +224,14 @@ export function JobDiscovery() {
         <BrandingBanner section="job_seeker" />
       </div>
       
-{/* Header */}
+      {/* Header */}
       <header className="relative z-10 p-4 glass">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-xl font-bold">Find Jobs</h1>
+            <h1 className="text-xl font-bold">{t('findJobs')}</h1>
             <p className="text-sm text-muted-foreground flex items-center gap-1">
               {userLocation && <Navigation className="w-3 h-3" />}
-              {filteredSalons.length} openings near you
+              {filteredSalons.length} {t('openingsNearYou')}
             </p>
           </div>
           <div className="flex items-center gap-3 relative">
@@ -240,7 +242,7 @@ export function JobDiscovery() {
               className="flex items-center gap-2 bg-yellow-500 text-black hover:bg-yellow-600 font-bold"
             >
               <Globe className="w-5 h-5" />
-              <span className="text-base">Language</span>
+              <span className="text-base">{t('language')}</span>
             </Button>
             {showLanguageMenu && (
               <div className="absolute top-full right-0 mt-2 w-48 bg-background border-2 border-primary rounded-lg shadow-2xl z-50">
@@ -275,7 +277,7 @@ export function JobDiscovery() {
         <div className="relative mb-3">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
-            placeholder="Search jobs, salons, roles..."
+            placeholder={t('searchJobsSalonsRoles')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="h-12 pl-12 pr-12 bg-secondary/50 border-border/50"
