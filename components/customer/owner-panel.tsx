@@ -324,19 +324,19 @@ export function OwnerPanel() {
         <div className="grid grid-cols-4 gap-2">
           <div className="p-3 glass-card rounded-xl text-center">
             <p className="text-xl font-bold text-primary">{stats.liveJobs}</p>
-            <p className="text-[10px] text-muted-foreground">Live Jobs</p>
+            <p className="text-sm text-muted-foreground">Live Jobs</p>
           </div>
           <div className="p-3 glass-card rounded-xl text-center">
             <p className="text-xl font-bold text-accent">{stats.totalApplications}</p>
-            <p className="text-[10px] text-muted-foreground">Applications</p>
+            <p className="text-sm text-muted-foreground">Applications</p>
           </div>
           <div className="p-3 glass-card rounded-xl text-center">
             <p className="text-xl font-bold text-green-400">{stats.selected}</p>
-            <p className="text-[10px] text-muted-foreground">Selected</p>
+            <p className="text-sm text-muted-foreground">Selected</p>
           </div>
           <div className="p-3 glass-card rounded-xl text-center">
             <p className="text-xl font-bold text-foreground">{stats.contactCredits}</p>
-            <p className="text-[10px] text-muted-foreground">Credits</p>
+            <p className="text-sm text-muted-foreground">Credits</p>
           </div>
         </div>
       </header>

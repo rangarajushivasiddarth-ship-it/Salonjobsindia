@@ -214,7 +214,7 @@ export function MessagesScreen() {
       </div>
       
       <div className="flex items-center justify-end gap-1 mt-2 text-muted-foreground">
-        <span className="text-[10px]">{formatTime(message.timestamp)}</span>
+        <span className="text-sm">{formatTime(message.timestamp)}</span>
       </div>
     </div>
   )
@@ -377,7 +377,7 @@ export function MessagesScreen() {
                     <div className={`flex items-center justify-end gap-1 mt-1 ${
                       message.isMe ? 'text-primary-foreground/70' : 'text-muted-foreground'
                     }`}>
-                      <span className="text-[10px]">
+                      <span className="text-sm">
                         {formatTime(message.timestamp)}
                       </span>
                       {message.isMe && (

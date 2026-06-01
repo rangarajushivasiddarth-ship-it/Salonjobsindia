@@ -337,7 +337,7 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
         
         {/* Footer */}
         <div className="mt-8 text-center">
-          <p className="text-[10px] text-muted-foreground/60">
+          <p className="text-sm text-muted-foreground/60">
             © 2026 FItonze Private Limited. All Rights Reserved.
           </p>
         </div>

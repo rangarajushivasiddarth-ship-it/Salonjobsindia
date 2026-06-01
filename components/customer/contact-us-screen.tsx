@@ -288,7 +288,7 @@ export function ContactUsScreen() {
         <p className="text-white/40 text-xs mb-2">
           © 2026 FItonze Private Limited. All Rights Reserved.
         </p>
-        <p className="text-white/30 text-[10px]">
+        <p className="text-white/30 text-sm">
           Application developed by Rangaraju Shiva Siddarth
         </p>
       </footer>
