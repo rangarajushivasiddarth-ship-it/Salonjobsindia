@@ -3,7 +3,7 @@
 // ==========================================
 
 // User Types
-export type UserRole = 'job_seeker' | 'salon_owner' | 'employer'
+export type UserRole = 'job_seeker' | 'salon_owner' | 'employer' | 'admin'
 
 export interface User {
   id: string

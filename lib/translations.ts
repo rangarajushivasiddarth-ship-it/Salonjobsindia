@@ -86,6 +86,7 @@ export const translations = {
     'alreadyHaveAccount': 'Already have an account?',
     'welcomeBack': 'Welcome Back',
     'createAccount': 'Create Account',
+    'emailOrPhoneRequired': 'Email or Phone is required',
     
     'aboutUs': 'About Us',
     'craftingBeautySince': 'Crafting Beauty Since 2003',
@@ -197,6 +198,7 @@ export const translations = {
     'alreadyHaveAccount': 'पहले से खाता है?',
     'welcomeBack': 'वापसी पर स्वागत है',
     'createAccount': 'खाता बनाएं',
+    'emailOrPhoneRequired': 'ईमेल या फोन आवश्यक है',
     
     'aboutUs': 'हमारे बारे में',
     'craftingBeautySince': '2003 से सौंदर्य को निखारना',
@@ -308,6 +310,7 @@ export const translations = {
     'alreadyHaveAccount': 'ఖాతా ఉందు?',
     'welcomeBack': 'సుస్వాగతం',
     'createAccount': 'ఖాతా సృష్టించండి',
+    'emailOrPhoneRequired': 'ఈమెయిల్ లేదా ఫోన్ నంబర్ అవసరం',
     
     'aboutUs': 'మా గురించి',
     'craftingBeautySince': '2003 నుండి సౌందర్యాన్ని రూపొందిస్తూ',

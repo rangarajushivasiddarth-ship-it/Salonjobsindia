@@ -226,26 +226,29 @@ export const UserService = {
   
   // Login user
   login: async (credentials: {
-    email: string
-    phone: string
+    email?: string
+    phone?: string
     password: string
   }): Promise<{ success: boolean; user?: User; error?: string }> => {
     const users = getFromStorage<User>(STORAGE_KEYS.USERS)
     
-    const user = users.find(u => 
-      u.email.toLowerCase() === credentials.email.toLowerCase()
-    )
+    // Find user by email or phone
+    const user = users.find(u => {
+      if (credentials.email && u.email?.toLowerCase() === credentials.email.toLowerCase()) {
+        return true
+      }
+      if (credentials.phone && u.phone === credentials.phone) {
+        return true
+      }
+      return false
+    })
     
     if (!user) {
-      return { success: false, error: 'No account found with this email. Please sign up.' }
+      return { success: false, error: 'No account found with this email or phone. Please sign up.' }
     }
     
     if (user.password !== credentials.password) {
       return { success: false, error: 'Invalid password. Please try again.' }
-    }
-    
-    if (user.phone !== credentials.phone) {
-      return { success: false, error: 'Phone number does not match. Please check and try again.' }
     }
     
     // Save session

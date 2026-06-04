@@ -35,15 +35,15 @@ export function AuthScreen({ onSignIn, onSignUp, onBack }: AuthScreenProps) {
   const validateSignInForm = () => {
     const newErrors: Record<string, string> = {}
     
-    if (!email) {
-      newErrors.email = 'Email ' + t('isRequired')
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!email && !phone) {
+      newErrors.email = t('emailOrPhoneRequired')
+    }
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = t('invalidEmail')
     }
     
-    if (!phone) {
-      newErrors.phone = 'Phone ' + t('isRequired')
-    } else if (!/^\d{10}$/.test(phone.replace(/\D/g, ''))) {
+    if (phone && !/^\d{10}$/.test(phone.replace(/\D/g, ''))) {
       newErrors.phone = t('invalidPhone')
     }
     

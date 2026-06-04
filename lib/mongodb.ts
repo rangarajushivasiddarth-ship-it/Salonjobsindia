@@ -1,4 +1,4 @@
-import { MongoClient, Db, Collection, ObjectId } from 'mongodb'
+import { MongoClient, Db, Collection, ObjectId, Document } from 'mongodb'
 
 // MongoDB Atlas connection
 const MONGODB_URI = process.env.MONGODB_URI || ''

@@ -97,7 +97,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const appliedJobs = JSON.parse(localStorage.getItem(APPLIED_JOBS_KEY) || '[]')
           
           // Get subscription status
-          const subscription = SubscriptionService.getByUserId(currentUser.id)
+          const rawSubscription = SubscriptionService.getByUserId(currentUser.id)
+          const subscription: Subscription | null = rawSubscription ? {
+            ...rawSubscription,
+            userRole: rawSubscription.userType as UserRole,
+            planType: rawSubscription.plan as any,
+            planName: rawSubscription.plan,
+            paymentMethod: 'upi', // Default fallback
+            createdAt: new Date(rawSubscription.createdAt),
+            expiresAt: new Date(rawSubscription.expiresAt)
+          } as unknown as Subscription : null
           
           // Get job seeker profile (resume data) if user is a job seeker
           const jobSeekerProfile = currentUser.role === 'job_seeker' 
@@ -108,13 +117,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // Get unread notifications count
           const unreadCount = NotificationService.getUnreadCount(currentUser.id)
           
+          const user: User = {
+            ...currentUser,
+            createdAt: new Date(currentUser.createdAt),
+            subscriptionExpiry: currentUser.subscriptionExpiry ? new Date(currentUser.subscriptionExpiry) : undefined
+          }
+
           setState(prev => ({
             ...prev,
-            user: currentUser as unknown as User,
+            user,
             resume,
             savedJobs,
             appliedJobs,
-            subscription: subscription as unknown as Subscription,
+            subscription,
             unreadNotifications: unreadCount,
             isAuthenticated: true,
             isLoading: false,
@@ -220,12 +235,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const result = await UserService.login({ email, password, phone })
     
     if (result.success && result.user) {
-      const user = result.user as unknown as User
+      const userData = result.user
+      const user: User = {
+        ...userData,
+        createdAt: new Date(userData.createdAt),
+        subscriptionExpiry: userData.subscriptionExpiry ? new Date(userData.subscriptionExpiry) : undefined
+      }
       
       // Load user data
       const savedJobs = JSON.parse(localStorage.getItem(SAVED_JOBS_KEY) || '[]')
       const appliedJobs = JSON.parse(localStorage.getItem(APPLIED_JOBS_KEY) || '[]')
-      const subscription = SubscriptionService.getByUserId(user.id)
+      const rawSubscription = SubscriptionService.getByUserId(user.id)
+      const subscription: Subscription | null = rawSubscription ? {
+        ...rawSubscription,
+        userRole: rawSubscription.userType as UserRole,
+        planType: rawSubscription.plan as any,
+        planName: rawSubscription.plan,
+        paymentMethod: 'upi', // Default fallback
+        createdAt: new Date(rawSubscription.createdAt),
+        expiresAt: new Date(rawSubscription.expiresAt)
+      } as unknown as Subscription : null
+
       const unreadCount = NotificationService.getUnreadCount(user.id)
       
       // Load job seeker profile (resume data) if user is a job seeker
@@ -240,7 +270,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         resume,
         savedJobs,
         appliedJobs,
-        subscription: subscription as unknown as Subscription,
+        subscription,
         unreadNotifications: unreadCount,
         isAuthenticated: true,
         currentStep: user.role ? 
@@ -260,7 +290,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const result = await UserService.register({ name, email, password, phone })
     
     if (result.success && result.user) {
-      const user = result.user as unknown as User
+      const userData = result.user
+      const user: User = {
+        ...userData,
+        createdAt: new Date(userData.createdAt),
+        subscriptionExpiry: userData.subscriptionExpiry ? new Date(userData.subscriptionExpiry) : undefined
+      }
       
       setState(prev => ({
         ...prev,
@@ -294,9 +329,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const refreshUser = useCallback(async () => {
     const currentUser = UserService.getCurrentUser()
     if (currentUser) {
+      const user: User = {
+        ...currentUser,
+        createdAt: new Date(currentUser.createdAt),
+        subscriptionExpiry: currentUser.subscriptionExpiry ? new Date(currentUser.subscriptionExpiry) : undefined
+      }
       setState(prev => ({
         ...prev,
-        user: currentUser as unknown as User,
+        user,
       }))
     }
   }, [])
@@ -314,9 +354,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const updatedUser = await UserService.updateUser(state.user.id, { role })
     
     if (updatedUser) {
+      const user: User = {
+        ...updatedUser,
+        createdAt: new Date(updatedUser.createdAt),
+        subscriptionExpiry: updatedUser.subscriptionExpiry ? new Date(updatedUser.subscriptionExpiry) : undefined
+      }
       setState(prev => ({
         ...prev,
-        user: updatedUser as unknown as User,
+        user,
         currentStep: role === 'job_seeker' ? 'resume' : 'salon-profile',
       }))
     }
@@ -403,12 +448,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const updateUser = useCallback(async (updates: Partial<User>) => {
     if (!state.user) return
     
-    const updatedUser = await UserService.updateUser(state.user.id, updates as Parameters<typeof UserService.updateUser>[1])
+    // Convert Date to string for storage
+    const storageUpdates = { ...updates } as any
+    if (updates.subscriptionExpiry instanceof Date) {
+      storageUpdates.subscriptionExpiry = updates.subscriptionExpiry.toISOString()
+    }
+    if (updates.createdAt instanceof Date) {
+      storageUpdates.createdAt = updates.createdAt.toISOString()
+    }
+
+    const updatedUser = await UserService.updateUser(state.user.id, storageUpdates)
     
     if (updatedUser) {
+      const user: User = {
+        ...updatedUser,
+        createdAt: new Date(updatedUser.createdAt),
+        subscriptionExpiry: updatedUser.subscriptionExpiry ? new Date(updatedUser.subscriptionExpiry) : undefined
+      }
       setState(prev => ({
         ...prev,
-        user: updatedUser as unknown as User,
+        user,
       }))
     }
   }, [state.user])

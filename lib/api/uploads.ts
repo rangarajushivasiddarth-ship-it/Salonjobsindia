@@ -68,7 +68,7 @@ const uploadFile = async (
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Upload failed';
-    throw new Error(errorMessage);
+    throw new Error(errorMessage, { cause: error });
   }
 };
 
@@ -140,7 +140,7 @@ export const uploadMultipleImages = async (
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Upload failed';
-    throw new Error(errorMessage);
+    throw new Error(errorMessage, { cause: error });
   }
 };
 
