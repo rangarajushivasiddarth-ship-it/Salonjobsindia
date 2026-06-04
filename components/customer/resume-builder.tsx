@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { ArrowLeft, User, Briefcase, Clock, DollarSign, MapPin, Navigation, X, Plus, Check, Crown, Upload, FileText, Calendar, Search } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ArrowLeft, User, Briefcase, Clock, DollarSign, MapPin, Navigation, X, Plus, Check, Crown, Upload, FileText, Calendar, Search, AlertCircle, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
@@ -27,6 +27,8 @@ export function ResumeBuilder() {
   const [isLoading, setIsLoading] = useState(false)
   const [detectingLocation, setDetectingLocation] = useState(false)
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
+  const [locationDenied, setLocationDenied] = useState(false)
+  const [locationError, setLocationError] = useState<string>('')
   
   const [formData, setFormData] = useState({
     name: '',
@@ -189,63 +191,130 @@ export function ResumeBuilder() {
     }
   }
 
-  const detectLocation = async () => {
-    setDetectingLocation(true)
+  // Load cached location from localStorage on component mount
+  useEffect(() => {
+    const cachedLocation = localStorage.getItem('userLocation')
+    if (cachedLocation) {
+      try {
+        const location = JSON.parse(cachedLocation)
+        setFormData(prev => ({
+          ...prev,
+          location
+        }))
+      } catch (e) {
+        console.log('[v0] Failed to load cached location')
+      }
+    }
     
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords
+    // Auto-detect location on first load if not cached
+    if (!cachedLocation && !detectingLocation && !locationDenied) {
+      detectLocation(true)
+    }
+  }, [])
+
+  // Save location to localStorage whenever it changes
+  useEffect(() => {
+    if (formData.location.address && formData.location.lat && formData.location.lng) {
+      localStorage.setItem('userLocation', JSON.stringify(formData.location))
+    }
+  }, [formData.location])
+
+  const detectLocation = async (isAutoDetect = false) => {
+    setDetectingLocation(true)
+    setLocationError('')
+    setLocationDenied(false)
+    
+    if (!('geolocation' in navigator)) {
+      setDetectingLocation(false)
+      setLocationError('Geolocation not supported on this device')
+      return
+    }
+
+    // Set a timeout for geolocation request (10 seconds)
+    const timeoutId = setTimeout(() => {
+      setDetectingLocation(false)
+      setLocationError('Location detection timed out. Please try again or enter manually.')
+    }, 10000)
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        clearTimeout(timeoutId)
+        const { latitude, longitude } = position.coords
+        
+        try {
+          // Reverse geocode using Nominatim
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+            { signal: AbortSignal.timeout(5000) }
+          )
           
-          try {
-            // Reverse geocode to get city, area, and town
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
-            )
-            const data = await response.json()
-            
-            const address = data.address || {}
-            const town = address.suburb || address.neighbourhood || address.hamlet || ''
-            const area = address.city_district || address.county || address.state_district || ''
-            const city = address.city || address.town || address.village || address.municipality || ''
-            
-            // Build display string with available parts
-            const locationParts = [town, area, city].filter(Boolean)
-            const displayAddress = locationParts.length > 0 
-              ? locationParts.join(', ')
-              : 'Location Detected'
-            
-            setFormData(prev => ({
-              ...prev,
-              location: {
-                lat: latitude,
-                lng: longitude,
-                address: displayAddress,
-              }
-            }))
-          } catch {
-            // Fallback if geocoding fails
-            setFormData(prev => ({
-              ...prev,
-              location: {
-                lat: latitude,
-                lng: longitude,
-                address: 'Location Detected',
-              }
-            }))
+          if (!response.ok) throw new Error('Geocoding failed')
+          
+          const data = await response.json()
+          
+          const address = data.address || {}
+          const town = address.suburb || address.neighbourhood || address.hamlet || ''
+          const area = address.city_district || address.county || address.state_district || ''
+          const city = address.city || address.town || address.village || address.municipality || ''
+          
+          // Build display string with available parts
+          const locationParts = [town, area, city].filter(Boolean)
+          const displayAddress = locationParts.length > 0 
+            ? locationParts.join(', ')
+            : 'Location Detected'
+          
+          const newLocation = {
+            lat: latitude,
+            lng: longitude,
+            address: displayAddress,
           }
           
-          setDetectingLocation(false)
-        },
-        () => {
-          setDetectingLocation(false)
-          setErrors(prev => ({ ...prev, location: 'Could not detect location' }))
+          setFormData(prev => ({
+            ...prev,
+            location: newLocation
+          }))
+          
+          setLocationError('')
+          setLocationDenied(false)
+        } catch (error) {
+          console.log('[v0] Geocoding failed, using coordinates:', error)
+          // Fallback: use coordinates without geocoding
+          const newLocation = {
+            lat: latitude,
+            lng: longitude,
+            address: 'Location Detected (Coordinates)',
+          }
+          
+          setFormData(prev => ({
+            ...prev,
+            location: newLocation
+          }))
         }
-      )
-    } else {
-      setDetectingLocation(false)
-      setErrors(prev => ({ ...prev, location: 'Geolocation not supported' }))
-    }
+        
+        setDetectingLocation(false)
+      },
+      (error) => {
+        clearTimeout(timeoutId)
+        setDetectingLocation(false)
+        
+        // Handle different error codes
+        if (error.code === error.PERMISSION_DENIED) {
+          setLocationDenied(true)
+          setLocationError('Location access denied. Please enable location permissions in your browser settings, or enter your location manually.')
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          setLocationError('Location information unavailable. Please enable GPS or try again.')
+        } else if (error.code === error.TIMEOUT) {
+          setLocationError('Location detection timed out. Please try again or enter manually.')
+        } else {
+          setLocationError('Unable to detect location. Please enter manually.')
+        }
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 8000,
+        maximumAge: 300000 // Cache location for 5 minutes
+      }
+    )
   }
 
   const validateStep = () => {
@@ -860,43 +929,76 @@ export function ResumeBuilder() {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">Your Location</label>
                 
+                {/* Error message - prominent and clear */}
+                {locationError && (
+                  <div className="flex gap-3 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm text-amber-800 dark:text-amber-200">{locationError}</p>
+                      {locationDenied && (
+                        <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                          To enable location access: Settings → Privacy → Location → Allow for this site
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
                 {/* Auto-detect button */}
                 <Button
-                  onClick={detectLocation}
+                  onClick={() => detectLocation(false)}
                   disabled={detectingLocation}
                   variant="outline"
                   className="w-full h-14 border-primary/50 text-primary hover:bg-primary/10"
                 >
                   {detectingLocation ? (
-                    <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin mr-2" />
+                    <>
+                      <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin mr-2" />
+                      Detecting...
+                    </>
+                  ) : locationDenied ? (
+                    <>
+                      <RotateCcw className="w-5 h-5 mr-2" />
+                      Try Again
+                    </>
                   ) : (
-                    <Navigation className="w-5 h-5 mr-2" />
+                    <>
+                      <Navigation className="w-5 h-5 mr-2" />
+                      Auto-detect Location
+                    </>
                   )}
-                  {detectingLocation ? 'Detecting...' : 'Auto-detect Location'}
                 </Button>
                 
-                {/* Manual input */}
+                {/* Manual input - always available as fallback */}
                 <div className="relative">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
                   <Input
-                    placeholder="Or enter address manually"
+                    placeholder="Or enter your address manually"
                     value={formData.location.address}
-                    onChange={(e) => setFormData(prev => ({ 
-                      ...prev, 
-                      location: { ...prev.location, address: e.target.value } 
-                    }))}
+                    onChange={(e) => {
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        location: { ...prev.location, address: e.target.value } 
+                      }))
+                      // Clear error when user manually enters location
+                      if (e.target.value.trim()) {
+                        setLocationError('')
+                      }
+                    }}
                     className="h-14 pl-12 bg-secondary/50 border-border/50 focus:border-primary"
                   />
                 </div>
                 
-                {formData.location.address && (
+                {/* Location confirmed badge */}
+                {formData.location.address && !locationError && (
                   <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-lg">
                     <Check className="w-5 h-5 text-primary" />
                     <span className="text-sm text-primary">{formData.location.address}</span>
                   </div>
                 )}
                 
-                {errors.location && <p className="text-sm text-destructive">{errors.location}</p>}
+                {/* Validation error - only show if form validation failed */}
+                {errors.location && !locationError && <p className="text-sm text-destructive">{errors.location}</p>}
               </div>
             </div>
           </div>
