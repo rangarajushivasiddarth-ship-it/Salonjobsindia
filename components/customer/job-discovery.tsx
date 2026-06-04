@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Lock, MapPin, Building2, User, Unlock, Filter, ChevronRight, MessageCircle, Phone, X, Send, Crown, Briefcase, DollarSign, Clock, Star, Navigation, Globe, BadgeCheck } from 'lucide-react'
+import { Search, Lock, MapPin, Building2, User, Unlock, Filter, ChevronRight, MessageCircle, Phone, X, Send, Crown, Briefcase, DollarSign, Clock, Star, Navigation, Globe, BadgeCheck, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
@@ -39,6 +39,31 @@ export function JobDiscovery() {
   const { user, goToStep, resume } = useApp()
   const { setLanguage } = useLanguage()
   const { t } = useTranslation()
+
+  // CRITICAL: Resume verification gate - job seekers MUST complete resume before accessing job discovery
+  useEffect(() => {
+    if (!resume || !resume.name || !resume.skills?.length) {
+      console.log('[v0] Resume not complete, redirecting to resume builder')
+      goToStep('resume')
+    }
+  }, [resume, goToStep])
+
+  // If resume is incomplete, don't render the discovery UI
+  if (!resume || !resume.name || !resume.skills?.length) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
+        <AlertCircle className="w-12 h-12 text-amber-500 mb-4" />
+        <h2 className="text-xl font-semibold mb-2">Resume Required</h2>
+        <p className="text-muted-foreground text-center mb-6">
+          Please complete your profile and upload your documents to browse jobs
+        </p>
+        <Button onClick={() => goToStep('resume')}>
+          Complete Profile
+        </Button>
+      </div>
+    )
+  }
+
   const [searchQuery, setSearchQuery] = useState('')
   const [showUnlockPrompt, setShowUnlockPrompt] = useState(false)
   const [selectedSalon, setSelectedSalon] = useState<SalonWithDetails | null>(null)
