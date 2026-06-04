@@ -285,6 +285,8 @@ export function ResumeBuilder() {
 
   // Save location to localStorage whenever it changes
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    
     if (formData.location.address && formData.location.lat && formData.location.lng) {
       localStorage.setItem('userLocation', JSON.stringify(formData.location))
     }

@@ -76,6 +76,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     
     const checkAuth = async () => {
       try {
+        // CRITICAL: Check if we're on client before accessing browser APIs
+        if (typeof window === 'undefined') {
+          if (isMounted) {
+            setState(prev => ({ ...prev, isLoading: false }))
+          }
+          return
+        }
+        
         // Run expiry checks on app load with error handling
         try {
           checkAndExpireJobs()
