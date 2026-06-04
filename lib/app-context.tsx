@@ -72,6 +72,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Check for existing session on mount
   useEffect(() => {
+    let isMounted = true // Prevent state update on unmount
+    
     const checkAuth = async () => {
       try {
         // Run expiry checks on app load with error handling
@@ -89,7 +91,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         
         const currentUser = UserService.getCurrentUser()
         
-        if (currentUser) {
+        if (currentUser && isMounted) {
           // Load saved jobs and applied jobs
           const savedJobs = JSON.parse(localStorage.getItem(SAVED_JOBS_KEY) || '[]')
           const appliedJobs = JSON.parse(localStorage.getItem(APPLIED_JOBS_KEY) || '[]')
@@ -128,11 +130,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         console.error('[v0] Auth check failed:', error)
       }
       
-      setState(prev => ({ ...prev, isLoading: false }))
+      if (isMounted) {
+        setState(prev => ({ ...prev, isLoading: false }))
+      }
     }
     
     // Small delay for splash screen
-    setTimeout(checkAuth, 1500)
+    const timeoutId = setTimeout(checkAuth, 1500)
+    
+    // Cleanup: prevent state updates if component unmounts
+    return () => {
+      isMounted = false
+      clearTimeout(timeoutId)
+    }
   }, [])
 
   // Periodic expiry check (once per hour)

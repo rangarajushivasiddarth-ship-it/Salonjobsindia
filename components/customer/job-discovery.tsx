@@ -119,35 +119,40 @@ export function JobDiscovery() {
       const subscription = getSubscriptionByUserId(user.id)
       
       // Convert real jobs to salon format with distance calculation
-      const allSalons: SalonWithDetails[] = realJobs.map(job => {
-        let distance: number | undefined
-        if (userLocation && job.location) {
-          distance = calculateDistance(
-            userLocation.lat, userLocation.lng,
-            job.location.lat, job.location.lng
-          )
-        }
-        
-        // Get salon profile for logo and verified status
-        const salonProfile = getSalonProfileByOwnerId(job.salonId || job.id)
-        const isVerified = job.isVerified || !!(salonProfile?.isVerified && salonProfile.verifiedUntil && new Date(salonProfile.verifiedUntil) > new Date())
-        
-        return {
-          id: job.salonId || job.id,
-          name: job.salonName,
-          ownerId: job.salonId || job.id,
-          ownerPhone: job.salonMobile || job.contact || '',
-          logoUrl: job.salonLogo || salonProfile?.logoUrl,
-          isVerified: isVerified,
-          job: {
-            role: job.role as BeautyRole,
-            salary: job.salaryFixed || job.salaryRange || 'Negotiable',
-            experience: job.experience,
-            location: job.location as { address: string; area: string; city: string; lat: number; lng: number },
-          },
-          distance
-        }
-      })
+      const allSalons: SalonWithDetails[] = realJobs
+        .filter(job => job && job.id && job.salonName) // Filter out null/undefined jobs
+        .map(job => {
+          if (!job) return null as any // Double-check for null
+          
+          let distance: number | undefined
+          if (userLocation && job.location?.lat && job.location?.lng) {
+            distance = calculateDistance(
+              userLocation.lat, userLocation.lng,
+              job.location.lat, job.location.lng
+            )
+          }
+          
+          // Get salon profile for logo and verified status
+          const salonProfile = getSalonProfileByOwnerId(job.salonId || job.id)
+          const isVerified = job.isVerified || !!(salonProfile?.isVerified && salonProfile.verifiedUntil && new Date(salonProfile.verifiedUntil) > new Date())
+          
+          return {
+            id: job.salonId || job.id,
+            name: job.salonName || 'Unknown Salon',
+            ownerId: job.salonId || job.id,
+            ownerPhone: job.salonMobile || job.contact || '',
+            logoUrl: job.salonLogo || salonProfile?.logoUrl,
+            isVerified: isVerified,
+            job: {
+              role: (job.role as BeautyRole) || 'Hair Stylist',
+              salary: job.salaryFixed || job.salaryRange || 'Negotiable',
+              experience: job.experience || 'Not specified',
+              location: job.location || { address: 'TBD', area: 'TBD', city: 'TBD', lat: 0, lng: 0 },
+            },
+            distance
+          }
+        })
+        .filter(Boolean) // Remove any null entries
       
       setSalons(allSalons)
       

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export function middleware(request: NextRequest) {
+// Export as 'proxy' for Next.js 16+ (renamed from middleware)
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Skip middleware for static files and next internals
+  // Skip proxy for static files and next internals
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/public') ||
