@@ -81,6 +81,38 @@ export function OwnerPanel() {
   const { user, logout, goToStep } = useApp()
   const { setLanguage } = useLanguage()
   const { t } = useTranslation()
+  
+  // CRITICAL: Salon owner verification gate - must complete salon profile before accessing owner panel
+  const [salonProfile, setSalonProfile] = useState<ReturnType<typeof getSalonProfileByOwnerId>>(null)
+  
+  useEffect(() => {
+    if (!user?.id) return
+    const profile = getSalonProfileByOwnerId(user.id)
+    setSalonProfile(profile)
+    
+    // If salon profile incomplete, redirect to profile setup
+    if (!profile || !profile.salonName || !profile.address || !profile.city) {
+      console.log('[v0] Salon profile incomplete, redirecting to salon profile setup')
+      goToStep('salon-profile')
+    }
+  }, [user?.id, goToStep])
+  
+  // Don't render owner panel if profile incomplete
+  if (!salonProfile || !salonProfile.salonName || !salonProfile.address || !salonProfile.city) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
+        <AlertCircle className="w-12 h-12 text-amber-500 mb-4" />
+        <h2 className="text-xl font-semibold mb-2">Complete Your Profile</h2>
+        <p className="text-muted-foreground text-center mb-6">
+          Please complete your salon profile to start posting jobs
+        </p>
+        <Button onClick={() => goToStep('salon-profile')}>
+          Setup Salon Profile
+        </Button>
+      </div>
+    )
+  }
+  
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false)
@@ -96,7 +128,6 @@ export function OwnerPanel() {
   const [ownerJobs, setOwnerJobs] = useState<Job[]>([])
   const [applications, setApplications] = useState<Application[]>([])
   const [candidates, setCandidates] = useState<JobSeeker[]>([])
-  const [salonProfile, setSalonProfile] = useState<ReturnType<typeof getSalonProfileByOwnerId>>(null)
   const [unreadMessages, setUnreadMessages] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
 
