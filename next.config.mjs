@@ -7,7 +7,6 @@ const nextConfig = {
     unoptimized: true,
   },
   productionBrowserSourceMaps: false,
-  swcMinify: true,
 }
 
 export default nextConfig
