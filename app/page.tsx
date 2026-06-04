@@ -23,10 +23,11 @@ import { SalonProfileSetup } from '@/components/customer/salon-profile-setup'
 import { BottomNav } from '@/components/customer/bottom-nav'
 
 function CustomerApp() {
-  const { currentStep, signIn, signUp, setRole, goToStep, isLoading } = useApp()
+  const { currentStep, signIn, signUp, setRole, goToStep } = useApp()
 
-  // Show loading while checking auth
-  if (isLoading && currentStep === 'splash') {
+  // Always show splash screen first, then proceed
+  // Don't block on isLoading - let splash screen complete after timeout
+  if (currentStep === 'splash') {
     return (
       <SplashScreen
         onComplete={() => goToStep('auth')}
@@ -36,12 +37,6 @@ function CustomerApp() {
 
   const renderScreen = () => {
     switch (currentStep) {
-      case 'splash':
-        return (
-          <SplashScreen
-            onComplete={() => goToStep('auth')}
-          />
-        )
       case 'auth':
         return (
           <AuthScreen
@@ -87,8 +82,10 @@ function CustomerApp() {
         return <SalonProfileSetup />
       default:
         return (
-          <SplashScreen
-            onComplete={() => goToStep('auth')}
+          <AuthScreen
+            onSignIn={signIn}
+            onSignUp={signUp}
+            onBack={() => goToStep('auth')}
           />
         )
     }

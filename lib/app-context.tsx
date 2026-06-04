@@ -143,8 +143,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     }
     
-    // Small delay for splash screen
-    const timeoutId = setTimeout(checkAuth, 1500)
+    // Small delay for splash screen (300ms instead of 1500ms so auth completes faster)
+    const timeoutId = setTimeout(checkAuth, 300)
     
     // Cleanup: prevent state updates if component unmounts
     return () => {
