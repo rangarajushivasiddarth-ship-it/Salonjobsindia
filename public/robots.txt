@@ -4,21 +4,22 @@ Disallow: /admin
 Disallow: /api/
 Disallow: /private/
 
-# Sitemap for Google to discover all pages
-Sitemap: https://saloonjobsindia.com/sitemap.xml
+# Sitemap for Google to discover all pages and metadata
+Sitemap: https://salonjobsindia.com/sitemap.xml
 
-# Aggressive crawling for Google
+# Aggressive crawling for Google - force homepage recrawl
 User-agent: Googlebot
 Allow: /
 Crawl-delay: 0
-Request-rate: 30/1s
+Request-rate: 50/1s
 
 # Aggressive crawling for Bing
 User-agent: Bingbot
 Allow: /
 Crawl-delay: 0
+Request-rate: 30/1s
 
-# Force re-indexing of homepage
+# Force homepage re-indexing every day
 User-agent: *
 Visit-time: any
 Visit-interval: 1d
