@@ -286,8 +286,17 @@ router.post('/', authenticate, requireOwner, jobValidation, asyncHandler(async (
     throw new ApiError(404, 'Owner not found');
   }
   
-  // Check subscription limits (if applicable)
-  // TODO: Add subscription checking logic
+  // Check subscription limits - Premium owners can post unlimited jobs
+  // Free owners can post up to 5 active jobs
+  if (owner.subscriptionStatus !== 'active') {
+    const activeJobCount = await Job.countDocuments({ 
+      ownerId: req.user!.id, 
+      status: 'active' 
+    });
+    if (activeJobCount >= 5) {
+      throw new ApiError(403, 'Free plan limited to 5 active jobs. Upgrade to premium for unlimited postings');
+    }
+  }
   
   const jobData = {
     ...req.body,
