@@ -14,12 +14,7 @@
       "memory": 1024
     }
   },
-  "redirects": [
-    {
-      "source": "/favicon.ico",
-      "destination": "/favicon.ico"
-    }
-  ],
+  "redirects": [],
   "headers": [
     {
       "source": "/(.*)",
