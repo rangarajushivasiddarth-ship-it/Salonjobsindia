@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, User, Briefcase, Clock, DollarSign, MapPin, Navigation, X, Plus, Check, Crown, Upload, FileText, Calendar, Search, AlertCircle, RotateCcw } from 'lucide-react'
+import { ArrowLeft, User, Briefcase, Clock, DollarSign, MapPin, Navigation, X, Plus, Check, Upload, FileText, Calendar, Search, AlertCircle, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
@@ -26,7 +26,6 @@ export function ResumeBuilder() {
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [detectingLocation, setDetectingLocation] = useState(false)
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
   const [locationDenied, setLocationDenied] = useState(false)
   const [locationError, setLocationError] = useState<string>('')
   
@@ -201,15 +200,84 @@ export function ResumeBuilder() {
           ...prev,
           location
         }))
+        return
       } catch (e) {
         console.log('[v0] Failed to load cached location')
       }
     }
     
     // Auto-detect location on first load if not cached
-    if (!cachedLocation && !detectingLocation && !locationDenied) {
-      detectLocation(true)
-    }
+    // Use a small delay to ensure geolocation is available
+    const timeoutId = setTimeout(() => {
+      if (!('geolocation' in navigator)) {
+        console.log('[v0] Geolocation not available')
+        return
+      }
+      
+      // Initiate auto-detection
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords
+          
+          try {
+            // Reverse geocode using Nominatim
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+              { signal: AbortSignal.timeout(5000) }
+            )
+            
+            if (!response.ok) throw new Error('Geocoding failed')
+            
+            const data = await response.json()
+            const address = data.address || {}
+            const town = address.suburb || address.neighbourhood || address.hamlet || ''
+            const area = address.city_district || address.county || address.state_district || ''
+            const city = address.city || address.town || address.village || address.municipality || ''
+            
+            const locationParts = [town, area, city].filter(Boolean)
+            const displayAddress = locationParts.length > 0 
+              ? locationParts.join(', ')
+              : 'Location Detected'
+            
+            setFormData(prev => ({
+              ...prev,
+              location: {
+                lat: latitude,
+                lng: longitude,
+                address: displayAddress,
+              }
+            }))
+          } catch (error) {
+            console.log('[v0] Geocoding failed, using coordinates')
+            // Fallback: use coordinates without geocoding
+            setFormData(prev => ({
+              ...prev,
+              location: {
+                lat: latitude,
+                lng: longitude,
+                address: 'Location Detected',
+              }
+            }))
+          }
+        },
+        (error) => {
+          console.log('[v0] Geolocation error:', error.code)
+          if (error.code === 1) {
+            setLocationDenied(true)
+            setLocationError('Location access denied. Enable in browser settings.')
+          } else if (error.code === 3) {
+            setLocationError('Location detection timed out.')
+          }
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 8000,
+          maximumAge: 300000
+        }
+      )
+    }, 500)
+    
+    return () => clearTimeout(timeoutId)
   }, [])
 
   // Save location to localStorage whenever it changes
@@ -351,11 +419,8 @@ export function ResumeBuilder() {
   }
 
   const handleSubmit = async () => {
-    // Check if user is subscribed
-    if (!user?.isSubscribed) {
-      setShowSubscriptionModal(true)
-      return
-    }
+    // Resume building is FREE - no subscription required
+    // Subscription only needed when contacting/calling salon owners
     
     setIsLoading(true)
     
@@ -433,6 +498,9 @@ export function ResumeBuilder() {
     
     setResume(resume)
     setIsLoading(false)
+    
+    // Redirect to job discovery - subscription only needed if they want to contact
+    goToStep('results')
   }
 
   const toggleSkill = (skill: string) => {
@@ -1023,43 +1091,6 @@ export function ResumeBuilder() {
           </Button>
         </div>
       </div>
-      
-      {/* Subscription Required Modal */}
-      {showSubscriptionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
-          <div className="w-full max-w-sm p-6 glass-card rounded-2xl animate-scale-in">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4">
-                <Crown className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-bold mb-2">Subscription Required</h3>
-              <p className="text-muted-foreground mb-6">
-                To create a job alert and get matched with salons, you need an active subscription.
-              </p>
-              
-              <div className="flex gap-3 w-full">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowSubscriptionModal(false)}
-                  className="flex-1 h-12"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => {
-                    setShowSubscriptionModal(false)
-                    goToStep('subscription')
-                  }}
-                  className="flex-1 h-12 bg-primary hover:bg-primary/90 gold-glow"
-                >
-                  <Crown className="w-4 h-4 mr-2" />
-                  Subscribe
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
