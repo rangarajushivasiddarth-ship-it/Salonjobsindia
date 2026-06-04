@@ -223,11 +223,16 @@ export function ResumeBuilder() {
           const { latitude, longitude } = position.coords
           
           try {
-            // Reverse geocode using Nominatim
+            // Reverse geocode using Nominatim with AbortController timeout
+            const controller = new AbortController()
+            const geocodingTimeoutId = setTimeout(() => controller.abort(), 5000)
+            
             const response = await fetch(
               `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
-              { signal: AbortSignal.timeout(5000) }
+              { signal: controller.signal }
             )
+            
+            clearTimeout(geocodingTimeoutId)
             
             if (!response.ok) throw new Error('Geocoding failed')
             

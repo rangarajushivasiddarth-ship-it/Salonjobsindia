@@ -78,6 +78,9 @@ export function CreateJob() {
 
   // Check for existing pending jobs
   useEffect(() => {
+    // Guard against server-side rendering
+    if (typeof window === 'undefined') return
+    
     const pendingJobs = localStorage.getItem(`fitonze_pending_jobs_${user?.id}`)
     if (pendingJobs) {
       const jobs: JobDraft[] = JSON.parse(pendingJobs)
@@ -242,10 +245,12 @@ export function CreateJob() {
     }
     
     // Save to localStorage
-    const existingJobs = localStorage.getItem(`salonjobsindia_pending_jobs_${user?.id}`)
-    const jobs: JobDraft[] = existingJobs ? JSON.parse(existingJobs) : []
-    jobs.push(jobDraft)
-    localStorage.setItem(`salonjobsindia_pending_jobs_${user?.id}`, JSON.stringify(jobs))
+    if (typeof window !== 'undefined') {
+      const existingJobs = localStorage.getItem(`salonjobsindia_pending_jobs_${user?.id}`)
+      const jobs: JobDraft[] = existingJobs ? JSON.parse(existingJobs) : []
+      jobs.push(jobDraft)
+      localStorage.setItem(`salonjobsindia_pending_jobs_${user?.id}`, JSON.stringify(jobs))
+    }
     
     // IMPORTANT: Submit to cloud sync API for cross-device real-time sync
     const cloudResult = await submitJobPayment({
@@ -836,6 +841,9 @@ function PendingApprovalScreen({
   
   // When approved, create the job locally and show success
   useEffect(() => {
+    // Guard against server-side rendering
+    if (typeof window === 'undefined') return
+    
     if (isApproved && approvalData) {
       // Create the job in localStorage if not already done by the hook
       const jobsStr = localStorage.getItem('salonjobsindia_jobs')

@@ -82,10 +82,13 @@ export function AdminJobs() {
       } catch (error) {
         console.error('[AdminJobs] Error loading pending payments:', error)
         // Fallback to localStorage for backwards compatibility
-        const stored = localStorage.getItem('fitonze_admin_job_payments')
-        if (stored) {
-          const payments: JobPaymentRequest[] = JSON.parse(stored)
-          setPendingPayments(payments.filter(p => p.status === 'pending'))
+        // Guard against server-side rendering
+        if (typeof window !== 'undefined') {
+          const stored = localStorage.getItem('fitonze_admin_job_payments')
+          if (stored) {
+            const payments: JobPaymentRequest[] = JSON.parse(stored)
+            setPendingPayments(payments.filter(p => p.status === 'pending'))
+          }
         }
       }
     }
@@ -129,30 +132,32 @@ export function AdminJobs() {
     }
     
     // Also update localStorage for backwards compatibility
-    const stored = localStorage.getItem('fitonze_admin_job_payments')
-    if (stored) {
-      const payments: JobPaymentRequest[] = JSON.parse(stored)
-      const updated = payments.map(p => 
-        p.id === payment.id 
-          ? { ...p, status: 'approved' as const, processedAt: new Date() }
-          : p
-      )
-      localStorage.setItem('fitonze_admin_job_payments', JSON.stringify(updated))
-    }
-    
-    // Update job status in pending jobs and get job details
-    const pendingJobsKey = `fitonze_pending_jobs_${payment.salonOwnerId}`
-    const pendingJobs = localStorage.getItem(pendingJobsKey)
-    
-    if (pendingJobs) {
-      const jobs = JSON.parse(pendingJobs)
-      const updated = jobs.map((j: { id: string; status: string }) => {
-        if (j.id === payment.jobId) {
-          return { ...j, status: 'live' }
-        }
-        return j
-      })
-      localStorage.setItem(pendingJobsKey, JSON.stringify(updated))
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('fitonze_admin_job_payments')
+      if (stored) {
+        const payments: JobPaymentRequest[] = JSON.parse(stored)
+        const updated = payments.map(p => 
+          p.id === payment.id 
+            ? { ...p, status: 'approved' as const, processedAt: new Date() }
+            : p
+        )
+        localStorage.setItem('fitonze_admin_job_payments', JSON.stringify(updated))
+      }
+      
+      // Update job status in pending jobs and get job details
+      const pendingJobsKey = `fitonze_pending_jobs_${payment.salonOwnerId}`
+      const pendingJobs = localStorage.getItem(pendingJobsKey)
+      
+      if (pendingJobs) {
+        const jobs = JSON.parse(pendingJobs)
+        const updated = jobs.map((j: { id: string; status: string }) => {
+          if (j.id === payment.jobId) {
+            return { ...j, status: 'live' }
+          }
+          return j
+        })
+        localStorage.setItem(pendingJobsKey, JSON.stringify(updated))
+      }
     }
     
     // Get salon profile for verification badge status
@@ -215,18 +220,20 @@ export function AdminJobs() {
     })
     
     // Add notification for salon owner
-    const notificationsKey = `fitonze_notifications_${payment.salonOwnerId}`
-    const existingNotifications = localStorage.getItem(notificationsKey)
-    const notifications = existingNotifications ? JSON.parse(existingNotifications) : []
-    notifications.unshift({
-      id: `notif_${Date.now()}`,
-      type: 'payment_approved',
-      title: 'Job is Now Live!',
-      message: `Your job post for "${payment.jobRole}" has been approved and is now visible to job seekers. 30 contact credits have been added to your account.`,
-      isRead: false,
-      createdAt: new Date(),
-    })
-    localStorage.setItem(notificationsKey, JSON.stringify(notifications))
+    if (typeof window !== 'undefined') {
+      const notificationsKey = `fitonze_notifications_${payment.salonOwnerId}`
+      const existingNotifications = localStorage.getItem(notificationsKey)
+      const notifications = existingNotifications ? JSON.parse(existingNotifications) : []
+      notifications.unshift({
+        id: `notif_${Date.now()}`,
+        type: 'payment_approved',
+        title: 'Job is Now Live!',
+        message: `Your job post for "${payment.jobRole}" has been approved and is now visible to job seekers. 30 contact credits have been added to your account.`,
+        isRead: false,
+        createdAt: new Date(),
+      })
+      localStorage.setItem(notificationsKey, JSON.stringify(notifications))
+    }
     
     // Refresh pending payments
     setPendingPayments(prev => prev.filter(p => p.id !== payment.id))
@@ -256,43 +263,45 @@ export function AdminJobs() {
     }
     
     // Also update localStorage for backwards compatibility
-    const stored = localStorage.getItem('fitonze_admin_job_payments')
-    if (stored) {
-      const payments: JobPaymentRequest[] = JSON.parse(stored)
-      const updated = payments.map(p => 
-        p.id === payment.id 
-          ? { ...p, status: 'rejected' as const, processedAt: new Date(), rejectionReason }
-          : p
-      )
-      localStorage.setItem('fitonze_admin_job_payments', JSON.stringify(updated))
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('fitonze_admin_job_payments')
+      if (stored) {
+        const payments: JobPaymentRequest[] = JSON.parse(stored)
+        const updated = payments.map(p => 
+          p.id === payment.id 
+            ? { ...p, status: 'rejected' as const, processedAt: new Date(), rejectionReason }
+            : p
+        )
+        localStorage.setItem('fitonze_admin_job_payments', JSON.stringify(updated))
+      }
+      
+      // Update job status in pending jobs
+      const pendingJobsKey = `fitonze_pending_jobs_${payment.salonOwnerId}`
+      const pendingJobs = localStorage.getItem(pendingJobsKey)
+      if (pendingJobs) {
+        const jobs = JSON.parse(pendingJobs)
+        const updated = jobs.map((j: { id: string; status: string }) => 
+          j.id === payment.jobId 
+            ? { ...j, status: 'rejected' }
+            : j
+        )
+        localStorage.setItem(pendingJobsKey, JSON.stringify(updated))
+      }
+      
+      // Add notification for salon owner
+      const notificationsKey = `fitonze_notifications_${payment.salonOwnerId}`
+      const existingNotifications = localStorage.getItem(notificationsKey)
+      const notifications = existingNotifications ? JSON.parse(existingNotifications) : []
+      notifications.unshift({
+        id: `notif_${Date.now()}`,
+        type: 'payment_rejected',
+        title: 'Payment Rejected',
+        message: `Your payment for "${payment.jobRole}" was rejected. ${rejectionReason ? `Reason: ${rejectionReason}` : 'Please contact support.'}`,
+        isRead: false,
+        createdAt: new Date(),
+      })
+      localStorage.setItem(notificationsKey, JSON.stringify(notifications))
     }
-    
-    // Update job status in pending jobs
-    const pendingJobsKey = `fitonze_pending_jobs_${payment.salonOwnerId}`
-    const pendingJobs = localStorage.getItem(pendingJobsKey)
-    if (pendingJobs) {
-      const jobs = JSON.parse(pendingJobs)
-      const updated = jobs.map((j: { id: string; status: string }) => 
-        j.id === payment.jobId 
-          ? { ...j, status: 'rejected' }
-          : j
-      )
-      localStorage.setItem(pendingJobsKey, JSON.stringify(updated))
-    }
-    
-    // Add notification for salon owner
-    const notificationsKey = `fitonze_notifications_${payment.salonOwnerId}`
-    const existingNotifications = localStorage.getItem(notificationsKey)
-    const notifications = existingNotifications ? JSON.parse(existingNotifications) : []
-    notifications.unshift({
-      id: `notif_${Date.now()}`,
-      type: 'payment_rejected',
-      title: 'Payment Rejected',
-      message: `Your payment for "${payment.jobRole}" was rejected. ${rejectionReason ? `Reason: ${rejectionReason}` : 'Please contact support.'}`,
-      isRead: false,
-      createdAt: new Date(),
-    })
-    localStorage.setItem(notificationsKey, JSON.stringify(notifications))
     
     // Refresh pending payments
     setPendingPayments(prev => prev.filter(p => p.id !== payment.id))
