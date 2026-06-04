@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
 import { saveJobAlert, saveJobSeeker, type JobAlert, type JobSeeker } from '@/lib/data-store'
+import { uploadIdentityProof, uploadPassportPhoto } from '@/lib/api/uploads'
 import type { Resume } from '@/lib/types'
 import { BEAUTY_ROLES, ROLE_CATEGORIES } from '@/lib/types'
 
@@ -116,38 +117,75 @@ export function ResumeBuilder() {
     }
   }
 
-  const handleIdentityProofChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleIdentityProofChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
+      try {
+        setIsLoading(true)
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setFormData(prev => ({
+            ...prev,
+            identityProof: {
+              ...prev.identityProof,
+              file,
+              preview: reader.result as string,
+            }
+          }))
+        }
+        reader.readAsDataURL(file)
+        
+        // Upload to persistent storage (Vercel Blob)
+        const response = await uploadIdentityProof(file)
         setFormData(prev => ({
           ...prev,
           identityProof: {
             ...prev.identityProof,
             file,
-            preview: reader.result as string,
+            preview: response.url, // Store persistent URL
           }
         }))
+      } catch (error) {
+        console.error('[v0] Identity proof upload failed:', error)
+        setErrors(prev => ({ ...prev, identityProofFile: 'Failed to upload identity proof' }))
+      } finally {
+        setIsLoading(false)
       }
-      reader.readAsDataURL(file)
     }
   }
 
-  const handlePassportPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePassportPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
+      try {
+        setIsLoading(true)
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setFormData(prev => ({
+            ...prev,
+            passportPhoto: {
+              file,
+              preview: reader.result as string,
+            }
+          }))
+        }
+        reader.readAsDataURL(file)
+        
+        // Upload to persistent storage (Vercel Blob)
+        const response = await uploadPassportPhoto(file)
         setFormData(prev => ({
           ...prev,
           passportPhoto: {
             file,
-            preview: reader.result as string,
+            preview: response.url, // Store persistent URL
           }
         }))
+      } catch (error) {
+        console.error('[v0] Passport photo upload failed:', error)
+        setErrors(prev => ({ ...prev, passportPhoto: 'Failed to upload passport photo' }))
+      } finally {
+        setIsLoading(false)
       }
-      reader.readAsDataURL(file)
     }
   }
 
