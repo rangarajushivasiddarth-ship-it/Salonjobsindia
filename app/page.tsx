@@ -36,59 +36,63 @@ function CustomerApp() {
   }
 
   const renderScreen = () => {
-    switch (currentStep) {
-      case 'auth':
-        return (
-          <AuthScreen
-            onSignIn={signIn}
-            onSignUp={signUp}
-            onBack={() => goToStep('splash')}
-          />
-        )
-      case 'role':
-        return (
-          <RoleSelection
-            onSelect={(role) => setRole(role)}
-            onBack={() => goToStep('auth')}
-          />
-        )
-      case 'resume':
-        return <ResumeBuilder />
-      case 'discovery':
-        return <JobDiscovery />
-      case 'subscription':
-        return <SubscriptionScreen />
-      case 'results':
-        return <JobResults />
-      case 'profile':
-        return <ProfileDashboard />
-      case 'create-job':
-        return <CreateJob />
-      case 'owner-panel':
-        return <OwnerPanel />
-      case 'messages':
-        return <MessagesScreen />
-      case 'notifications':
-        return <NotificationsScreen />
-      case 'settings':
-        return <SettingsScreen />
-      case 'about':
-        return <AboutUsScreen />
-      case 'contact':
-        return <ContactUsScreen />
-      case 'credit-payment':
-        return <CreditPayment />
-      case 'salon-profile':
-        return <SalonProfileSetup />
-      default:
-        return (
-          <AuthScreen
-            onSignIn={signIn}
-            onSignUp={signUp}
-            onBack={() => goToStep('auth')}
-          />
-        )
-    }
+    const screen = (() => {
+      switch (currentStep) {
+        case 'auth':
+          return (
+            <AuthScreen
+              onSignIn={signIn}
+              onSignUp={signUp}
+              onBack={() => goToStep('splash')}
+            />
+          )
+        case 'role':
+          return (
+            <RoleSelection
+              onSelect={(role) => setRole(role)}
+              onBack={() => goToStep('auth')}
+            />
+          )
+        case 'resume':
+          return <ResumeBuilder />
+        case 'discovery':
+          return <JobDiscovery />
+        case 'subscription':
+          return <SubscriptionScreen />
+        case 'results':
+          return <JobResults />
+        case 'profile':
+          return <ProfileDashboard />
+        case 'create-job':
+          return <CreateJob />
+        case 'owner-panel':
+          return <OwnerPanel />
+        case 'messages':
+          return <MessagesScreen />
+        case 'notifications':
+          return <NotificationsScreen />
+        case 'settings':
+          return <SettingsScreen />
+        case 'about':
+          return <AboutUsScreen />
+        case 'contact':
+          return <ContactUsScreen />
+        case 'credit-payment':
+          return <CreditPayment />
+        case 'salon-profile':
+          return <SalonProfileSetup />
+        default:
+          return (
+            <AuthScreen
+              onSignIn={signIn}
+              onSignUp={signUp}
+              onBack={() => goToStep('auth')}
+            />
+          )
+      }
+    })()
+    
+    return <div className="w-full h-screen overflow-auto">{screen}</div>
   }
 
   // Show bottom nav only on main app screens (not auth flow)
