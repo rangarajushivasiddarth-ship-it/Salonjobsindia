@@ -4,6 +4,15 @@ import { put, del } from '@vercel/blob';
 // Handle POST - File upload to Vercel Blob
 export async function POST(request: NextRequest) {
   try {
+    // Check for BLOB token
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      console.error('[v0] BLOB_READ_WRITE_TOKEN not configured')
+      return NextResponse.json(
+        { error: 'Upload service not properly configured' },
+        { status: 503 }
+      )
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const category = formData.get('category') as string;
@@ -44,6 +53,8 @@ export async function POST(request: NextRequest) {
       contentType: file.type,
     });
 
+    console.log('[v0] File uploaded successfully:', blob.url);
+
     return NextResponse.json(
       {
         success: true,
@@ -53,9 +64,10 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('[v0] Upload error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('[v0] Upload error:', errorMessage);
     return NextResponse.json(
-      { error: 'Upload failed' },
+      { error: 'Upload failed: ' + errorMessage },
       { status: 500 }
     );
   }
@@ -64,6 +76,14 @@ export async function POST(request: NextRequest) {
 // Handle DELETE - Delete file from Vercel Blob
 export async function DELETE(request: NextRequest) {
   try {
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      console.error('[v0] BLOB_READ_WRITE_TOKEN not configured for delete');
+      return NextResponse.json(
+        { error: 'Delete service not properly configured' },
+        { status: 503 }
+      );
+    }
+
     const { url } = await request.json();
 
     if (!url) {
@@ -75,15 +95,18 @@ export async function DELETE(request: NextRequest) {
 
     // Delete from Vercel Blob
     await del(url);
+    
+    console.log('[v0] File deleted successfully:', url);
 
     return NextResponse.json(
       { success: true, message: 'File deleted' },
       { status: 200 }
     );
   } catch (error) {
-    console.error('[v0] Delete error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('[v0] Delete error:', errorMessage);
     return NextResponse.json(
-      { error: 'Delete failed' },
+      { error: 'Delete failed: ' + errorMessage },
       { status: 500 }
     );
   }
