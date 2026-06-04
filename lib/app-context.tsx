@@ -76,6 +76,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     
     const checkAuth = async () => {
       try {
+        // CRITICAL: Check if we're on client before accessing browser APIs
+        if (typeof window === 'undefined') {
+          if (isMounted) {
+            setState(prev => ({ ...prev, isLoading: false }))
+          }
+          return
+        }
+        
         // Run expiry checks on app load with error handling
         try {
           checkAndExpireJobs()
@@ -135,8 +143,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     }
     
-    // Small delay for splash screen
-    const timeoutId = setTimeout(checkAuth, 1500)
+    // Small delay for splash screen (300ms instead of 1500ms so auth completes faster)
+    const timeoutId = setTimeout(checkAuth, 300)
     
     // Cleanup: prevent state updates if component unmounts
     return () => {
@@ -170,6 +178,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   
   // Poll for subscription approval with cross-tab sync
   useEffect(() => {
+    // Guard against server-side rendering
+    if (typeof window === 'undefined') return
     if (!state.user?.id || state.user.isSubscribed) return
     
     const checkApproval = () => {

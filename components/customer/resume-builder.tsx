@@ -192,6 +192,9 @@ export function ResumeBuilder() {
 
   // Load cached location from localStorage on component mount
   useEffect(() => {
+    // CRITICAL: Check window FIRST before accessing any browser APIs
+    if (typeof window === 'undefined') return
+    
     const cachedLocation = localStorage.getItem('userLocation')
     if (cachedLocation) {
       try {
@@ -282,6 +285,8 @@ export function ResumeBuilder() {
 
   // Save location to localStorage whenever it changes
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    
     if (formData.location.address && formData.location.lat && formData.location.lng) {
       localStorage.setItem('userLocation', JSON.stringify(formData.location))
     }

@@ -41,6 +41,14 @@ export function getBrandingLogos(): BrandingLogosConfig {
 }
 
 export function getClientBrandingLogos(): BrandingLogosConfig {
+  // Guard against server-side access
+  if (typeof window === 'undefined') {
+    return {
+      job_seeker: DEFAULT_LOGOS,
+      salon_owner: DEFAULT_LOGOS
+    }
+  }
+  
   try {
     const stored = localStorage.getItem(BRANDING_LOGOS_KEY)
     if (stored) {
@@ -57,6 +65,8 @@ export function getClientBrandingLogos(): BrandingLogosConfig {
 }
 
 export function saveBrandingLogos(config: BrandingLogosConfig) {
+  if (typeof window === 'undefined') return
+  
   try {
     localStorage.setItem(BRANDING_LOGOS_KEY, JSON.stringify(config))
   } catch {
@@ -69,6 +79,9 @@ export function BrandingBanner({ section, className = '' }: BrandingBannerProps)
   const [mounted, setMounted] = useState(false)
   
   useEffect(() => {
+    // Guard against server-side rendering - MUST BE FIRST
+    if (typeof window === 'undefined') return
+    
     setMounted(true)
     
     const loadLogos = () => {
