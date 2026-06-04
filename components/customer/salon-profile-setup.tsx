@@ -195,7 +195,7 @@ export function SalonProfileSetup() {
       }
 
       saveSalonProfile(profile)
-      goToStep('create-job')
+      goToStep('owner-panel')
     } catch (error) {
       console.error('Error saving profile:', error)
       setErrors(prev => ({ ...prev, submit: 'Failed to save profile. Please try again.' }))

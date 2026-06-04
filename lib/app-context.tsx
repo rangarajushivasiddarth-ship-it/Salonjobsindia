@@ -307,7 +307,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setState(prev => ({
         ...prev,
         user: updatedUser as unknown as User,
-        currentStep: role === 'job_seeker' ? 'resume' : 'create-job',
+        currentStep: role === 'job_seeker' ? 'resume' : 'salon-profile',
       }))
     }
   }, [state.user])
