@@ -178,6 +178,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   
   // Poll for subscription approval with cross-tab sync
   useEffect(() => {
+    // Guard against server-side rendering
+    if (typeof window === 'undefined') return
     if (!state.user?.id || state.user.isSubscribed) return
     
     const checkApproval = () => {
