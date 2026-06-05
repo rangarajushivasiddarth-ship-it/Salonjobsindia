@@ -33,8 +33,12 @@ export function SalonProfileSetup() {
     email: user?.email || '',
     logoUrl: '',
     address: '',
+    latitude: 0,
+    longitude: 0,
     state: '',
     city: '',
+    district: '',
+    country: 'India',
     area: '',
     locality: '',
     workingHours: '10:00 AM - 8:00 PM',
@@ -123,22 +127,35 @@ export function SalonProfileSetup() {
       const { latitude, longitude } = position.coords
       
       // Reverse geocoding using Nominatim (free)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000)
+      
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
+        { signal: controller.signal }
       )
+      
+      clearTimeout(timeoutId)
+      
       const data = await response.json()
       
       if (data.address) {
         setFormData(prev => ({
           ...prev,
           address: data.display_name || '',
+          latitude,
+          longitude,
           state: data.address.state || '',
           city: data.address.city || data.address.town || data.address.village || '',
+          district: data.address.state_district || data.address.county || '',
+          country: data.address.country || 'India',
           area: data.address.suburb || data.address.neighbourhood || '',
           locality: data.address.road || data.address.locality || '',
         }))
+        setErrors(prev => ({ ...prev, location: '' }))
       }
-    } catch {
+    } catch (error) {
+      console.error('[v0] Location detection error:', error)
       setErrors(prev => ({ ...prev, location: 'Unable to detect location. Please enter manually.' }))
     } finally {
       setIsDetectingLocation(false)
@@ -181,8 +198,12 @@ export function SalonProfileSetup() {
         email: formData.email || undefined,
         logoUrl: formData.logoUrl || undefined,
         address: formData.address || `${formData.locality}, ${formData.area}, ${formData.city}, ${formData.state}`,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
         state: formData.state,
         city: formData.city,
+        district: formData.district,
+        country: formData.country,
         area: formData.area,
         locality: formData.locality,
         workingHours: formData.workingHours,
@@ -197,7 +218,7 @@ export function SalonProfileSetup() {
       saveSalonProfile(profile)
       goToStep('owner-panel')
     } catch (error) {
-      console.error('Error saving profile:', error)
+      console.error('[v0] Error saving profile:', error)
       setErrors(prev => ({ ...prev, submit: 'Failed to save profile. Please try again.' }))
     } finally {
       setIsLoading(false)

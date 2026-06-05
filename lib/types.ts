@@ -44,6 +44,10 @@ export interface Resume {
     lat: number
     lng: number
     address: string
+    city?: string
+    district?: string
+    state?: string
+    country?: string
   }
   passportPhoto?: {
     url?: string
@@ -224,8 +228,12 @@ export interface SalonProfile {
   email?: string
   logoUrl?: string
   address: string
+  latitude: number
+  longitude: number
   state: string
   city: string
+  district?: string
+  country?: string
   area: string
   locality: string
   workingHours: string

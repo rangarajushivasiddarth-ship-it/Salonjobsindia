@@ -5,7 +5,7 @@ import { hash } from 'bcryptjs'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, email, phone, password, role } = body
+    const { name, email, phone, password, role, location } = body
 
     // Validate input
     if (!name || !email || !phone || !password || !role) {
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     const result = await usersCollection.insertOne(newUser)
 
-    // Create role-specific profile
+    // Create role-specific profile with location data
     if (role === 'job_seeker') {
       const jobSeekersCollection = db.collection<JobSeekerDocument>('job_seekers')
       await jobSeekersCollection.insertOne({
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
         experience: '',
         skills: [],
         salaryExpectation: '',
-        location: { lat: 0, lng: 0, address: '' },
+        location: location || { lat: 0, lng: 0, address: '', city: '', district: '', state: '', country: '' },
         identityProof: { type: '', verified: false },
         passportPhotoUrl: '',
         isSubscribed: false,
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         phone,
         email,
         address: '',
-        location: { lat: 0, lng: 0 },
+        location: location || { lat: 0, lng: 0, city: '', district: '', state: '', country: '', address: '' },
         isVerified: false,
         createdAt: new Date(),
         updatedAt: new Date()
