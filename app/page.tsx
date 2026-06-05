@@ -1,13 +1,13 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useState, useEffect } from 'react'
+import { Suspense } from 'react'
 import { AppProvider, useApp } from '@/lib/app-context'
 import { LanguageProvider } from '@/lib/language-context'
 import { ErrorBoundary } from '@/components/error-boundary'
 
 // Dynamically import all components with no SSR to prevent hydration mismatches
-const SplashScreen = dynamic(() => import('@/components/customer/splash-screen').then(mod => ({ default: mod.SplashScreen })), { ssr: false })
+const SplashScreen = dynamic(() => import('@/components/customer/splash-screen').then(mod => ({ default: mod.SplashScreen })), { ssr: false, loading: () => null })
 const AuthScreen = dynamic(() => import('@/components/customer/auth-screen').then(mod => ({ default: mod.AuthScreen })), { ssr: false })
 const RoleSelection = dynamic(() => import('@/components/customer/role-selection').then(mod => ({ default: mod.RoleSelection })), { ssr: false })
 const ResumeBuilder = dynamic(() => import('@/components/customer/resume-builder').then(mod => ({ default: mod.ResumeBuilder })), { ssr: false })
@@ -28,18 +28,8 @@ const BottomNav = dynamic(() => import('@/components/customer/bottom-nav').then(
 
 function CustomerApp() {
   const { currentStep, signIn, signUp, setRole, goToStep } = useApp()
-  const [mounted, setMounted] = useState(false)
-  
-  // Only render after client mount to prevent hydration mismatches
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-  
-  if (!mounted) {
-    return <SplashScreen onComplete={() => {}} />
-  }
 
-  // Always show splash screen first, then proceed
+  // Show splash screen first, then proceed (no mounted state needed with ssr: false)
   if (currentStep === 'splash') {
     return (
       <SplashScreen
