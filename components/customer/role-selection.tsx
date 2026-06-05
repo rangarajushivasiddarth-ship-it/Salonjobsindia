@@ -31,7 +31,7 @@ export function RoleSelection({ onSelect, onBack }: RoleSelectionProps) {
       ],
     },
     {
-      id: 'employer' as UserRole,
+      id: 'salon_owner' as UserRole,
       title: t('role.salonOwner'),
       description: t('role.salonOwnerDesc'),
       icon: Building2,
