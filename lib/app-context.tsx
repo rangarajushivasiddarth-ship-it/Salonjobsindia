@@ -18,8 +18,8 @@ function jobSeekerToResume(jobSeeker: ReturnType<typeof JobSeekerService.getByUs
     skills: jobSeeker.skills,
     salaryExpectation: jobSeeker.salaryExpectation,
     location: jobSeeker.location,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    createdAt: jobSeeker.createdAt ? new Date(jobSeeker.createdAt) : new Date(0),
+    updatedAt: jobSeeker.updatedAt ? new Date(jobSeeker.updatedAt) : new Date(0),
   }
 }
 

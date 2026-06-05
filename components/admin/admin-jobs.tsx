@@ -162,7 +162,8 @@ export function AdminJobs() {
     
     // Get salon profile for verification badge status
     const salonProfile = getSalonProfileByOwnerId(payment.salonOwnerId)
-    const isVerified = !!(salonProfile?.isVerified && salonProfile.verifiedUntil && new Date(salonProfile.verifiedUntil) > new Date())
+    const now = new Date()
+    const isVerified = !!(salonProfile?.isVerified && salonProfile.verifiedUntil && new Date(salonProfile.verifiedUntil) > now)
     
     // Extract job details from payment if available
     const jobDetails = payment.jobDetails || {}
