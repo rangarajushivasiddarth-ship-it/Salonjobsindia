@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { Building2, User, Phone, Mail, MapPin, Clock, FileText, Camera, X, Navigation, ChevronRight, Upload } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Building2, User, Phone, Mail, MapPin, Clock, FileText, Camera, X, Navigation, ChevronRight, Upload, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
 import { saveSalonProfile } from '@/lib/data-store'
+import { detectLocation as detectLocationFromBrowser, cacheLocation, getCachedLocation, type LocationData, type GeolocationError } from '@/lib/location-utils'
 import type { SalonProfile } from '@/lib/types'
 
 // Indian states
@@ -33,8 +34,12 @@ export function SalonProfileSetup() {
     email: user?.email || '',
     logoUrl: '',
     address: '',
+    latitude: 0,
+    longitude: 0,
     state: '',
     city: '',
+    district: '',
+    country: 'India',
     area: '',
     locality: '',
     workingHours: '10:00 AM - 8:00 PM',
@@ -103,43 +108,53 @@ export function SalonProfileSetup() {
     }
   }
 
-  const detectLocation = async () => {
-    if (!navigator.geolocation) {
-      setErrors(prev => ({ ...prev, location: 'Geolocation is not supported by your browser' }))
-      return
+  // Load cached location on component mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    
+    const cachedLocation = getCachedLocation()
+    if (cachedLocation) {
+      setFormData(prev => ({
+        ...prev,
+        address: cachedLocation.formattedAddress || cachedLocation.address,
+        latitude: cachedLocation.latitude,
+        longitude: cachedLocation.longitude,
+        state: cachedLocation.state,
+        city: cachedLocation.city,
+        district: cachedLocation.district,
+        country: cachedLocation.country || 'India',
+      }))
     }
+  }, [])
 
+  const detectLocation = async () => {
     setIsDetectingLocation(true)
+    setErrors(prev => ({ ...prev, location: '' }))
     
     try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        })
-      })
-
-      const { latitude, longitude } = position.coords
+      const locationData = await detectLocationFromBrowser()
       
-      // Reverse geocoding using Nominatim (free)
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
-      )
-      const data = await response.json()
+      // Auto-fill all location fields
+      setFormData(prev => ({
+        ...prev,
+        address: locationData.formattedAddress || locationData.address,
+        latitude: locationData.latitude,
+        longitude: locationData.longitude,
+        state: locationData.state,
+        city: locationData.city,
+        district: locationData.district,
+        country: locationData.country,
+        area: locationData.formattedAddress ? locationData.formattedAddress.split(',')[0] : '',
+        locality: locationData.formattedAddress ? locationData.formattedAddress.split(',')[1]?.trim() || '' : '',
+      }))
       
-      if (data.address) {
-        setFormData(prev => ({
-          ...prev,
-          address: data.display_name || '',
-          state: data.address.state || '',
-          city: data.address.city || data.address.town || data.address.village || '',
-          area: data.address.suburb || data.address.neighbourhood || '',
-          locality: data.address.road || data.address.locality || '',
-        }))
-      }
-    } catch {
-      setErrors(prev => ({ ...prev, location: 'Unable to detect location. Please enter manually.' }))
+      // Cache the location
+      cacheLocation(locationData)
+      setErrors(prev => ({ ...prev, location: '' }))
+    } catch (error) {
+      const geolocationError = error as GeolocationError
+      console.error('[v0] Location detection error:', geolocationError)
+      setErrors(prev => ({ ...prev, location: geolocationError.message }))
     } finally {
       setIsDetectingLocation(false)
     }
@@ -181,8 +196,12 @@ export function SalonProfileSetup() {
         email: formData.email || undefined,
         logoUrl: formData.logoUrl || undefined,
         address: formData.address || `${formData.locality}, ${formData.area}, ${formData.city}, ${formData.state}`,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
         state: formData.state,
         city: formData.city,
+        district: formData.district,
+        country: formData.country,
         area: formData.area,
         locality: formData.locality,
         workingHours: formData.workingHours,
@@ -197,7 +216,7 @@ export function SalonProfileSetup() {
       saveSalonProfile(profile)
       goToStep('owner-panel')
     } catch (error) {
-      console.error('Error saving profile:', error)
+      console.error('[v0] Error saving profile:', error)
       setErrors(prev => ({ ...prev, submit: 'Failed to save profile. Please try again.' }))
     } finally {
       setIsLoading(false)

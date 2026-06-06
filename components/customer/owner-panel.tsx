@@ -84,9 +84,12 @@ export function OwnerPanel() {
   
   // CRITICAL: Salon owner verification gate - must complete salon profile before accessing owner panel
   const [salonProfile, setSalonProfile] = useState<ReturnType<typeof getSalonProfileByOwnerId>>(null)
+  const [profileCheckDone, setProfileCheckDone] = useState(false)
   
+  // Check profile ONCE on mount or when userId changes, NOT on every render
   useEffect(() => {
-    if (!user?.id) return
+    if (!user?.id || profileCheckDone) return
+    
     const profile = getSalonProfileByOwnerId(user.id)
     setSalonProfile(profile)
     
@@ -95,7 +98,9 @@ export function OwnerPanel() {
       console.log('[v0] Salon profile incomplete, redirecting to salon profile setup')
       goToStep('salon-profile')
     }
-  }, [user?.id, goToStep])
+    
+    setProfileCheckDone(true)
+  }, [user?.id]) // ONLY depend on user.id, NOT goToStep
   
   // Don't render owner panel if profile incomplete
   if (!salonProfile || !salonProfile.salonName || !salonProfile.address || !salonProfile.city) {
