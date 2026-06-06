@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
 import { saveJobAlert, saveJobSeeker, type JobAlert, type JobSeeker } from '@/lib/data-store'
 import { uploadIdentityProof, uploadPassportPhoto } from '@/lib/api/uploads'
+import { detectLocation as detectLocationFromBrowser, cacheLocation, getCachedLocation, type LocationData, type GeolocationError } from '@/lib/location-utils'
 import type { Resume } from '@/lib/types'
 import { BEAUTY_ROLES, ROLE_CATEGORIES } from '@/lib/types'
 
@@ -192,100 +193,19 @@ export function ResumeBuilder() {
 
   // Load cached location from localStorage on component mount
   useEffect(() => {
-    // CRITICAL: Check window FIRST before accessing any browser APIs
     if (typeof window === 'undefined') return
     
-    const cachedLocation = localStorage.getItem('userLocation')
+    const cachedLocation = getCachedLocation()
     if (cachedLocation) {
-      try {
-        const location = JSON.parse(cachedLocation)
-        setFormData(prev => ({
-          ...prev,
-          location
-        }))
-        return
-      } catch (e) {
-        console.log('[v0] Failed to load cached location')
-      }
-    }
-    
-    // Auto-detect location on first load if not cached
-    // Use a small delay to ensure geolocation is available
-    const timeoutId = setTimeout(() => {
-      if (!('geolocation' in navigator)) {
-        console.log('[v0] Geolocation not available')
-        return
-      }
-      
-      // Initiate auto-detection
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords
-          
-          try {
-            // Reverse geocode using Nominatim with AbortController timeout
-            const controller = new AbortController()
-            const geocodingTimeoutId = setTimeout(() => controller.abort(), 5000)
-            
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
-              { signal: controller.signal }
-            )
-            
-            clearTimeout(geocodingTimeoutId)
-            
-            if (!response.ok) throw new Error('Geocoding failed')
-            
-            const data = await response.json()
-            const address = data.address || {}
-            const town = address.suburb || address.neighbourhood || address.hamlet || ''
-            const area = address.city_district || address.county || address.state_district || ''
-            const city = address.city || address.town || address.village || address.municipality || ''
-            
-            const locationParts = [town, area, city].filter(Boolean)
-            const displayAddress = locationParts.length > 0 
-              ? locationParts.join(', ')
-              : 'Location Detected'
-            
-            setFormData(prev => ({
-              ...prev,
-              location: {
-                lat: latitude,
-                lng: longitude,
-                address: displayAddress,
-              }
-            }))
-          } catch (error) {
-            console.log('[v0] Geocoding failed, using coordinates')
-            // Fallback: use coordinates without geocoding
-            setFormData(prev => ({
-              ...prev,
-              location: {
-                lat: latitude,
-                lng: longitude,
-                address: 'Location Detected',
-              }
-            }))
-          }
-        },
-        (error) => {
-          console.log('[v0] Geolocation error:', error.code)
-          if (error.code === 1) {
-            setLocationDenied(true)
-            setLocationError('Location access denied. Enable in browser settings.')
-          } else if (error.code === 3) {
-            setLocationError('Location detection timed out.')
-          }
-        },
-        {
-          enableHighAccuracy: false,
-          timeout: 8000,
-          maximumAge: 300000
+      setFormData(prev => ({
+        ...prev,
+        location: {
+          lat: cachedLocation.latitude,
+          lng: cachedLocation.longitude,
+          address: cachedLocation.formattedAddress || cachedLocation.address
         }
-      )
-    }, 500)
-    
-    return () => clearTimeout(timeoutId)
+      }))
+    }
   }, [])
 
   // Save location to localStorage whenever it changes
@@ -293,7 +213,16 @@ export function ResumeBuilder() {
     if (typeof window === 'undefined') return
     
     if (formData.location.address && formData.location.lat && formData.location.lng) {
-      localStorage.setItem('userLocation', JSON.stringify(formData.location))
+      const locationData: LocationData = {
+        latitude: formData.location.lat,
+        longitude: formData.location.lng,
+        address: formData.location.address,
+        city: '',
+        district: '',
+        state: '',
+        country: 'India',
+      }
+      cacheLocation(locationData)
     }
   }, [formData.location])
 
@@ -302,102 +231,32 @@ export function ResumeBuilder() {
     setLocationError('')
     setLocationDenied(false)
     
-    if (!('geolocation' in navigator)) {
-      setDetectingLocation(false)
-      setLocationError('Geolocation not supported on this device')
-      return
-    }
-
-    // Set a timeout for geolocation request (10 seconds)
-    const timeoutId = setTimeout(() => {
-      setDetectingLocation(false)
-      setLocationError('Location detection timed out. Please try again or enter manually.')
-    }, 10000)
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        clearTimeout(timeoutId)
-        const { latitude, longitude } = position.coords
-        
-        try {
-          // Reverse geocode using Nominatim with AbortController timeout for better compatibility
-          const controller = new AbortController()
-          const geocodingTimeoutId = setTimeout(() => controller.abort(), 5000)
-          
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
-            { signal: controller.signal }
-          )
-          
-          clearTimeout(geocodingTimeoutId)
-          
-          if (!response.ok) throw new Error('Geocoding failed')
-          
-          const data = await response.json()
-          
-          const address = data.address || {}
-          const town = address.suburb || address.neighbourhood || address.hamlet || ''
-          const area = address.city_district || address.county || address.state_district || ''
-          const city = address.city || address.town || address.village || address.municipality || ''
-          
-          // Build display string with available parts
-          const locationParts = [town, area, city].filter(Boolean)
-          const displayAddress = locationParts.length > 0 
-            ? locationParts.join(', ')
-            : 'Location Detected'
-          
-          const newLocation = {
-            lat: latitude,
-            lng: longitude,
-            address: displayAddress,
-          }
-          
-          setFormData(prev => ({
-            ...prev,
-            location: newLocation
-          }))
-          
-          setLocationError('')
-          setLocationDenied(false)
-        } catch (error) {
-          console.log('[v0] Geocoding failed, using coordinates:', error)
-          // Fallback: use coordinates without geocoding
-          const newLocation = {
-            lat: latitude,
-            lng: longitude,
-            address: 'Location Detected (Coordinates)',
-          }
-          
-          setFormData(prev => ({
-            ...prev,
-            location: newLocation
-          }))
+    try {
+      const locationData = await detectLocationFromBrowser()
+      
+      setFormData(prev => ({
+        ...prev,
+        location: {
+          lat: locationData.latitude,
+          lng: locationData.longitude,
+          address: locationData.formattedAddress || locationData.address
         }
-        
-        setDetectingLocation(false)
-      },
-      (error) => {
-        clearTimeout(timeoutId)
-        setDetectingLocation(false)
-        
-        // Handle different error codes
-        if (error.code === error.PERMISSION_DENIED) {
-          setLocationDenied(true)
-          setLocationError('Location access denied. Please enable location permissions in your browser settings, or enter your location manually.')
-        } else if (error.code === error.POSITION_UNAVAILABLE) {
-          setLocationError('Location information unavailable. Please enable GPS or try again.')
-        } else if (error.code === error.TIMEOUT) {
-          setLocationError('Location detection timed out. Please try again or enter manually.')
-        } else {
-          setLocationError('Unable to detect location. Please enter manually.')
-        }
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 8000,
-        maximumAge: 300000 // Cache location for 5 minutes
+      }))
+      
+      cacheLocation(locationData)
+      setLocationError('')
+      setLocationDenied(false)
+    } catch (error) {
+      const geolocationError = error as GeolocationError
+      console.error('[v0] Location detection error:', geolocationError)
+      
+      if (geolocationError.code === 'PERMISSION_DENIED') {
+        setLocationDenied(true)
       }
-    )
+      setLocationError(geolocationError.message)
+    } finally {
+      setDetectingLocation(false)
+    }
   }
 
   const validateStep = () => {
