@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { Building2, User, Phone, Mail, MapPin, Clock, FileText, Camera, X, Navigation, ChevronRight, Upload } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Building2, User, Phone, Mail, MapPin, Clock, FileText, Camera, X, Navigation, ChevronRight, Upload, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
 import { saveSalonProfile } from '@/lib/data-store'
+import { detectLocation as detectLocationFromBrowser, cacheLocation, getCachedLocation, type LocationData, type GeolocationError } from '@/lib/location-utils'
 import type { SalonProfile } from '@/lib/types'
 
 // Indian states
@@ -107,56 +108,53 @@ export function SalonProfileSetup() {
     }
   }
 
-  const detectLocation = async () => {
-    if (!navigator.geolocation) {
-      setErrors(prev => ({ ...prev, location: 'Geolocation is not supported by your browser' }))
-      return
+  // Load cached location on component mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    
+    const cachedLocation = getCachedLocation()
+    if (cachedLocation) {
+      setFormData(prev => ({
+        ...prev,
+        address: cachedLocation.formattedAddress || cachedLocation.address,
+        latitude: cachedLocation.latitude,
+        longitude: cachedLocation.longitude,
+        state: cachedLocation.state,
+        city: cachedLocation.city,
+        district: cachedLocation.district,
+        country: cachedLocation.country || 'India',
+      }))
     }
+  }, [])
 
+  const detectLocation = async () => {
     setIsDetectingLocation(true)
+    setErrors(prev => ({ ...prev, location: '' }))
     
     try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        })
-      })
-
-      const { latitude, longitude } = position.coords
+      const locationData = await detectLocationFromBrowser()
       
-      // Reverse geocoding using Nominatim (free)
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 5000)
+      // Auto-fill all location fields
+      setFormData(prev => ({
+        ...prev,
+        address: locationData.formattedAddress || locationData.address,
+        latitude: locationData.latitude,
+        longitude: locationData.longitude,
+        state: locationData.state,
+        city: locationData.city,
+        district: locationData.district,
+        country: locationData.country,
+        area: locationData.formattedAddress ? locationData.formattedAddress.split(',')[0] : '',
+        locality: locationData.formattedAddress ? locationData.formattedAddress.split(',')[1]?.trim() || '' : '',
+      }))
       
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
-        { signal: controller.signal }
-      )
-      
-      clearTimeout(timeoutId)
-      
-      const data = await response.json()
-      
-      if (data.address) {
-        setFormData(prev => ({
-          ...prev,
-          address: data.display_name || '',
-          latitude,
-          longitude,
-          state: data.address.state || '',
-          city: data.address.city || data.address.town || data.address.village || '',
-          district: data.address.state_district || data.address.county || '',
-          country: data.address.country || 'India',
-          area: data.address.suburb || data.address.neighbourhood || '',
-          locality: data.address.road || data.address.locality || '',
-        }))
-        setErrors(prev => ({ ...prev, location: '' }))
-      }
+      // Cache the location
+      cacheLocation(locationData)
+      setErrors(prev => ({ ...prev, location: '' }))
     } catch (error) {
-      console.error('[v0] Location detection error:', error)
-      setErrors(prev => ({ ...prev, location: 'Unable to detect location. Please enter manually.' }))
+      const geolocationError = error as GeolocationError
+      console.error('[v0] Location detection error:', geolocationError)
+      setErrors(prev => ({ ...prev, location: geolocationError.message }))
     } finally {
       setIsDetectingLocation(false)
     }
