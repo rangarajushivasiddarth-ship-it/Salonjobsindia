@@ -900,10 +900,11 @@ function PendingApprovalScreen({
       
       // Redirect to dashboard after 2 seconds
       setTimeout(() => {
+        console.log('[v0] CreateJob - Redirecting to owner-panel after approval')
         goToStep('owner-panel')
       }, 2000)
     }
-  }, [isApproved, approvalData, user?.id, formData, goToStep])
+  }, [isApproved, approvalData, user?.id, formData]) // REMOVED goToStep - function reference changes every render
   
   if (showSuccess) {
     return (

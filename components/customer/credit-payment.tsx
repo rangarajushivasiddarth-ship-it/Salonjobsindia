@@ -45,12 +45,14 @@ export function CreditPayment() {
         setSelectedPack(JSON.parse(packStr))
       } catch {
         // Invalid pack, go back
+        console.log('[v0] CreditPayment - Invalid pack, redirecting to owner-panel')
         goToStep('owner-panel')
       }
     } else {
+      console.log('[v0] CreditPayment - No pack selected, redirecting to owner-panel')
       goToStep('owner-panel')
     }
-  }, [goToStep])
+  }, []) // REMOVED goToStep - runs on mount only, redirects if no pack found
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

@@ -42,11 +42,12 @@ export function JobDiscovery() {
 
   // CRITICAL: Resume verification gate - job seekers MUST complete resume before accessing job discovery
   useEffect(() => {
-    if (!resume || !resume.name || !resume.skills?.length) {
-      console.log('[v0] Resume not complete, redirecting to resume builder')
+    console.log('[v0] JobDiscovery - Checking resume', { hasResume: !!resume, hasName: !!resume?.name, hasSkills: !!resume?.skills?.length })
+    if (!resume || !resume.name || !resume?.skills?.length) {
+      console.log('[v0] JobDiscovery - Resume not complete, redirecting to resume builder')
       goToStep('resume')
     }
-  }, [resume, goToStep])
+  }, [resume]) // REMOVED goToStep - only check when resume changes
 
   // If resume is incomplete, don't render the discovery UI
   if (!resume || !resume.name || !resume.skills?.length) {
