@@ -31,13 +31,17 @@ export function SubscriptionScreen() {
 
   // Check for existing pending subscription and poll for approval
   useEffect(() => {
+    console.log('[v0] SubscriptionScreen - useEffect1 starting', { userId: user?.id, isOwner })
     if (user?.id) {
       const checkSubscription = () => {
+        console.log('[v0] SubscriptionScreen - checkSubscription called')
         const existing = getSubscriptionByUserId(user.id)
         if (existing && existing.status === 'pending') {
+          console.log('[v0] SubscriptionScreen - Found pending subscription, showing waiting screen')
           setExistingPending(existing)
           setIsSubmitted(true)
         } else if (existing && existing.status === 'approved') {
+          console.log('[v0] SubscriptionScreen - Subscription approved! Redirecting to:', isOwner ? 'owner-panel' : 'results')
           // Subscription approved! Redirect to app
           goToStep(isOwner ? 'owner-panel' : 'results')
         }
@@ -50,7 +54,7 @@ export function SubscriptionScreen() {
       
       return () => clearInterval(interval)
     }
-  }, [user?.id, goToStep, isOwner])
+  }, [user?.id, isOwner]) // REMOVED goToStep - it's a function that changes every render
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -152,7 +156,9 @@ export function SubscriptionScreen() {
 
   // Check if approved via cloud
   useEffect(() => {
+    console.log('[v0] SubscriptionScreen - useEffect2 (cloudApproved check)', { cloudApproved, isOwner })
     if (cloudApproved && approvalData) {
+      console.log('[v0] SubscriptionScreen - Cloud approval detected, preparing redirect')
       // Update local state
       if (user) {
         const approvedSub: Subscription = {
@@ -175,10 +181,11 @@ export function SubscriptionScreen() {
       }
       // Redirect to main app
       setTimeout(() => {
+        console.log('[v0] SubscriptionScreen - Redirecting to:', isOwner ? 'owner-panel' : 'results')
         goToStep(isOwner ? 'owner-panel' : 'results')
       }, 2000)
     }
-  }, [cloudApproved, approvalData, user, isOwner, selectedPlan, selectedPlanDetails, previewUrl, setSubscription, goToStep])
+  }, [cloudApproved, approvalData, isOwner]) // REMOVED: goToStep, setSubscription, user, selectedPlan, etc - they are functions/objects that change every render
 
   // Pending status screen
   if (isSubmitted || existingPending) {
