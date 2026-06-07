@@ -78,46 +78,16 @@ const VERIFIED_BADGE_PLANS = [
 type TabType = 'dashboard' | 'jobs' | 'applicants' | 'candidates' | 'settings'
 
 export function OwnerPanel() {
+  // CRITICAL FIX: ALL HOOKS MUST BE CALLED UNCONDITIONALLY
   const { user, logout, goToStep } = useApp()
   const { setLanguage } = useLanguage()
   const { t } = useTranslation()
   
-  // CRITICAL: Salon owner verification gate - must complete salon profile before accessing owner panel
+  // Profile verification gate
   const [salonProfile, setSalonProfile] = useState<ReturnType<typeof getSalonProfileByOwnerId>>(null)
   const [profileCheckDone, setProfileCheckDone] = useState(false)
   
-  // Check profile ONCE on mount or when userId changes, NOT on every render
-  useEffect(() => {
-    if (!user?.id || profileCheckDone) return
-    
-    const profile = getSalonProfileByOwnerId(user.id)
-    setSalonProfile(profile)
-    
-    // If salon profile incomplete, redirect to profile setup
-    if (!profile || !profile.salonName || !profile.address || !profile.city) {
-      console.log('[v0] Salon profile incomplete, redirecting to salon profile setup')
-      goToStep('salon-profile')
-    }
-    
-    setProfileCheckDone(true)
-  }, [user?.id]) // ONLY depend on user.id, NOT goToStep
-  
-  // Don't render owner panel if profile incomplete
-  if (!salonProfile || !salonProfile.salonName || !salonProfile.address || !salonProfile.city) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
-        <AlertCircle className="w-12 h-12 text-amber-500 mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Complete Your Profile</h2>
-        <p className="text-muted-foreground text-center mb-6">
-          Please complete your salon profile to start posting jobs
-        </p>
-        <Button onClick={() => goToStep('salon-profile')}>
-          Setup Salon Profile
-        </Button>
-      </div>
-    )
-  }
-  
+  // UI state - ALL declared at top, never conditionally
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false)
@@ -135,7 +105,23 @@ export function OwnerPanel() {
   const [candidates, setCandidates] = useState<JobSeeker[]>([])
   const [unreadMessages, setUnreadMessages] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
-
+  
+  // Check profile ONCE on mount or when userId changes
+  useEffect(() => {
+    if (!user?.id || profileCheckDone) return
+    
+    const profile = getSalonProfileByOwnerId(user.id)
+    setSalonProfile(profile)
+    
+    // If salon profile incomplete, redirect to profile setup
+    if (!profile || !profile.salonName || !profile.address || !profile.city) {
+      console.log('[v0] Salon profile incomplete, redirecting to salon profile setup')
+      goToStep('salon-profile')
+    }
+    
+    setProfileCheckDone(true)
+  }, [user?.id, goToStep])
+  
   // Load real data
   const loadData = useCallback(() => {
     if (!user?.id) return
@@ -226,6 +212,22 @@ export function OwnerPanel() {
     if (days === 1) return 'Yesterday'
     if (days < 7) return `${days}d ago`
     return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+  }
+  
+  // RENDER GATE: Check after all hooks are called
+  if (!salonProfile || !salonProfile.salonName || !salonProfile.address || !salonProfile.city) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
+        <AlertCircle className="w-12 h-12 text-amber-500 mb-4" />
+        <h2 className="text-xl font-semibold mb-2">Complete Your Profile</h2>
+        <p className="text-muted-foreground text-center mb-6">
+          Please complete your salon profile to start posting jobs
+        </p>
+        <Button onClick={() => goToStep('salon-profile')}>
+          Setup Salon Profile
+        </Button>
+      </div>
+    )
   }
 
   const handleDeleteJob = (jobId: string) => {
