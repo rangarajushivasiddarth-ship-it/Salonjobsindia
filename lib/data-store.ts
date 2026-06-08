@@ -885,10 +885,6 @@ export function getAllJobs(): Job[] {
   }
 }
 
-export function getLiveJobs(): Job[] {
-  return getAllJobs().filter(j => j.status === 'live' && j.isActive)
-}
-
 export function getJobById(jobId: string): Job | null {
   return getAllJobs().find(j => j.id === jobId) || null
 }
