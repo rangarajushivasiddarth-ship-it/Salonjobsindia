@@ -31,6 +31,15 @@ export interface User {
 // Job preference status for job seekers
 export type JobPreferenceStatus = 'looking_for_work' | 'not_looking_for_job'
 
+// Job Seeker Profile Visibility Status
+export type JobSeekerVisibilityStatus = 
+  | 'incomplete_profile'
+  | 'pending_payment'
+  | 'pending_admin_approval'
+  | 'active_visible'
+  | 'hidden'
+  | 'rejected'
+
 export interface Resume {
   id: string
   userId: string
@@ -63,6 +72,9 @@ export interface Resume {
   isActive?: boolean
   availabilityStatus?: 'actively_looking' | 'open_to_opportunities' | 'not_looking'
   jobPreference?: JobPreferenceStatus
+  visibilityStatus?: JobSeekerVisibilityStatus // NEW: Track profile visibility
+  paymentId?: string // NEW: Link to payment record
+  adminApprovedAt?: Date // NEW: Track admin approval
   createdAt: Date
   updatedAt: Date
 }
@@ -253,10 +265,10 @@ export interface SalonProfile {
 export type JobPostStatus = 
   | 'draft'
   | 'pending_payment'
-  | 'pending_approval'
+  | 'pending_admin_approval'
   | 'live'
   | 'expired'
-  | 'deleted'
+  | 'rejected'
 
 export interface Job {
   id: string
@@ -291,6 +303,7 @@ export interface Job {
   applicationsCount: number
   isVerified: boolean
   paymentId?: string
+  paymentStatus?: 'pending_payment' | 'approved' | 'rejected' // NEW: Explicit payment status
   paymentScreenshot?: string
   paymentSubmittedAt?: Date
   paymentApprovedAt?: Date
@@ -544,7 +557,7 @@ export interface Alert {
 // ==========================================
 
 export type PaymentStatus = 'pending' | 'approved' | 'rejected'
-export type PaymentType = 'job_publishing' | 'verified_badge' | 'contact_pack'
+export type PaymentType = 'job_publishing' | 'job_seeker_subscription' | 'verified_badge' | 'contact_pack'
 
 export interface Payment {
   id: string
@@ -553,13 +566,15 @@ export interface Payment {
   userPhone?: string
   salonName?: string
   type: PaymentType
-  planId: SalonOwnerPlanType
+  planId: SalonOwnerPlanType | JobSeekerPlanType | string // Support credit pack IDs
   amount: number
   screenshotUrl?: string
   status: PaymentStatus
   jobId?: string // For job publishing payments
+  resumeId?: string // For job seeker subscription payments (NEW)
   contactCredits?: number // For contact pack payments
   validityDays: number
+  transactionId?: string // NEW: For duplicate prevention
   submittedAt: Date
   processedAt?: Date
   processedBy?: string
