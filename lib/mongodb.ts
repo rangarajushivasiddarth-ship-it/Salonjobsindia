@@ -66,6 +66,9 @@ export interface JobSeekerDocument {
   isSubscribed: boolean
   subscriptionPlan: string | null
   subscriptionExpiry: Date | null
+  visibilityStatus?: 'incomplete_profile' | 'pending_payment' | 'pending_admin_approval' | 'active_visible' | 'hidden' | 'rejected'
+  paymentId?: string
+  adminApprovedAt?: Date
   createdAt: Date
   updatedAt: Date
 }
@@ -100,6 +103,9 @@ export interface JobDocument {
     lng: number
     address: string
   }
+  status: 'draft' | 'pending_payment' | 'pending_admin_approval' | 'live' | 'expired' | 'rejected'
+  paymentId?: string
+  paymentStatus?: 'pending_payment' | 'approved' | 'rejected'
   isActive: boolean
   applicants: string[]
   createdAt: Date
@@ -112,6 +118,30 @@ export interface ApplicationDocument {
   jobSeekerId: string
   status: 'pending' | 'reviewed' | 'shortlisted' | 'rejected' | 'hired'
   appliedAt: Date
+  updatedAt: Date
+}
+
+export interface PaymentDocument {
+  _id?: ObjectId
+  userId: string
+  userName?: string
+  userPhone?: string
+  salonName?: string
+  type: 'job_publishing' | 'job_seeker_subscription' | 'verified_badge' | 'contact_pack'
+  planId: string
+  amount: number
+  screenshotUrl?: string
+  status: 'pending' | 'approved' | 'rejected'
+  jobId?: string
+  resumeId?: string
+  contactCredits?: number
+  validityDays: number
+  transactionId?: string
+  submittedAt: Date
+  processedAt?: Date
+  processedBy?: string
+  rejectionReason?: string
+  createdAt: Date
   updatedAt: Date
 }
 

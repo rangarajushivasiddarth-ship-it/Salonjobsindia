@@ -88,18 +88,24 @@ export async function POST(request: NextRequest) {
       requirements: requirements || [],
       salary,
       location: location || { lat: 0, lng: 0, address: '' },
-      isActive: true,
+      status: 'pending_payment', // Jobs start in pending_payment status
+      paymentId: undefined,
+      paymentStatus: 'pending_payment',
+      isActive: false, // Not active until payment approved
       applicants: [],
       createdAt: new Date(),
       updatedAt: new Date()
     }
 
     const result = await collection.insertOne(newJob)
+    
+    console.log('[v0] Job created with pending_payment status:', result.insertedId)
 
     return NextResponse.json({
       success: true,
       jobId: result.insertedId.toString(),
-      message: 'Job created successfully'
+      status: 'pending_payment',
+      message: 'Job created successfully. Please submit payment to make it live.'
     })
 
   } catch (error) {

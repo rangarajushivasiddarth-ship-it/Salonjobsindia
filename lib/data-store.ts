@@ -577,6 +577,103 @@ export function updateJobSeekerPreference(userId: string, jobPreference: 'lookin
   return null
 }
 
+// ============== JOB SEEKER VISIBILITY WORKFLOW ==============
+
+// Get only VISIBLE Job Seekers (for Salon Owners to browse)
+export function getVisibleJobSeekers(): JobSeeker[] {
+  const jobSeekers = getAllJobSeekers()
+  
+  // Only return Job Seekers with 'looking_for_work' preference and 'active_visible' visibility status
+  return jobSeekers.filter(js => 
+    js.jobPreference === 'looking_for_work'
+  ) // Note: visibility status check would require Resume data structure integration
+}
+
+// Get Job Seekers who applied to a salon's jobs (always visible to that salon)
+export function getApplicantJobSeekers(salonOwnerId: string): JobSeeker[] {
+  const applications = getApplicationsBySalonId(salonOwnerId)
+  const applicantIds = applications.map(a => a.candidateId)
+  
+  return getAllJobSeekers().filter(js => applicantIds.includes(js.userId))
+}
+
+// Approve Job Seeker payment and make profile visible
+export function approveJobSeekerPayment(paymentId: string, adminId: string): { success: boolean; resumeId?: string; error?: string } {
+  const payments = getAllPayments()
+  const payment = payments.find(p => p.id === paymentId)
+  
+  if (!payment) {
+    return { success: false, error: 'Payment not found' }
+  }
+  
+  if (payment.type !== 'job_seeker_subscription' || !payment.resumeId) {
+    return { success: false, error: 'Payment is not for job seeker subscription' }
+  }
+  
+  // Update payment
+  payment.status = 'approved'
+  payment.processedAt = new Date()
+  payment.processedBy = adminId
+  
+  // Update subscriptions (mark approved)
+  const subscriptions = getAllSubscriptions()
+  const subscription = subscriptions.find(s => s.userId === payment.userId && s.status === 'pending')
+  
+  if (subscription) {
+    subscription.status = 'approved'
+    subscription.approvedAt = new Date()
+    subscription.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subscriptions))
+    dispatchDataUpdate(SUBSCRIPTIONS_KEY)
+    
+    console.log('[v0] Job Seeker subscription approved:', subscription.userId)
+  }
+  
+  localStorage.setItem(PAYMENTS_KEY, JSON.stringify(payments))
+  dispatchDataUpdate(PAYMENTS_KEY)
+  
+  createAlert({
+    userId: payment.userId,
+    type: 'payment_approved',
+    title: 'Profile Approved!',
+    message: 'Your profile is now visible to salon owners.',
+    data: { resumeId: payment.resumeId },
+    isRead: false,
+  })
+  
+  return { success: true, resumeId: payment.resumeId }
+}
+
+// Reject Job Seeker payment
+export function rejectJobSeekerPayment(paymentId: string, adminId: string, reason?: string): { success: boolean; error?: string } {
+  const payments = getAllPayments()
+  const payment = payments.find(p => p.id === paymentId)
+  
+  if (!payment) {
+    return { success: false, error: 'Payment not found' }
+  }
+  
+  payment.status = 'rejected'
+  payment.processedAt = new Date()
+  payment.processedBy = adminId
+  payment.rejectionReason = reason
+  
+  localStorage.setItem(PAYMENTS_KEY, JSON.stringify(payments))
+  dispatchDataUpdate(PAYMENTS_KEY)
+  
+  createAlert({
+    userId: payment.userId,
+    type: 'payment_rejected',
+    title: 'Profile Verification Failed',
+    message: reason || 'Your profile verification failed. Please contact support.',
+    isRead: false,
+  })
+  
+  console.log('[v0] Job Seeker payment rejected:', payment.userId)
+  
+  return { success: true }
+}
+
 export function getJobSeekersForSalonOwners(salonOwnerId: string): JobSeeker[] {
   const jobSeekers = getAllJobSeekers()
   const applications = getApplicationsBySalonId(salonOwnerId)
@@ -855,6 +952,120 @@ export function incrementJobEdit(jobId: string): boolean {
   job.editsUsed = editsUsed + 1
   saveJob(job)
   return true
+}
+
+// ============== JOB PAYMENT WORKFLOW ==============
+
+// Get jobs by status for admin dashboard
+export function getJobsByStatus(status: Job['status']): Job[] {
+  return getAllJobs()
+    .filter(j => j.status === status)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+}
+
+// Get only LIVE jobs visible to Job Seekers
+export function getLiveJobs(): Job[] {
+  return getAllJobs()
+    .filter(j => j.status === 'live' && j.isActive)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+}
+
+// Approve payment and make job live (atomic operation)
+export function approveJobPayment(paymentId: string, adminId: string): { success: boolean; jobId?: string; error?: string } {
+  const payments = getAllPayments()
+  const payment = payments.find(p => p.id === paymentId)
+  
+  if (!payment) {
+    return { success: false, error: 'Payment not found' }
+  }
+  
+  if (payment.type !== 'job_publishing' || !payment.jobId) {
+    return { success: false, error: 'Payment is not for job publishing' }
+  }
+  
+  // Update payment
+  payment.status = 'approved'
+  payment.processedAt = new Date()
+  payment.processedBy = adminId
+  
+  // Update job
+  const jobs = getAllJobs()
+  const job = jobs.find(j => j.id === payment.jobId)
+  
+  if (!job) {
+    return { success: false, error: 'Job not found' }
+  }
+  
+  job.status = 'live'
+  job.isActive = true
+  job.paymentStatus = 'approved'
+  job.paymentApprovedAt = new Date()
+  job.expiresAt = new Date(Date.now() + (payment.validityDays || 30) * 24 * 60 * 60 * 1000)
+  
+  // Add contact credits
+  updateSalonCredits(payment.userId, payment.contactCredits || 30)
+  
+  // Save updates
+  localStorage.setItem(PAYMENTS_KEY, JSON.stringify(payments))
+  localStorage.setItem(JOBS_KEY, JSON.stringify(jobs))
+  dispatchDataUpdate(PAYMENTS_KEY)
+  dispatchDataUpdate(JOBS_KEY)
+  
+  console.log('[v0] Job payment approved, job now live:', job.id)
+  
+  // Create alert
+  createAlert({
+    userId: payment.userId,
+    type: 'job_live',
+    title: 'Job is Live!',
+    message: `Your job "${job.role}" is now live and visible to all job seekers.`,
+    data: { jobId: job.id },
+    isRead: false,
+  })
+  
+  return { success: true, jobId: job.id }
+}
+
+// Reject payment and revert job to draft
+export function rejectJobPayment(paymentId: string, adminId: string, reason?: string): { success: boolean; error?: string } {
+  const payments = getAllPayments()
+  const payment = payments.find(p => p.id === paymentId)
+  
+  if (!payment) {
+    return { success: false, error: 'Payment not found' }
+  }
+  
+  payment.status = 'rejected'
+  payment.processedAt = new Date()
+  payment.processedBy = adminId
+  payment.rejectionReason = reason
+  
+  if (payment.jobId) {
+    const jobs = getAllJobs()
+    const job = jobs.find(j => j.id === payment.jobId)
+    if (job) {
+      job.status = 'draft'
+      job.paymentStatus = 'rejected'
+      job.isActive = false
+      localStorage.setItem(JOBS_KEY, JSON.stringify(jobs))
+      dispatchDataUpdate(JOBS_KEY)
+      
+      console.log('[v0] Job payment rejected, job reverted to draft:', job.id)
+    }
+  }
+  
+  localStorage.setItem(PAYMENTS_KEY, JSON.stringify(payments))
+  dispatchDataUpdate(PAYMENTS_KEY)
+  
+  createAlert({
+    userId: payment.userId,
+    type: 'payment_rejected',
+    title: 'Payment Rejected',
+    message: reason || 'Your payment verification failed. Please contact support.',
+    isRead: false,
+  })
+  
+  return { success: true }
 }
 
 // ============== MESSAGES ==============
@@ -1181,3 +1392,154 @@ export function checkAndExpireVerifiedBadges(): void {
     dispatchDataUpdate(SALON_PROFILES_KEY)
   }
 }
+
+// ============== CREDITS SYSTEM ==============
+
+// Get contact credit balance for a salon owner
+export function getCreditBalance(salonOwnerId: string): number {
+  const profile = getSalonProfileByOwnerId(salonOwnerId)
+  return profile?.contactCredits || 0
+}
+
+// Deduct credit with validation
+export function deductContactCredit(salonOwnerId: string, candidateId: string): { success: boolean; creditsRemaining?: number; error?: string } {
+  const profile = getSalonProfileByOwnerId(salonOwnerId)
+  
+  if (!profile) {
+    return { success: false, error: 'Salon profile not found' }
+  }
+  
+  // Check if already unlocked
+  if (profile.unlockedCandidates?.includes(candidateId)) {
+    console.log('[v0] Candidate already unlocked, no deduction needed')
+    return { success: true, creditsRemaining: profile.contactCredits }
+  }
+  
+  // Check if has credits
+  if ((profile.contactCredits || 0) <= 0) {
+    return { success: false, error: 'Insufficient contact credits', creditsRemaining: 0 }
+  }
+  
+  // Deduct credit and add to unlocked
+  profile.contactCredits = (profile.contactCredits || 0) - 1
+  profile.unlockedCandidates = [...(profile.unlockedCandidates || []), candidateId]
+  saveSalonProfile(profile)
+  
+  console.log('[v0] Credit deducted. Remaining:', profile.contactCredits)
+  
+  // Create alert for credits low
+  if (profile.contactCredits <= 5) {
+    createAlert({
+      userId: salonOwnerId,
+      type: 'credits_low',
+      title: 'Credits Running Low',
+      message: `You have only ${profile.contactCredits} contact credits remaining. Buy more to continue unlocking candidates.`,
+      isRead: false,
+    })
+  }
+  
+  return { success: true, creditsRemaining: profile.contactCredits }
+}
+
+// Buy credit pack with payment
+export function buyCreditPack(salonOwnerId: string, packId: string): { success: boolean; paymentId?: string; error?: string } {
+  const CREDIT_PACKS: Record<string, { credits: number; price: number }> = {
+    'credit_pack_15': { credits: 15, price: 199 },
+    'credit_pack_50': { credits: 50, price: 499 }
+  }
+  
+  const pack = CREDIT_PACKS[packId]
+  if (!pack) {
+    return { success: false, error: 'Credit pack not found' }
+  }
+  
+  const profile = getSalonProfileByOwnerId(salonOwnerId)
+  if (!profile) {
+    return { success: false, error: 'Salon profile not found' }
+  }
+  
+  // Create payment record
+  const transactionId = `credit_${salonOwnerId}_${Date.now()}`
+  const payment: Payment = {
+    id: crypto.randomUUID(),
+    userId: salonOwnerId,
+    userName: profile.ownerName,
+    userPhone: profile.mobile,
+    salonName: profile.salonName,
+    type: 'contact_pack',
+    planId: packId,
+    amount: pack.price,
+    status: 'pending',
+    contactCredits: pack.credits,
+    validityDays: 365, // Credits don't expire
+    transactionId,
+    submittedAt: new Date()
+  }
+  
+  savePayment(payment)
+  
+  console.log('[v0] Credit pack purchase created, awaiting admin approval:', payment.id)
+  
+  createAlert({
+    userId: salonOwnerId,
+    type: 'payment_pending',
+    title: 'Credit Pack Purchase Submitted',
+    message: `You've submitted a purchase for ${pack.credits} contact credits. Awaiting admin verification.`,
+    data: { paymentId: payment.id },
+    isRead: false,
+  })
+  
+  return { success: true, paymentId: payment.id }
+}
+
+// Approve credit purchase payment
+export function approveCreditPurchasePayment(paymentId: string, adminId: string): { success: boolean; creditsAdded?: number; error?: string } {
+  const payments = getAllPayments()
+  const payment = payments.find(p => p.id === paymentId)
+  
+  if (!payment) {
+    return { success: false, error: 'Payment not found' }
+  }
+  
+  if (payment.type !== 'contact_pack') {
+    return { success: false, error: 'Payment is not for credit pack' }
+  }
+  
+  // Check for duplicate
+  if (payment.transactionId) {
+    const existing = payments.filter(p => 
+      p.transactionId === payment.transactionId && 
+      p.status === 'approved' && 
+      p.id !== payment.id
+    )
+    if (existing.length > 0) {
+      console.log('[v0] Duplicate payment detected, rejecting')
+      return { success: false, error: 'Duplicate payment detected' }
+    }
+  }
+  
+  // Update payment
+  payment.status = 'approved'
+  payment.processedAt = new Date()
+  payment.processedBy = adminId
+  
+  // Add credits to profile
+  const creditsAdded = payment.contactCredits || 0
+  const profile = updateSalonCredits(payment.userId, creditsAdded)
+  
+  localStorage.setItem(PAYMENTS_KEY, JSON.stringify(payments))
+  dispatchDataUpdate(PAYMENTS_KEY)
+  
+  console.log('[v0] Credit purchase approved, credits added:', creditsAdded)
+  
+  createAlert({
+    userId: payment.userId,
+    type: 'contact_pack_approved',
+    title: 'Credits Added to Your Account',
+    message: `${creditsAdded} contact credits have been successfully added.`,
+    isRead: false,
+  })
+  
+  return { success: true, creditsAdded }
+}
+
