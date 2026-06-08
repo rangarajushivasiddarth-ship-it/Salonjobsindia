@@ -1,35 +1,32 @@
 'use client'
 
-import dynamic from 'next/dynamic'
 import { Suspense } from 'react'
 import { AppProvider, useApp } from '@/lib/app-context'
 import { LanguageProvider } from '@/lib/language-context'
 import { ErrorBoundary } from '@/components/error-boundary'
-
-// Dynamically import all components with no SSR to prevent hydration mismatches
-const SplashScreen = dynamic(() => import('@/components/customer/splash-screen').then(mod => ({ default: mod.SplashScreen })), { ssr: false, loading: () => null })
-const AuthScreen = dynamic(() => import('@/components/customer/auth-screen').then(mod => ({ default: mod.AuthScreen })), { ssr: false })
-const RoleSelection = dynamic(() => import('@/components/customer/role-selection').then(mod => ({ default: mod.RoleSelection })), { ssr: false })
-const ResumeBuilder = dynamic(() => import('@/components/customer/resume-builder').then(mod => ({ default: mod.ResumeBuilder })), { ssr: false })
-const JobDiscovery = dynamic(() => import('@/components/customer/job-discovery').then(mod => ({ default: mod.JobDiscovery })), { ssr: false })
-const SubscriptionScreen = dynamic(() => import('@/components/customer/subscription-screen').then(mod => ({ default: mod.SubscriptionScreen })), { ssr: false })
-const JobResults = dynamic(() => import('@/components/customer/job-results').then(mod => ({ default: mod.JobResults })), { ssr: false })
-const ProfileDashboard = dynamic(() => import('@/components/customer/profile-dashboard').then(mod => ({ default: mod.ProfileDashboard })), { ssr: false })
-const CreateJob = dynamic(() => import('@/components/customer/create-job').then(mod => ({ default: mod.CreateJob })), { ssr: false })
-const OwnerPanel = dynamic(() => import('@/components/customer/owner-panel').then(mod => ({ default: mod.OwnerPanel })), { ssr: false })
-const MessagesScreen = dynamic(() => import('@/components/customer/messages-screen').then(mod => ({ default: mod.MessagesScreen })), { ssr: false })
-const NotificationsScreen = dynamic(() => import('@/components/customer/notifications-screen').then(mod => ({ default: mod.NotificationsScreen })), { ssr: false })
-const SettingsScreen = dynamic(() => import('@/components/customer/settings-screen').then(mod => ({ default: mod.SettingsScreen })), { ssr: false })
-const AboutUsScreen = dynamic(() => import('@/components/customer/about-us-screen').then(mod => ({ default: mod.AboutUsScreen })), { ssr: false })
-const ContactUsScreen = dynamic(() => import('@/components/customer/contact-us-screen').then(mod => ({ default: mod.ContactUsScreen })), { ssr: false })
-const CreditPayment = dynamic(() => import('@/components/customer/credit-payment').then(mod => ({ default: mod.CreditPayment })), { ssr: false })
-const SalonProfileSetup = dynamic(() => import('@/components/customer/salon-profile-setup').then(mod => ({ default: mod.SalonProfileSetup })), { ssr: false })
-const BottomNav = dynamic(() => import('@/components/customer/bottom-nav').then(mod => ({ default: mod.BottomNav })), { ssr: false })
+import { SplashScreen } from '@/components/customer/splash-screen'
+import { AuthScreen } from '@/components/customer/auth-screen'
+import { RoleSelection } from '@/components/customer/role-selection'
+import { ResumeBuilder } from '@/components/customer/resume-builder'
+import { JobDiscovery } from '@/components/customer/job-discovery'
+import { SubscriptionScreen } from '@/components/customer/subscription-screen'
+import { JobResults } from '@/components/customer/job-results'
+import { ProfileDashboard } from '@/components/customer/profile-dashboard'
+import { CreateJob } from '@/components/customer/create-job'
+import { OwnerPanel } from '@/components/customer/owner-panel'
+import { MessagesScreen } from '@/components/customer/messages-screen'
+import { NotificationsScreen } from '@/components/customer/notifications-screen'
+import { SettingsScreen } from '@/components/customer/settings-screen'
+import { AboutUsScreen } from '@/components/customer/about-us-screen'
+import { ContactUsScreen } from '@/components/customer/contact-us-screen'
+import { CreditPayment } from '@/components/customer/credit-payment'
+import { SalonProfileSetup } from '@/components/customer/salon-profile-setup'
+import { BottomNav } from '@/components/customer/bottom-nav'
 
 function CustomerApp() {
   const { currentStep, signIn, signUp, setRole, goToStep } = useApp()
 
-  // Show splash screen first, then proceed (no mounted state needed with ssr: false)
+  // Show splash screen first, then proceed
   if (currentStep === 'splash') {
     return (
       <SplashScreen

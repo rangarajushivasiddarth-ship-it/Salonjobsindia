@@ -86,8 +86,8 @@ export async function POST(request: NextRequest) {
 
     // Check if already applied
     const existingApplication = await applicationsCollection.findOne({
-      jobId: new ObjectId(jobId),
-      jobSeekerId: new ObjectId(jobSeekerId)
+      jobId: jobId,
+      jobSeekerId: jobSeekerId
     })
 
     if (existingApplication) {

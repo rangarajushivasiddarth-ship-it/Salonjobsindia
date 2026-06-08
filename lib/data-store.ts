@@ -918,7 +918,7 @@ export function deleteJob(jobId: string): void {
   const job = jobs.find(j => j.id === jobId)
   
   if (job) {
-    job.status = 'deleted'
+    job.status = 'expired'
     job.isActive = false
     localStorage.setItem(JOBS_KEY, JSON.stringify(jobs))
     dispatchDataUpdate(JOBS_KEY)

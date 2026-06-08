@@ -566,7 +566,7 @@ export interface Payment {
   userPhone?: string
   salonName?: string
   type: PaymentType
-  planId: SalonOwnerPlanType | JobSeekerPlanType
+  planId: SalonOwnerPlanType | JobSeekerPlanType | string // Support credit pack IDs
   amount: number
   screenshotUrl?: string
   status: PaymentStatus
