@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
 import { submitJobPayment, useApprovalStatus } from '@/lib/hooks/use-realtime-sync'
+import { detectLocation as detectLocationFromBrowser, cacheLocation, type LocationData, type GeolocationError } from '@/lib/location-utils'
 import Image from 'next/image'
 
 const ROLE_OPTIONS = [
@@ -123,57 +124,28 @@ export function CreateJob() {
 
   const detectLocation = async () => {
     setDetectingLocation(true)
+    setErrors(prev => ({ ...prev, location: '' }))
     
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords
-          
-          try {
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
-            )
-            const data = await response.json()
-            
-            const address = data.address || {}
-            const town = address.suburb || address.neighbourhood || address.hamlet || ''
-            const area = address.city_district || address.county || address.state_district || ''
-            const city = address.city || address.town || address.village || address.municipality || ''
-            
-            const locationParts = [town, area, city].filter(Boolean)
-            const displayAddress = locationParts.length > 0 
-              ? locationParts.join(', ')
-              : 'Location Detected'
-            
-            setFormData(prev => ({
-              ...prev,
-              location: {
-                lat: latitude,
-                lng: longitude,
-                address: displayAddress,
-              }
-            }))
-          } catch {
-            setFormData(prev => ({
-              ...prev,
-              location: {
-                lat: latitude,
-                lng: longitude,
-                address: 'Location Detected',
-              }
-            }))
-          }
-          
-          setDetectingLocation(false)
-        },
-        () => {
-          setDetectingLocation(false)
-          setErrors(prev => ({ ...prev, location: 'Could not detect location' }))
+    try {
+      const locationData = await detectLocationFromBrowser()
+      
+      setFormData(prev => ({
+        ...prev,
+        location: {
+          lat: locationData.latitude,
+          lng: locationData.longitude,
+          address: locationData.formattedAddress || locationData.address,
         }
-      )
-    } else {
+      }))
+      
+      cacheLocation(locationData)
+      setErrors(prev => ({ ...prev, location: '' }))
+    } catch (error) {
+      const geolocationError = error as GeolocationError
+      console.error('[v0] Location detection failed:', geolocationError)
+      setErrors(prev => ({ ...prev, location: geolocationError.message }))
+    } finally {
       setDetectingLocation(false)
-      setErrors(prev => ({ ...prev, location: 'Geolocation not supported' }))
     }
   }
 

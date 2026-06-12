@@ -16,8 +16,16 @@ export interface LocationData {
 }
 
 export interface GeolocationError {
-  code: 'PERMISSION_DENIED' | 'POSITION_UNAVAILABLE' | 'TIMEOUT' | 'NOT_SUPPORTED' | 'UNKNOWN'
+  code: 'PERMISSION_DENIED' | 'POSITION_UNAVAILABLE' | 'TIMEOUT' | 'NOT_SUPPORTED' | 'UNKNOWN' | 'HTTPS_REQUIRED'
   message: string
+}
+
+/**
+ * Check if the environment supports HTTPS (required for geolocation)
+ */
+export function isHttpsAvailable(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
 }
 
 /**
@@ -25,6 +33,15 @@ export interface GeolocationError {
  */
 export async function getCurrentPosition(): Promise<GeolocationCoordinates> {
   return new Promise((resolve, reject) => {
+    // Check HTTPS requirement
+    if (!isHttpsAvailable()) {
+      reject({
+        code: 'HTTPS_REQUIRED',
+        message: 'HTTPS is required for location access. Please use a secure connection.'
+      } as GeolocationError)
+      return
+    }
+
     if (!('geolocation' in navigator)) {
       reject({
         code: 'NOT_SUPPORTED',
@@ -36,7 +53,7 @@ export async function getCurrentPosition(): Promise<GeolocationCoordinates> {
     const timeoutId = setTimeout(() => {
       reject({
         code: 'TIMEOUT',
-        message: 'Location detection timed out. Please try again.'
+        message: 'Location detection timed out. Please try again or enter manually.'
       } as GeolocationError)
     }, 10000)
 
@@ -52,13 +69,13 @@ export async function getCurrentPosition(): Promise<GeolocationCoordinates> {
 
         if (error.code === error.PERMISSION_DENIED) {
           errorCode = 'PERMISSION_DENIED'
-          message = 'Location access denied. Please enable location permissions in your browser settings.'
+          message = 'Location permission denied. Please enable it in your browser settings and try again.'
         } else if (error.code === error.POSITION_UNAVAILABLE) {
           errorCode = 'POSITION_UNAVAILABLE'
-          message = 'Location information is unavailable. Please enable GPS or try again.'
+          message = 'Location unavailable. Please enable GPS and try again, or enter manually.'
         } else if (error.code === error.TIMEOUT) {
           errorCode = 'TIMEOUT'
-          message = 'Location detection timed out. Please try again.'
+          message = 'Location detection timed out. Please try again or enter manually.'
         }
 
         reject({ code: errorCode, message } as GeolocationError)
