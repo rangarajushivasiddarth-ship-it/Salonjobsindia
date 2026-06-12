@@ -1539,3 +1539,82 @@ export function approveCreditPurchasePayment(paymentId: string, adminId: string)
   return { success: true, creditsAdded }
 }
 
+// Location Management
+const LOCATIONS_KEY = 'salonjobsindia_locations'
+
+export interface LocationRecord {
+  userId: string
+  latitude: number
+  longitude: number
+  address: string
+  city: string
+  district: string
+  state: string
+  country: string
+  postalCode?: string
+  formattedAddress?: string
+  timestamp: Date
+}
+
+export function saveLocation(location: Omit<LocationRecord, 'timestamp'> & { timestamp?: Date }): LocationRecord {
+  if (typeof window === 'undefined') return { ...location, timestamp: new Date() } as LocationRecord
+  
+  try {
+    const locations: LocationRecord[] = JSON.parse(localStorage.getItem(LOCATIONS_KEY) || '[]')
+    
+    const locationRecord: LocationRecord = {
+      ...location,
+      timestamp: location.timestamp || new Date(),
+    }
+    
+    // Remove duplicate user locations and add the new one
+    const filtered = locations.filter(l => l.userId !== location.userId)
+    filtered.push(locationRecord)
+    
+    localStorage.setItem(LOCATIONS_KEY, JSON.stringify(filtered))
+    dispatchDataUpdate(LOCATIONS_KEY)
+    
+    console.log('[v0] Location saved for user:', location.userId)
+    return locationRecord
+  } catch (error) {
+    console.error('[v0] Failed to save location:', error)
+    return { ...location, timestamp: new Date() } as LocationRecord
+  }
+}
+
+export function getLocationsByCity(city: string): LocationRecord[] {
+  if (typeof window === 'undefined') return []
+  
+  try {
+    const locations: LocationRecord[] = JSON.parse(localStorage.getItem(LOCATIONS_KEY) || '[]')
+    return locations.filter(l => l.city.toLowerCase() === city.toLowerCase())
+  } catch (error) {
+    console.error('[v0] Failed to retrieve locations by city:', error)
+    return []
+  }
+}
+
+export function getUserLocation(userId: string): LocationRecord | null {
+  if (typeof window === 'undefined') return null
+  
+  try {
+    const locations: LocationRecord[] = JSON.parse(localStorage.getItem(LOCATIONS_KEY) || '[]')
+    return locations.find(l => l.userId === userId) || null
+  } catch (error) {
+    console.error('[v0] Failed to retrieve user location:', error)
+    return null
+  }
+}
+
+export function getAllLocations(): LocationRecord[] {
+  if (typeof window === 'undefined') return []
+  
+  try {
+    return JSON.parse(localStorage.getItem(LOCATIONS_KEY) || '[]')
+  } catch (error) {
+    console.error('[v0] Failed to retrieve all locations:', error)
+    return []
+  }
+}
+
+
