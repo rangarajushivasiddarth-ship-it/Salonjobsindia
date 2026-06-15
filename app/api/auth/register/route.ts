@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
           url: identityProofUrl || ''
         },
         passportPhotoUrl: passportPhotoUrl || '',
-        isSubscribed: false,
+        isSubscribed: true, // Job seekers are always subscribed (free access)
         subscriptionPlan: null,
         subscriptionExpiry: null,
         createdAt: new Date(),

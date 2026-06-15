@@ -11,11 +11,8 @@ export interface User {
   phone: string
   name?: string
   role: UserRole
-  isSubscribed: boolean
-  subscriptionType?: JobSeekerPlanType | SalonOwnerPlanType
-  subscriptionExpiry?: Date
-  shopsViewed?: number
-  jobPostsRemaining?: number
+  isSubscribed: boolean // Quick flag for job seekers (always true) and salon owners (subscription active)
+  subscriptionId?: string // FK to Subscriptions table for salon owners
   profilePhoto?: string
   identityProof?: {
     type: string
@@ -34,8 +31,6 @@ export type JobPreferenceStatus = 'looking_for_work' | 'not_looking_for_job'
 // Job Seeker Profile Visibility Status
 export type JobSeekerVisibilityStatus = 
   | 'incomplete_profile'
-  | 'pending_payment'
-  | 'pending_admin_approval'
   | 'active_visible'
   | 'hidden'
   | 'rejected'
@@ -72,43 +67,15 @@ export interface Resume {
   isActive?: boolean
   availabilityStatus?: 'actively_looking' | 'open_to_opportunities' | 'not_looking'
   jobPreference?: JobPreferenceStatus
-  visibilityStatus?: JobSeekerVisibilityStatus // NEW: Track profile visibility
-  paymentId?: string // NEW: Link to payment record
-  adminApprovedAt?: Date // NEW: Track admin approval
+  visibilityStatus?: JobSeekerVisibilityStatus
   createdAt: Date
   updatedAt: Date
 }
 
-export type JobSeekerPlanType = 'gold' | 'premium' | 'ultra_premium' | 'unlimited'
+export type JobSeekerPlanType = 'free'
 
-export interface JobSeekerPlan {
-  id: JobSeekerPlanType
-  name: string
-  price: number
-  shopLimit: number | 'unlimited'
-  features: string[]
-  recommended?: boolean
-  color: string
-}
-
-export const JOB_SEEKER_PLANS: JobSeekerPlan[] = [
-  {
-    id: 'unlimited',
-    name: 'Premium Access',
-    price: 99,
-    shopLimit: 'unlimited',
-    features: [
-      'View all salon job listings',
-      'Unlock salon phone numbers',
-      'Apply to unlimited jobs',
-      'Chat with salon owners',
-      'Priority support',
-      'Valid for 30 days'
-    ],
-    recommended: true,
-    color: '#FFD700'
-  }
-]
+// Job Seekers have free access - no plans to purchase
+export const JOB_SEEKER_PLANS: never[] = []
 
 // ==========================================
 // SALON OWNER TYPES
@@ -296,20 +263,19 @@ export interface Job {
     locality: string
   }
   contact: string
-  status: JobPostStatus
+  status: JobPostStatus // SINGLE source of truth: draft, pending_payment, pending_admin_approval, live, expired, rejected
   editsUsed: number
   maxEdits: number
   viewsCount: number
   applicationsCount: number
   isVerified: boolean
-  paymentId?: string
-  paymentStatus?: 'pending_payment' | 'approved' | 'rejected' // NEW: Explicit payment status
-  paymentScreenshot?: string
+  paymentId: string // REQUIRED: Must be set when job goes live
+  salonSubscriptionId?: string // Link to active salon subscription for expiration tracking
   paymentSubmittedAt?: Date
   paymentApprovedAt?: Date
   createdAt: Date
-  expiresAt?: Date
-  isActive: boolean
+  expiresAt: Date // REQUIRED: Set when payment approved, used for automatic expiration
+  isActive: boolean // Derived from status === 'live' && expiresAt > now()
 }
 
 // ==========================================
@@ -557,7 +523,7 @@ export interface Alert {
 // ==========================================
 
 export type PaymentStatus = 'pending' | 'approved' | 'rejected'
-export type PaymentType = 'job_publishing' | 'job_seeker_subscription' | 'verified_badge' | 'contact_pack'
+export type PaymentType = 'job_publishing' | 'verified_badge' | 'contact_pack'
 
 export interface Payment {
   id: string
@@ -566,15 +532,14 @@ export interface Payment {
   userPhone?: string
   salonName?: string
   type: PaymentType
-  planId: SalonOwnerPlanType | JobSeekerPlanType | string // Support credit pack IDs
+  planId: SalonOwnerPlanType | string
   amount: number
   screenshotUrl?: string
   status: PaymentStatus
-  jobId?: string // For job publishing payments
-  resumeId?: string // For job seeker subscription payments (NEW)
-  contactCredits?: number // For contact pack payments
+  jobId?: string
+  contactCredits?: number
   validityDays: number
-  transactionId?: string // NEW: For duplicate prevention
+  transactionId?: string
   submittedAt: Date
   processedAt?: Date
   processedBy?: string
@@ -591,15 +556,13 @@ export interface Subscription {
   userPhone?: string
   userName?: string
   userRole: UserRole
-  planType: JobSeekerPlanType | SalonOwnerPlanType
+  planType: SalonOwnerPlanType
   planName: string
   amount: number
   screenshotUrl?: string
   transactionId?: string
   paymentMethod: 'upi' | 'card' | 'netbanking'
   status: 'pending' | 'approved' | 'rejected' | 'expired'
-  shopLimit?: number | 'unlimited'
-  shopsViewed?: number
   jobPostsTotal?: number
   jobPostsUsed?: number
   contactCredits?: number

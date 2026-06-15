@@ -25,25 +25,8 @@ function dispatchDataUpdate(key: string) {
   }
 }
 
-// Job Seeker Plans
-export const JOB_SEEKER_PLANS: JobSeekerPlan[] = [
-  {
-    id: 'unlimited',
-    name: 'Premium Access',
-    shopLimit: 'unlimited',
-    price: 99,
-    features: [
-      'View all salon job listings',
-      'Unlock salon phone numbers',
-      'Apply to unlimited jobs',
-      'Chat with salon owners',
-      'Priority support',
-      'Valid for 30 days'
-    ],
-    recommended: true,
-    color: '#FFD700',
-  },
-]
+// Job Seeker Plans - No longer needed as job seekers are always free
+export const JOB_SEEKER_PLANS: never[] = []
 
 // Salon Owner Plans
 export interface SalonOwnerPlan {
