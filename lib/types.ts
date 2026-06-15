@@ -11,11 +11,8 @@ export interface User {
   phone: string
   name?: string
   role: UserRole
-  isSubscribed: boolean
-  subscriptionType?: JobSeekerPlanType | SalonOwnerPlanType
-  subscriptionExpiry?: Date
-  shopsViewed?: number
-  jobPostsRemaining?: number
+  isSubscribed: boolean // Quick flag for job seekers (always true) and salon owners (subscription active)
+  subscriptionId?: string // FK to Subscriptions table for salon owners
   profilePhoto?: string
   identityProof?: {
     type: string
@@ -266,20 +263,19 @@ export interface Job {
     locality: string
   }
   contact: string
-  status: JobPostStatus
+  status: JobPostStatus // SINGLE source of truth: draft, pending_payment, pending_admin_approval, live, expired, rejected
   editsUsed: number
   maxEdits: number
   viewsCount: number
   applicationsCount: number
   isVerified: boolean
-  paymentId?: string
-  paymentStatus?: 'pending_payment' | 'approved' | 'rejected' // NEW: Explicit payment status
-  paymentScreenshot?: string
+  paymentId: string // REQUIRED: Must be set when job goes live
+  salonSubscriptionId?: string // Link to active salon subscription for expiration tracking
   paymentSubmittedAt?: Date
   paymentApprovedAt?: Date
   createdAt: Date
-  expiresAt?: Date
-  isActive: boolean
+  expiresAt: Date // REQUIRED: Set when payment approved, used for automatic expiration
+  isActive: boolean // Derived from status === 'live' && expiresAt > now()
 }
 
 // ==========================================

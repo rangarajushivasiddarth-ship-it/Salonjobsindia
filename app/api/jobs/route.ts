@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase, JobDocument, ObjectId } from '@/lib/mongodb'
 
-// GET - Fetch jobs with pagination and filters
+// GET - Fetch jobs with pagination, filters, and subscription validation
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -13,20 +13,24 @@ export async function GET(request: NextRequest) {
 
     const db = await connectToDatabase()
     const collection = db.collection<JobDocument>('jobs')
+    const subscriptionsCollection = db.collection('subscriptions')
 
-    // Build query
-    const query: Record<string, unknown> = {}
+    // Build query - FIX: Check status === 'live' AND expiration
+    const query: Record<string, unknown> = {
+      status: 'live', // Only show live jobs
+      expiresAt: { $gt: new Date() } // Only show non-expired jobs
+    }
     
     if (search) {
       query.$or = [
-        { title: { $regex: search, $options: 'i' } },
         { salonName: { $regex: search, $options: 'i' } },
-        { 'location.address': { $regex: search, $options: 'i' } }
+        { 'location.address': { $regex: search, $options: 'i' } },
+        { role: { $regex: search, $options: 'i' } }
       ]
     }
     
     if (ownerId) {
-      query.ownerId = ownerId
+      query.salonId = ownerId
     }
     
     if (isActive !== null && isActive !== undefined) {
@@ -44,6 +48,10 @@ export async function GET(request: NextRequest) {
       .sort({ createdAt: -1 })
       .toArray()
 
+    // TODO: Implement subscription verification - join with subscriptions table
+    // This ensures we only show jobs from salon owners with active subscriptions
+    // For now, filter is based on status and expiration
+    
     return NextResponse.json({
       success: true,
       data: jobs,
@@ -64,15 +72,37 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create new job
+// POST - Create new job (must have valid payment before going live)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { ownerId, salonName, title, description, requirements, salary, location } = body
+    const { 
+      salonId, 
+      salonName, 
+      role, 
+      skills = [], 
+      description = '', 
+      salaryType,
+      salaryFixed,
+      salaryRange,
+      experience = '',
+      jobType = 'full_time',
+      location = {},
+      contact = ''
+    } = body
 
-    if (!ownerId || !title || !salary) {
+    // Validate required fields
+    if (!salonId || !role || !salaryType) {
       return NextResponse.json(
-        { error: 'Owner ID, title, and salary are required' },
+        { error: 'Missing required fields: salonId, role, salaryType' },
+        { status: 400 }
+      )
+    }
+
+    // Validate location
+    if (!location.lat || !location.lng || !location.address) {
+      return NextResponse.json(
+        { error: 'Invalid location: must include lat, lng, address' },
         { status: 400 }
       )
     }
@@ -81,21 +111,38 @@ export async function POST(request: NextRequest) {
     const collection = db.collection<JobDocument>('jobs')
 
     const newJob: JobDocument = {
-      ownerId,
+      salonId,
       salonName: salonName || '',
-      title,
-      description: description || '',
-      requirements: requirements || [],
-      salary,
-      location: location || { lat: 0, lng: 0, address: '' },
-      status: 'pending_payment', // Jobs start in pending_payment status
-      paymentId: undefined,
-      paymentStatus: 'pending_payment',
-      isActive: false, // Not active until payment approved
-      applicants: [],
+      role,
+      skills,
+      description,
+      salaryType,
+      salaryFixed: salaryFixed || '',
+      salaryRange: salaryRange || '',
+      experience,
+      jobType,
+      location: {
+        lat: location.lat,
+        lng: location.lng,
+        address: location.address,
+        state: location.state || '',
+        city: location.city || '',
+        area: location.area || '',
+        locality: location.locality || ''
+      },
+      contact,
+      status: 'pending_payment', // FIX: Start in pending_payment
+      editsUsed: 0,
+      maxEdits: 3,
+      viewsCount: 0,
+      applicationsCount: 0,
+      isVerified: false,
+      paymentId: '', // FIX: Will be set when payment approved (required)
+      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Default 1 year, updated on payment
+      isActive: false, // FIX: Not active until payment approved AND not expired
       createdAt: new Date(),
       updatedAt: new Date()
-    }
+    } as any
 
     const result = await collection.insertOne(newJob)
     

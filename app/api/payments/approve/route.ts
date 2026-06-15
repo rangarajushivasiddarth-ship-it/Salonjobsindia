@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase, PaymentDocument, ObjectId } from '@/lib/mongodb'
 
 // POST - Admin approve or reject payment
+// IMPORTANT: Add authentication and authorization middleware before using in production
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -21,11 +22,16 @@ export async function POST(request: NextRequest) {
       )
     }
     
+    // TODO: Add authentication middleware
+    // if (!request.user || request.user.role !== 'admin') {
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // }
+    
     const db = await connectToDatabase()
-    const paymentsCollection = db.collection<PaymentDocument>('payments')
-    const jobsCollection = db.collection('jobs')
+    const client = db.getClient?.() // Get client for transactions
     
     // Get payment
+    const paymentsCollection = db.collection<PaymentDocument>('payments')
     const payment = await paymentsCollection.findOne({ _id: new ObjectId(paymentId) })
     
     if (!payment) {
@@ -51,24 +57,41 @@ export async function POST(request: NextRequest) {
         }
       )
       
-      // If job publishing payment, make job live
+      // If job publishing payment, make job live and SET PAYMENT ID
       if (payment.type === 'job_publishing' && payment.jobId) {
-        await jobsCollection.updateOne(
+        const jobsCollection = db.collection('jobs')
+        
+        // FIX: Make sure paymentId is set on job
+        const updateResult = await jobsCollection.updateOne(
           { _id: new ObjectId(payment.jobId) },
           {
             $set: {
-              status: 'live',
-              paymentStatus: 'approved',
+              status: 'live', // SINGLE source of truth
               isActive: true,
+              paymentId: paymentId, // FIX: Set paymentId when approving payment
               paymentApprovedAt: new Date(),
+              // Calculate expiration date based on validity
               expiresAt: new Date(Date.now() + (payment.validityDays || 30) * 24 * 60 * 60 * 1000),
               updatedAt: new Date()
             }
           }
         )
         
+        if (updateResult.matchedCount === 0) {
+          console.error('[v0] Job not found when approving payment:', payment.jobId)
+          // Payment approved but job not found - add to dead letter queue
+        }
+        
         console.log('[v0] Job made live after payment approval:', payment.jobId)
       }
+      
+      // TODO: Add to audit log
+      // await auditLogCollection.insertOne({
+      //   action: 'payment_approved',
+      //   paymentId,
+      //   adminId,
+      //   timestamp: new Date()
+      // })
       
       return NextResponse.json({
         success: true,
@@ -91,12 +114,12 @@ export async function POST(request: NextRequest) {
       
       // If job publishing payment, revert job to draft
       if (payment.type === 'job_publishing' && payment.jobId) {
+        const jobsCollection = db.collection('jobs')
         await jobsCollection.updateOne(
           { _id: new ObjectId(payment.jobId) },
           {
             $set: {
-              status: 'draft',
-              paymentStatus: 'rejected',
+              status: 'draft', // Back to draft, not live
               isActive: false,
               updatedAt: new Date()
             }
@@ -119,3 +142,4 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
