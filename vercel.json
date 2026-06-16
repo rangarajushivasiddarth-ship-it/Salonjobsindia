@@ -1,7 +1,6 @@
 {
   "name": "Salon Jobs India",
   "version": 2,
-  "public": true,
   "buildCommand": "next build",
   "devCommand": "next dev",
   "installCommand": "pnpm install",
