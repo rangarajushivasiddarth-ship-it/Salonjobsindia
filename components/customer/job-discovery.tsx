@@ -209,12 +209,12 @@ export function JobDiscovery() {
       }
     })
 
-  const isSubscribed = user?.isSubscribed === true
+  // Job seekers are always free - no subscription checks needed
   const subscription = user?.id ? getSubscriptionByUserId(user.id) : null
   const isApproved = subscription?.status === 'approved'
 
   const handleSalonClick = (salon: SalonWithDetails) => {
-    // All users can view salon details, but phone numbers are blurred for non-subscribers
+    // All job seekers can view salon details
     setSelectedSalon({ ...salon, isUnlocked: isApproved })
   }
 

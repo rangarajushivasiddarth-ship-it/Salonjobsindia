@@ -63,12 +63,7 @@ export interface JobSeekerDocument {
     verified: boolean
   }
   passportPhotoUrl: string
-  isSubscribed: boolean
-  subscriptionPlan: string | null
-  subscriptionExpiry: Date | null
-  visibilityStatus?: 'incomplete_profile' | 'pending_payment' | 'pending_admin_approval' | 'active_visible' | 'hidden' | 'rejected'
-  paymentId?: string
-  adminApprovedAt?: Date
+  visibilityStatus?: 'incomplete_profile' | 'active_visible' | 'hidden' | 'rejected'
   createdAt: Date
   updatedAt: Date
 }

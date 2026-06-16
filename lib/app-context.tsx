@@ -180,7 +180,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Guard against server-side rendering
     if (typeof window === 'undefined') return
-    if (!state.user?.id || state.user.isSubscribed) return
+    // Only check subscription approval for salon owners (not job seekers)
+    if (!state.user?.id || state.user.role === 'job_seeker') return
     
     const checkApproval = () => {
       // Check from data-store
@@ -224,7 +225,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       clearInterval(interval)
       window.removeEventListener('storage', handleStorageChange)
     }
-  }, [state.user?.id, state.user?.isSubscribed])
+  }, [state.user?.id, state.user?.role])
 
   const signIn = useCallback(async (email: string, password: string, phone: string): Promise<{ success: boolean; error?: string }> => {
     const result = await UserService.login({ email, password, phone })
@@ -362,11 +363,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setSubscription = useCallback(async (subscription: Subscription) => {
     const isApproved = subscription.status === 'approved'
     
-    if (state.user && isApproved) {
+    // Only update for salon owners (not job seekers)
+    if (state.user && isApproved && state.user.role !== 'job_seeker') {
       await UserService.updateUser(state.user.id, {
-        isSubscribed: true,
-        subscriptionPlan: subscription.planName || subscription.planType,
-        subscriptionExpiry: subscription.expiresAt?.toString(),
+        // Subscription tracking removed from User for job seekers (always free)
       })
     }
     
@@ -375,10 +375,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       subscription,
       user: prev.user ? { 
         ...prev.user, 
-        isSubscribed: isApproved,
-        subscriptionExpiry: isApproved ? subscription.expiresAt : undefined
+        // Don't update isSubscribed or subscriptionExpiry - removed from User type
       } : null,
-      currentStep: isApproved ? 'results' : prev.currentStep,
+      currentStep: isApproved ? (prev.user?.role === 'salon_owner' ? 'owner-panel' : 'results') : prev.currentStep,
     }))
   }, [state.user])
 

@@ -107,9 +107,7 @@ export async function PUT(request: NextRequest) {
     if (location !== undefined) updateData.location = location as any
     if (identityProof !== undefined) updateData.identityProof = identityProof as any
     if (passportPhotoUrl !== undefined) updateData.passportPhotoUrl = passportPhotoUrl
-    if (isSubscribed !== undefined) updateData.isSubscribed = isSubscribed
-    if (subscriptionPlan !== undefined) updateData.subscriptionPlan = subscriptionPlan
-    if (subscriptionExpiry !== undefined) updateData.subscriptionExpiry = subscriptionExpiry
+    // Job seekers are always free - no subscription fields to update
 
     const result = await collection.updateOne(
       { userId },
