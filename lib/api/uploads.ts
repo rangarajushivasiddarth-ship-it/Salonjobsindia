@@ -1,195 +1,188 @@
-// Uploads API services - Using Vercel Blob for persistent file storage
-
-import { getAccessToken } from './client';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// Uploads API services - Using Hostinger SFTP storage for persistent file storage
 
 export interface UploadResponse {
-  success: boolean;
-  url: string;
-  message: string;
+  success: boolean
+  url: string
+  path: string
+  message: string
+  error?: string
 }
 
-export interface MultipleUploadResponse {
-  success: boolean;
-  files: Array<{ url: string; originalName: string }>;
-  message: string;
-}
-
-// Upload file to Vercel Blob storage for persistence
-const uploadFileToBlob = async (
+// Upload file to Hostinger SFTP via Vercel API route
+const uploadFileToHostinger = async (
   file: File,
-  category: string
+  category: string,
+  userId: string
 ): Promise<string> => {
   try {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('category', category);
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('category', category)
+    formData.append('userId', userId)
 
     const response = await fetch('/api/upload', {
       method: 'POST',
       body: formData,
-    });
+    })
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Upload failed');
+      const error = await response.json()
+      throw new Error(error.error || 'Upload failed')
     }
 
-    const data = await response.json();
-    return data.url; // Returns persistent Blob URL
+    const data: UploadResponse = await response.json()
+    console.log('[v0] File uploaded to Hostinger:', data.url)
+    return data.url
   } catch (error) {
-    console.error('[v0] Upload error:', error);
-    // Fallback to local Blob URL if server upload fails
-    return URL.createObjectURL(file);
+    console.error('[v0] Upload error:', error)
+    throw error
   }
-};
+}
 
-// Generic upload function - uses Vercel Blob storage
+// Generic upload function
 const uploadFile = async (
-  endpoint: string,
   file: File,
-  category: string
-): Promise<UploadResponse> => {
-  try {
-    // Validate file first
-    const validation = validateFile(file);
-    if (!validation.valid) {
-      throw new Error(validation.error || 'File validation failed');
-    }
-
-    // Upload to Vercel Blob for persistence
-    const url = await uploadFileToBlob(file, category);
-
-    return {
-      success: true,
-      url,
-      message: `File ${file.name} uploaded successfully`
-    };
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Upload failed';
-    throw new Error(errorMessage);
+  category: string,
+  userId: string,
+  onProgress?: (progress: number) => void
+): Promise<string> => {
+  if (!file) {
+    throw new Error('No file selected')
   }
-};
 
-// Upload avatar
-export const uploadAvatar = async (file: File): Promise<UploadResponse> => {
-  return uploadFile('/uploads/avatar', file, 'avatar');
-};
+  if (onProgress) onProgress(25)
 
-// Upload portfolio image
-export const uploadPortfolioImage = async (file: File): Promise<UploadResponse> => {
-  return uploadFile('/uploads/portfolio', file, 'portfolio');
-};
+  try {
+    const url = await uploadFileToHostinger(file, category, userId)
+    if (onProgress) onProgress(100)
+    return url
+  } catch (error) {
+    console.error('[v0] Upload failed:', error)
+    throw error
+  }
+}
 
-// Upload certification image
-export const uploadCertificationImage = async (file: File): Promise<UploadResponse> => {
-  return uploadFile('/uploads/certification', file, 'certification');
-};
-
-// Upload payment screenshot
-export const uploadPaymentScreenshot = async (file: File): Promise<UploadResponse> => {
-  return uploadFile('/uploads/payment-screenshot', file, 'payment');
-};
+// Upload avatar/profile photo
+export const uploadAvatar = async (
+  file: File,
+  userId: string,
+  onProgress?: (progress: number) => void
+): Promise<string> => {
+  return uploadFile(file, 'profile-photo', userId, onProgress)
+}
 
 // Upload resume
-export const uploadResume = async (file: File): Promise<UploadResponse> => {
-  return uploadFile('/uploads/resume', file, 'resume');
-};
+export const uploadResume = async (
+  file: File,
+  userId: string,
+  onProgress?: (progress: number) => void
+): Promise<string> => {
+  return uploadFile(file, 'resume', userId, onProgress)
+}
 
-// Upload salon logo
-export const uploadSalonLogo = async (file: File): Promise<UploadResponse> => {
-  return uploadFile('/uploads/salon-logo', file, 'salon-logo');
-};
+// Upload payment screenshot (for subscriptions/job posting)
+export const uploadPaymentScreenshot = async (
+  file: File,
+  userId: string,
+  onProgress?: (progress: number) => void
+): Promise<string> => {
+  return uploadFile(file, 'payment-screenshot', userId, onProgress)
+}
 
-// Upload identity proof - CRITICAL FOR REGISTRATION
-export const uploadIdentityProof = async (file: File): Promise<UploadResponse> => {
-  return uploadFile('/uploads/identity-proof', file, 'identity-proof');
-};
+// Upload verification document
+export const uploadVerificationDocument = async (
+  file: File,
+  userId: string,
+  onProgress?: (progress: number) => void
+): Promise<string> => {
+  return uploadFile(file, 'verification-document', userId, onProgress)
+}
 
-// Upload passport photo - CRITICAL FOR REGISTRATION
-export const uploadPassportPhoto = async (file: File): Promise<UploadResponse> => {
-  return uploadFile('/uploads/passport-photo', file, 'passport-photo');
-};
+// Upload banner/logo
+export const uploadBannerLogo = async (
+  file: File,
+  userId: string,
+  onProgress?: (progress: number) => void
+): Promise<string> => {
+  return uploadFile(file, 'banner-logo', userId, onProgress)
+}
 
-// Upload multiple images
-export const uploadMultipleImages = async (
-  files: File[],
-  category: string
-): Promise<MultipleUploadResponse> => {
+// Upload salon gallery image
+export const uploadSalonGalleryImage = async (
+  file: File,
+  userId: string,
+  onProgress?: (progress: number) => void
+): Promise<string> => {
+  return uploadFile(file, 'salon-gallery', userId, onProgress)
+}
+
+// Upload identity/passport photo
+export const uploadIdentityProof = async (
+  file: File,
+  userId: string,
+  onProgress?: (progress: number) => void
+): Promise<string> => {
+  return uploadFile(file, 'verification-document', userId, onProgress)
+}
+
+// Upload passport photo (alias for identity proof)
+export const uploadPassportPhoto = async (
+  file: File,
+  userId: string,
+  onProgress?: (progress: number) => void
+): Promise<string> => {
+  return uploadFile(file, 'verification-document', userId, onProgress)
+}
+
+// Generic upload with category
+export const uploadFileWithCategory = async (
+  file: File,
+  category: string,
+  userId: string,
+  onProgress?: (progress: number) => void
+): Promise<string> => {
+  return uploadFile(file, category, userId, onProgress)
+}
+
+// Delete file from Hostinger
+export const deleteFile = async (
+  filePath: string
+): Promise<{ success: boolean; message: string }> => {
   try {
-    const uploadedFiles = await Promise.all(
-      files.map(async (file) => {
-        const validation = validateFile(file);
-        if (!validation.valid) {
-          throw new Error(validation.error || 'File validation failed');
-        }
-
-        const url = await uploadFileToBlob(file, category);
-        return {
-          url,
-          originalName: file.name
-        };
-      })
-    );
-
-    return {
-      success: true,
-      files: uploadedFiles,
-      message: `${files.length} files uploaded successfully`
-    };
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Upload failed';
-    throw new Error(errorMessage);
-  }
-};
-
-// Delete a file from Vercel Blob
-export const deleteFile = async (url: string): Promise<{ success: boolean; message: string }> => {
-  try {
-    if (url.startsWith('blob:')) {
-      URL.revokeObjectURL(url);
-      return { success: true, message: 'Local file deleted' };
-    }
-
-    // Delete from Vercel Blob if it's a blob URL
     const response = await fetch('/api/upload', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url })
-    });
+      body: JSON.stringify({ path: filePath }),
+    })
 
-    if (response.ok) {
-      return { success: true, message: 'File deleted from storage' };
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Delete failed')
     }
-    
-    throw new Error('Delete failed');
+
+    const data = await response.json()
+    console.log('[v0] File deleted from Hostinger:', filePath)
+    return { success: true, message: 'File deleted' }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Delete failed';
-    return { success: false, message: errorMessage };
+    console.error('[v0] Delete error:', error)
+    throw error
   }
-};
+}
 
-// Helper to validate file before upload
-export const validateFile = (
-  file: File,
-  options: {
-    maxSizeMB?: number;
-    allowedTypes?: string[];
-  } = {}
-): { valid: boolean; error?: string } => {
-  const { maxSizeMB = 10, allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'] } = options;
+// Get file download URL (for resume downloads)
+export const getFileDownloadUrl = (publicUrl: string): string => {
+  // For Hostinger, the public URL is already the download URL
+  return publicUrl
+}
 
-  const maxSizeBytes = maxSizeMB * 1024 * 1024;
-
-  if (file.size > maxSizeBytes) {
-    return { valid: false, error: `File size must be less than ${maxSizeMB}MB` };
-  }
-
-  if (!allowedTypes.includes(file.type)) {
-    return { valid: false, error: 'Invalid file type' };
-  }
-
-  return { valid: true };
-};
-
+export default {
+  uploadAvatar,
+  uploadResume,
+  uploadPaymentScreenshot,
+  uploadVerificationDocument,
+  uploadBannerLogo,
+  uploadSalonGalleryImage,
+  uploadFileWithCategory,
+  deleteFile,
+  getFileDownloadUrl,
+}
