@@ -137,14 +137,14 @@ export function ResumeBuilder() {
         }
         reader.readAsDataURL(file)
         
-        // Upload to persistent storage (Vercel Blob)
-        const response = await uploadIdentityProof(file)
+        // Upload to persistent storage (Hostinger)
+        const url = await uploadIdentityProof(file, user?.id || 'anonymous')
         setFormData(prev => ({
           ...prev,
           identityProof: {
             ...prev.identityProof,
             file,
-            preview: response.url, // Store persistent URL
+            preview: url, // Store persistent URL
           }
         }))
       } catch (error) {
@@ -173,13 +173,13 @@ export function ResumeBuilder() {
         }
         reader.readAsDataURL(file)
         
-        // Upload to persistent storage (Vercel Blob)
-        const response = await uploadPassportPhoto(file)
+        // Upload to persistent storage (Hostinger)
+        const url = await uploadPassportPhoto(file, user?.id || 'anonymous')
         setFormData(prev => ({
           ...prev,
           passportPhoto: {
             file,
-            preview: response.url, // Store persistent URL
+            preview: url, // Store persistent URL
           }
         }))
       } catch (error) {
