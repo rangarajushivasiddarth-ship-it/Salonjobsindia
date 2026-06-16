@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import Client from 'ssh2-sftp-client'
 
-// Map of file categories to Hostinger upload folders
-const FOLDER_MAPPING: Record<string, string> = {
-  'profile-photo': '/uploads/profile-photos',
-  'resume': '/uploads/resumes',
-  'payment-screenshot': '/uploads/payment-screenshots',
-  'verification-document': '/uploads/verification-documents',
-  'banner-logo': '/uploads/banners',
-  'salon-gallery': '/uploads/salon-gallery',
+// Map of file categories to Supabase storage buckets
+const BUCKET_MAPPING: Record<string, string> = {
+  'profile-photo': 'profile-photos',
+  'resume': 'resumes',
+  'payment-screenshot': 'payment-screenshots',
+  'verification-document': 'verification-documents',
+  'banner-logo': 'banners',
+  'salon-gallery': 'salon-gallery',
 }
 
 // Allowed file types and extensions
@@ -20,48 +19,22 @@ const ALLOWED_TYPES: Record<string, string[]> = {
   'application/pdf': ['pdf'],
 }
 
-// Initialize Supabase client for metadata storage
+// Initialize Supabase client
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  
+
   if (!url || !key) {
     throw new Error('Supabase credentials not configured')
   }
-  
+
   return createClient(url, key)
-}
-
-// Create SFTP connection to Hostinger
-async function createSFTPConnection() {
-  const sftp = new Client()
-  
-  const host = process.env.HOSTINGER_SFTP_HOST
-  const port = parseInt(process.env.HOSTINGER_SFTP_PORT || '22')
-  const username = process.env.HOSTINGER_SFTP_USERNAME
-  const password = process.env.HOSTINGER_SFTP_PASSWORD
-
-  if (!host || !username || !password) {
-    throw new Error('Hostinger SFTP credentials not configured. Set HOSTINGER_SFTP_HOST, HOSTINGER_SFTP_USERNAME, and HOSTINGER_SFTP_PASSWORD')
-  }
-
-  try {
-    await sftp.connect({
-      host,
-      port,
-      username,
-      password,
-    })
-    return sftp
-  } catch (error) {
-    throw new Error(`SFTP connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
-  }
 }
 
 // Validate file
 function validateFile(file: File, category: string): { valid: boolean; error?: string } {
-  if (!FOLDER_MAPPING[category]) {
-    return { valid: false, error: `Invalid category. Must be one of: ${Object.keys(FOLDER_MAPPING).join(', ')}` }
+  if (!BUCKET_MAPPING[category]) {
+    return { valid: false, error: `Invalid category. Must be one of: ${Object.keys(BUCKET_MAPPING).join(', ')}` }
   }
 
   if (!ALLOWED_TYPES[file.type]) {
@@ -80,7 +53,7 @@ function generateSafeFilename(originalName: string, userId: string): string {
   const timestamp = Date.now()
   const randomId = Math.random().toString(36).substring(2, 9)
   const extension = originalName.split('.').pop()?.toLowerCase() || 'bin'
-  
+
   // Remove unsafe characters and limit length
   const safeName = originalName
     .split('.')[0]
@@ -90,77 +63,8 @@ function generateSafeFilename(originalName: string, userId: string): string {
   return `${userId}-${timestamp}-${randomId}.${extension}`
 }
 
-// Upload file to Hostinger SFTP
-async function uploadToHostinger(
-  sftp: InstanceType<typeof Client>,
-  buffer: Buffer,
-  remoteFolder: string,
-  filename: string
-): Promise<string> {
-  try {
-    // Ensure remote folder exists
-    try {
-      await sftp.stat(remoteFolder)
-    } catch {
-      // Folder doesn't exist, create it
-      await sftp.mkdir(remoteFolder, true)
-    }
-
-    // Upload file
-    const remotePath = `${remoteFolder}/${filename}`
-    await sftp.put(buffer, remotePath)
-
-    // Generate public URL (adjust domain based on your Hostinger setup)
-    const publicUrl = `${process.env.HOSTINGER_PUBLIC_URL || 'https://example.com'}${remoteFolder}/${filename}`
-    
-    return publicUrl
-  } catch (error) {
-    throw new Error(`Hostinger upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
-  }
-}
-
-// Save file metadata to Supabase
-async function saveFileMetadata(
-  supabase: ReturnType<typeof getSupabaseClient>,
-  fileData: {
-    file_url: string
-    file_path: string
-    file_type: string
-    category: string
-    uploaded_by: string
-    file_size: number
-  }
-) {
-  try {
-    const { error } = await supabase
-      .from('file_uploads')
-      .insert([{
-        file_url: fileData.file_url,
-        file_path: fileData.file_path,
-        file_type: fileData.file_type,
-        category: fileData.category,
-        uploaded_by: fileData.uploaded_by,
-        file_size: fileData.file_size,
-        uploaded_at: new Date().toISOString(),
-      }])
-
-    if (error) {
-      console.error('[v0] Supabase metadata save error:', error)
-      // Don't throw - file was uploaded successfully, just metadata failed
-      return false
-    }
-
-    return true
-  } catch (error) {
-    console.error('[v0] Metadata save error:', error)
-    return false
-  }
-}
-
-// Handle POST - File upload to Hostinger SFTP
+// Handle POST - Upload file to Supabase Storage
 export async function POST(request: NextRequest) {
-  let sftp: InstanceType<typeof Client> | null = null
-
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
@@ -185,39 +89,65 @@ export async function POST(request: NextRequest) {
 
     // Generate safe filename
     const filename = generateSafeFilename(file.name, userId)
-    const remoteFolder = FOLDER_MAPPING[category]
+    const bucketName = BUCKET_MAPPING[category]
+    const filePath = `${userId}/${filename}`
 
-    console.log('[v0] Uploading file:', filename, 'to', remoteFolder)
+    console.log('[v0] Uploading file to Supabase Storage:', bucketName, filePath)
 
-    // Upload to Hostinger
-    sftp = await createSFTPConnection()
-    const buffer = await file.arrayBuffer()
-    const publicUrl = await uploadToHostinger(
-      sftp,
-      Buffer.from(buffer),
-      remoteFolder,
-      filename
-    )
-
-    // Save metadata to Supabase
+    // Upload to Supabase Storage
     const supabase = getSupabaseClient()
-    await saveFileMetadata(supabase, {
-      file_url: publicUrl,
-      file_path: `${remoteFolder}/${filename}`,
-      file_type: file.type,
-      category,
-      uploaded_by: userId,
-      file_size: file.size,
-    })
+    const buffer = await file.arrayBuffer()
 
-    console.log('[v0] File uploaded successfully:', publicUrl)
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .upload(filePath, Buffer.from(buffer), {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type,
+      })
+
+    if (error) {
+      throw new Error(`Storage upload failed: ${error.message}`)
+    }
+
+    // Get public URL for public buckets
+    let publicUrl = ''
+    if (['profile-photos', 'banners', 'salon-gallery'].includes(bucketName)) {
+      const { data: urlData } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(filePath)
+      publicUrl = urlData.publicUrl
+    }
+
+    // Save metadata to Supabase database
+    const { error: metadataError } = await supabase
+      .from('file_metadata')
+      .insert({
+        user_id: userId,
+        file_name: file.name,
+        file_path: filePath,
+        file_category: category,
+        file_size: file.size,
+        file_type: file.type,
+        public_url: publicUrl,
+        storage_location: 'supabase',
+        uploaded_by: userId,
+      })
+
+    if (metadataError) {
+      console.error('[v0] Metadata save error:', metadataError)
+      // Don't throw - file was uploaded successfully
+    }
+
+    console.log('[v0] File uploaded successfully:', filePath)
 
     return NextResponse.json(
       {
         success: true,
-        url: publicUrl,
-        path: `${remoteFolder}/${filename}`,
-        message: 'File uploaded to Hostinger successfully'
+        url: publicUrl || filePath,
+        path: filePath,
+        bucket: bucketName,
+        message: 'File uploaded to Supabase Storage successfully'
       },
       { status: 200 }
     )
@@ -228,43 +158,47 @@ export async function POST(request: NextRequest) {
       { error: 'Upload failed: ' + errorMessage },
       { status: 500 }
     )
-  } finally {
-    // Close SFTP connection
-    if (sftp) {
-      await sftp.end()
-    }
   }
 }
 
-// Handle DELETE - Delete file from Hostinger SFTP
+// Handle DELETE - Delete file from Supabase Storage
 export async function DELETE(request: NextRequest) {
-  let sftp: InstanceType<typeof Client> | null = null
-
   try {
-    const { path } = await request.json()
+    const { path, bucket } = await request.json()
 
-    if (!path) {
+    if (!path || !bucket) {
       return NextResponse.json(
-        { error: 'Path is required' },
+        { error: 'Path and bucket are required' },
         { status: 400 }
       )
     }
 
-    // Delete from Hostinger
-    sftp = await createSFTPConnection()
-    await sftp.delete(path)
-
-    // Delete metadata from Supabase
     const supabase = getSupabaseClient()
-    await supabase
-      .from('file_uploads')
+
+    // Delete from Supabase Storage
+    const { error } = await supabase.storage
+      .from(bucket)
+      .remove([path])
+
+    if (error) {
+      throw new Error(`Storage delete failed: ${error.message}`)
+    }
+
+    // Delete metadata from database
+    const { error: metadataError } = await supabase
+      .from('file_metadata')
       .delete()
       .eq('file_path', path)
+
+    if (metadataError) {
+      console.error('[v0] Metadata delete error:', metadataError)
+      // Don't throw - file was deleted successfully
+    }
 
     console.log('[v0] File deleted successfully:', path)
 
     return NextResponse.json(
-      { success: true, message: 'File deleted from Hostinger' },
+      { success: true, message: 'File deleted from Supabase Storage' },
       { status: 200 }
     )
   } catch (error) {
@@ -274,10 +208,5 @@ export async function DELETE(request: NextRequest) {
       { error: 'Delete failed: ' + errorMessage },
       { status: 500 }
     )
-  } finally {
-    // Close SFTP connection
-    if (sftp) {
-      await sftp.end()
-    }
   }
 }
