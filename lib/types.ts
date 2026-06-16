@@ -11,6 +11,8 @@ export interface User {
   phone: string
   name?: string
   role: UserRole
+  isSubscribed: boolean // Quick flag for job seekers (always true) and salon owners (subscription active)
+  subscriptionId?: string // FK to Subscriptions table for salon owners
   profilePhoto?: string
   identityProof?: {
     type: string
@@ -521,7 +523,7 @@ export interface Alert {
 // ==========================================
 
 export type PaymentStatus = 'pending' | 'approved' | 'rejected'
-export type PaymentType = 'job_publishing' | 'verified_badge' | 'contact_pack'
+export type PaymentType = 'job_publishing' | 'verified_badge' | 'contact_pack' | 'job_seeker_subscription'
 
 export interface Payment {
   id: string

@@ -180,12 +180,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Guard against server-side rendering
     if (typeof window === 'undefined') return
-    // Job seekers no longer need subscription approval checks
-    if (!state.user?.id || state.user.role !== 'salon_owner') return
+    if (!state.user?.id || state.user.isSubscribed) return
     
     const checkApproval = () => {
       // Check from data-store
-      const dataStoreKey = 'salonjobsindia_subscriptions'
+      const dataStoreKey = 'fitonze_subscriptions'
       try {
         const stored = localStorage.getItem(dataStoreKey)
         if (stored) {
@@ -225,7 +224,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       clearInterval(interval)
       window.removeEventListener('storage', handleStorageChange)
     }
-  }, [state.user?.id])
+  }, [state.user?.id, state.user?.isSubscribed])
 
   const signIn = useCallback(async (email: string, password: string, phone: string): Promise<{ success: boolean; error?: string }> => {
     const result = await UserService.login({ email, password, phone })

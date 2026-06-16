@@ -298,12 +298,13 @@ export const UserService = {
     const users = getFromStorage<User>(STORAGE_KEYS.USERS)
     const jobSeekers = users.filter(u => u.role === 'job_seeker')
     const salonOwners = users.filter(u => u.role === 'salon_owner' || u.role === 'employer')
+    const subscribedUsers = users.filter(u => u.isSubscribed)
     
     return {
       totalUsers: users.length,
       jobSeekers: jobSeekers.length,
       salonOwners: salonOwners.length,
-      subscribedUsers: salonOwners.length, // Only salon owners have paid subscriptions
+      subscribedUsers: subscribedUsers.length,
     }
   }
 }

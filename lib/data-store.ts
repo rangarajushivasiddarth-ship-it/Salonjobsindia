@@ -552,8 +552,8 @@ export function getApplicantJobSeekers(salonOwnerId: string): JobSeeker[] {
   return getAllJobSeekers().filter(js => applicantIds.includes(js.userId))
 }
 
-// Approve Job Publishing Payment (for salon owners)
-export function approveJobPublishingPayment(paymentId: string, adminId: string): { success: boolean; jobId?: string; error?: string } {
+// Approve Job Seeker payment and make profile visible
+export function approveJobSeekerPayment(paymentId: string, adminId: string): { success: boolean; resumeId?: string; error?: string } {
   const payments = getAllPayments()
   const payment = payments.find(p => p.id === paymentId)
   
@@ -561,14 +561,72 @@ export function approveJobPublishingPayment(paymentId: string, adminId: string):
     return { success: false, error: 'Payment not found' }
   }
   
+  if (payment.type !== 'job_seeker_subscription' || !payment.resumeId) {
+    return { success: false, error: 'Payment is not for job seeker subscription' }
+  }
+  
+  // Update payment
   payment.status = 'approved'
   payment.processedAt = new Date()
   payment.processedBy = adminId
   
+  // Update subscriptions (mark approved)
+  const subscriptions = getAllSubscriptions()
+  const subscription = subscriptions.find(s => s.userId === payment.userId && s.status === 'pending')
+  
+  if (subscription) {
+    subscription.status = 'approved'
+    subscription.approvedAt = new Date()
+    subscription.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subscriptions))
+    dispatchDataUpdate(SUBSCRIPTIONS_KEY)
+    
+    console.log('[v0] Job Seeker subscription approved:', subscription.userId)
+  }
+  
   localStorage.setItem(PAYMENTS_KEY, JSON.stringify(payments))
   dispatchDataUpdate(PAYMENTS_KEY)
   
-  return { success: true, jobId: payment.jobId }
+  createAlert({
+    userId: payment.userId,
+    type: 'payment_approved',
+    title: 'Profile Approved!',
+    message: 'Your profile is now visible to salon owners.',
+    data: { resumeId: payment.resumeId },
+    isRead: false,
+  })
+  
+  return { success: true, resumeId: payment.resumeId }
+}
+
+// Reject Job Seeker payment
+export function rejectJobSeekerPayment(paymentId: string, adminId: string, reason?: string): { success: boolean; error?: string } {
+  const payments = getAllPayments()
+  const payment = payments.find(p => p.id === paymentId)
+  
+  if (!payment) {
+    return { success: false, error: 'Payment not found' }
+  }
+  
+  payment.status = 'rejected'
+  payment.processedAt = new Date()
+  payment.processedBy = adminId
+  payment.rejectionReason = reason
+  
+  localStorage.setItem(PAYMENTS_KEY, JSON.stringify(payments))
+  dispatchDataUpdate(PAYMENTS_KEY)
+  
+  createAlert({
+    userId: payment.userId,
+    type: 'payment_rejected',
+    title: 'Profile Verification Failed',
+    message: reason || 'Your profile verification failed. Please contact support.',
+    isRead: false,
+  })
+  
+  console.log('[v0] Job Seeker payment rejected:', payment.userId)
+  
+  return { success: true }
 }
 
 export function getJobSeekersForSalonOwners(salonOwnerId: string): JobSeeker[] {
@@ -677,15 +735,13 @@ function updateUserSubscription(userId: string, isSubscribed: boolean): void {
   if (typeof window === 'undefined' || !userId) return
   
   try {
-    const currentUserStr = localStorage.getItem('salonjobsindia_current_user')
+    const currentUserStr = localStorage.getItem('fitonze_current_user')
     if (currentUserStr) {
       try {
         const currentUser = JSON.parse(currentUserStr)
         if (currentUser?.id === userId) {
-          // Job seekers don't have isSubscribed field anymore
-          if (currentUser.role !== 'job_seeker') {
-            localStorage.setItem('salonjobsindia_current_user', JSON.stringify(currentUser))
-          }
+          currentUser.isSubscribed = isSubscribed
+          localStorage.setItem('fitonze_current_user', JSON.stringify(currentUser))
         }
       } catch {
         // Ignore
@@ -710,13 +766,10 @@ function updateUserSubscription(userId: string, isSubscribed: boolean): void {
           }
           
           if (uid === userId) {
-            // Only update subscription for salon owners, not job seekers
-            if ((userData.user?.role || userData.role) !== 'job_seeker') {
-              if (userData.user && typeof userData.user === 'object') {
-                // Subscription field removed from User type for salon owners only
-              } else {
-                // Subscription field removed from User type
-              }
+            if (userData.user && typeof userData.user === 'object') {
+              userData.user.isSubscribed = isSubscribed
+            } else {
+              userData.isSubscribed = isSubscribed
             }
             break
           }

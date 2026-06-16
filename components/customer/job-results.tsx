@@ -18,7 +18,9 @@ export function JobResults() {
   const [showSubscribeModal, setShowSubscribeModal] = useState(false)
   const [jobs, setJobs] = useState<Job[]>([])
 
-  // Job seekers always have access to view results
+  // Check if user has active subscription
+  const isSubscribed = user?.isSubscribed === true
+
   // Load real jobs from data store
   useEffect(() => {
     const loadJobs = async () => {

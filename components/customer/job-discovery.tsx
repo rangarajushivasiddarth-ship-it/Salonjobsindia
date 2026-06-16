@@ -209,12 +209,12 @@ export function JobDiscovery() {
       }
     })
 
-  // Job seekers always have access to view jobs
+  const isSubscribed = user?.isSubscribed === true
   const subscription = user?.id ? getSubscriptionByUserId(user.id) : null
   const isApproved = subscription?.status === 'approved'
 
   const handleSalonClick = (salon: SalonWithDetails) => {
-    // All users can view salon details, but contact details require credit unlock
+    // All users can view salon details, but phone numbers are blurred for non-subscribers
     setSelectedSalon({ ...salon, isUnlocked: isApproved })
   }
 
