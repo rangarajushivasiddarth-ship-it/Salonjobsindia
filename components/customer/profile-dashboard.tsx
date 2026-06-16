@@ -74,7 +74,7 @@ export function ProfileDashboard() {
   }
 
   // Calculate days remaining from subscription or user's subscription expiry
-  const expiryDate = subscription?.expiresAt || user?.subscriptionExpiry
+  const expiryDate = subscription?.expiresAt
   const daysRemaining = expiryDate
     ? Math.max(0, Math.ceil((new Date(expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : (user?.isSubscribed ? 30 : 0) // Default to 30 days if subscribed but no expiry set

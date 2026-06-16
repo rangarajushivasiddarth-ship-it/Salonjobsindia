@@ -92,8 +92,6 @@ export function SubscriptionScreen() {
       screenshotUrl: previewUrl || '',
       paymentMethod: 'upi',
       status: 'pending',
-      shopLimit: !isOwner ? (selectedPlanDetails as typeof JOB_SEEKER_PLANS[0]).shopLimit : undefined,
-      shopsViewed: 0,
       jobPostsTotal: isOwner ? (selectedPlanDetails as typeof SALON_OWNER_PLANS[0]).jobPosts : undefined,
       jobPostsUsed: 0,
       createdAt: new Date(),

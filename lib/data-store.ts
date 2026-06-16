@@ -1,6 +1,6 @@
 'use client'
 
-import type { Subscription, Job, User, JobSeekerPlan, SalonProfile, Payment, Alert, Application } from './types'
+import type { Subscription, Job, User, SalonProfile, Payment, Alert, Application } from './types'
 
 // Storage keys
 const SUBSCRIPTIONS_KEY = 'salonjobsindia_subscriptions'
@@ -76,36 +76,8 @@ export function canViewMoreShops(userId: string): { canView: boolean; remaining:
     return { canView: false, remaining: 0, total: 0 }
   }
   
-  // Check shop limit
-  if (subscription.shopLimit === 'unlimited') {
-    return { canView: true, remaining: 'unlimited', total: 'unlimited' }
-  }
-  
-  const shopLimit = typeof subscription.shopLimit === 'number' ? subscription.shopLimit : 999
-  const shopsViewed = subscription.shopsViewed || 0
-  const remaining = shopLimit - shopsViewed
-  
-  return {
-    canView: remaining > 0,
-    remaining: Math.max(0, remaining),
-    total: shopLimit
-  }
-}
-
-export function incrementShopsViewed(userId: string): boolean {
-  const subscriptions = getAllSubscriptions()
-  const subscription = subscriptions.find(s => s.userId === userId && s.status === 'approved')
-  
-  if (!subscription) return false
-  
-  subscription.shopsViewed = (subscription.shopsViewed || 0) + 1
-  
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subscriptions))
-    dispatchDataUpdate(SUBSCRIPTIONS_KEY)
-  }
-  
-  return true
+  // Job seekers have unlimited access, salon owners have job posting limits
+  return { canView: true, remaining: 'unlimited', total: 'unlimited' }
 }
 
 // Message interface
@@ -721,7 +693,6 @@ export function approveSubscription(subscriptionId: string): Subscription | null
     subscription.status = 'approved'
     subscription.approvedAt = new Date()
     subscription.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-    subscription.shopsViewed = 0
     
     localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subscriptions))
     updateUserSubscription(subscription.userId, true)
@@ -977,7 +948,6 @@ export function approveJobPayment(paymentId: string, adminId: string): { success
   
   job.status = 'live'
   job.isActive = true
-  job.paymentStatus = 'approved'
   job.paymentApprovedAt = new Date()
   job.expiresAt = new Date(Date.now() + (payment.validityDays || 30) * 24 * 60 * 60 * 1000)
   
@@ -1024,7 +994,6 @@ export function rejectJobPayment(paymentId: string, adminId: string, reason?: st
     const job = jobs.find(j => j.id === payment.jobId)
     if (job) {
       job.status = 'draft'
-      job.paymentStatus = 'rejected'
       job.isActive = false
       localStorage.setItem(JOBS_KEY, JSON.stringify(jobs))
       dispatchDataUpdate(JOBS_KEY)

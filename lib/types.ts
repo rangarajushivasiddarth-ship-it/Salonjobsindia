@@ -523,7 +523,7 @@ export interface Alert {
 // ==========================================
 
 export type PaymentStatus = 'pending' | 'approved' | 'rejected'
-export type PaymentType = 'job_publishing' | 'verified_badge' | 'contact_pack'
+export type PaymentType = 'job_publishing' | 'verified_badge' | 'contact_pack' | 'job_seeker_subscription'
 
 export interface Payment {
   id: string
@@ -537,6 +537,7 @@ export interface Payment {
   screenshotUrl?: string
   status: PaymentStatus
   jobId?: string
+  resumeId?: string
   contactCredits?: number
   validityDays: number
   transactionId?: string
@@ -556,7 +557,7 @@ export interface Subscription {
   userPhone?: string
   userName?: string
   userRole: UserRole
-  planType: SalonOwnerPlanType
+  planType: JobSeekerPlanType | SalonOwnerPlanType
   planName: string
   amount: number
   screenshotUrl?: string
