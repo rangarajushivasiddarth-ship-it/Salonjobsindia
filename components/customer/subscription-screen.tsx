@@ -16,7 +16,27 @@ export function SubscriptionScreen() {
   const { user, setSubscription, goToStep } = useApp()
   const isOwner = user?.role === 'salon_owner' || user?.role === 'employer'
   
-  const [selectedPlan, setSelectedPlan] = useState<string>(isOwner ? 'single_post' : 'unlimited')
+  // Job seekers are always free - skip subscription screen entirely
+  useEffect(() => {
+    if (user && !isOwner) {
+      console.log('[v0] Job seeker detected - skipping subscription screen, redirecting to results')
+      goToStep('results')
+    }
+  }, [user, isOwner, goToStep])
+  
+  // If job seeker, return loading/empty state
+  if (!isOwner) {
+    return (
+      <div className="w-full h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // SALON OWNER ONLY - Payment subscription flow
+  const [selectedPlan, setSelectedPlan] = useState<string>('single_post')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -24,38 +44,22 @@ export function SubscriptionScreen() {
   const [existingPending, setExistingPending] = useState<Subscription | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const plans = isOwner ? SALON_OWNER_PLANS : JOB_SEEKER_PLANS
+  const plans = SALON_OWNER_PLANS
+  const selectedPlanDetails = plans.find(p => p.id === selectedPlan)
   
+  if (!selectedPlanDetails) {
+    return (
+      <div className="w-full h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive">Invalid plan selected</p>
+        </div>
+      </div>
+    )
+  }
+
   // Real-time approval status check (polls cloud storage)
   const { isApproved: cloudApproved, approvalData } = useApprovalStatus(user?.id, 2000)
-
-  // Check for existing pending subscription and poll for approval
-  useEffect(() => {
-    console.log('[v0] SubscriptionScreen - useEffect1 starting', { userId: user?.id, isOwner })
-    if (user?.id) {
-      const checkSubscription = () => {
-        console.log('[v0] SubscriptionScreen - checkSubscription called')
-        const existing = getSubscriptionByUserId(user.id)
-        if (existing && existing.status === 'pending') {
-          console.log('[v0] SubscriptionScreen - Found pending subscription, showing waiting screen')
-          setExistingPending(existing)
-          setIsSubmitted(true)
-        } else if (existing && existing.status === 'approved') {
-          console.log('[v0] SubscriptionScreen - Subscription approved! Redirecting to:', isOwner ? 'owner-panel' : 'results')
-          // Subscription approved! Redirect to app
-          goToStep(isOwner ? 'owner-panel' : 'results')
-        }
-      }
-      
-      checkSubscription()
-      
-      // Poll every 3 seconds to check if approved
-      const interval = setInterval(checkSubscription, 3000)
-      
-      return () => clearInterval(interval)
-    }
-  }, [user?.id, isOwner]) // REMOVED goToStep - it's a function that changes every render
-
+  
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -65,17 +69,13 @@ export function SubscriptionScreen() {
       reader.readAsDataURL(file)
     }
   }
-
-  const selectedPlanDetails = plans.find(p => p.id === selectedPlan)!
-
+  
   const handleSubmit = async () => {
     if (!uploadedFile || !user) return
     
     setIsSubmitting(true)
     
-    const validityDays = isOwner 
-      ? (selectedPlanDetails as typeof SALON_OWNER_PLANS[0]).validityDays 
-      : 30
+    const validityDays = (selectedPlanDetails as typeof SALON_OWNER_PLANS[0]).validityDays || 30
     
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + validityDays)
