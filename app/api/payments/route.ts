@@ -80,15 +80,44 @@ export async function PUT(request: NextRequest) {
     
     console.log(`[v0] Admin ${action}ing payment:`, { paymentId, adminId, reason })
     
-    // This would update payment in MongoDB in production
-    // and trigger downstream updates (job going live, credits added, etc.)
+    // In production, this would:
+    // 1. Update payment status in MongoDB
+    // 2. If approved for job publishing:
+    //    - Mark job as "live"
+    //    - Activate salon owner subscription
+    //    - Send notification to salon owner
+    // 3. If approved for contact pack:
+    //    - Add credits to salon owner account
+    //    - Create credit_transactions record
+    // 4. If rejected:
+    //    - Send rejection reason to user
+    //    - Update payment status to "rejected"
     
-    return NextResponse.json({
+    const responseData = {
       success: true,
       paymentId,
       action,
-      message: `Payment ${action}ed successfully`
-    })
+      message: `Payment ${action}ed successfully`,
+      details: {
+        timestamp: new Date().toISOString(),
+        processedBy: adminId,
+        reason: reason || null
+      }
+    }
+    
+    if (action === 'approve') {
+      console.log(`[v0] Payment approved. Next steps:
+        - Update payment.status = "approved"
+        - Activate associated subscription/credits
+        - Make job visible to job seekers
+        - Send notification to user`)
+    } else {
+      console.log(`[v0] Payment rejected. Reason: ${reason || 'Not provided'}
+        - Update payment.status = "rejected"
+        - Send rejection notification to user`)
+    }
+    
+    return NextResponse.json(responseData)
   } catch (error) {
     console.error('[v0] Error updating payment:', error)
     return NextResponse.json(
