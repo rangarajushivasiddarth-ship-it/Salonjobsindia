@@ -48,18 +48,30 @@ export async function GET(request: NextRequest) {
       .sort({ createdAt: -1 })
       .toArray()
 
-    // TODO: Implement subscription verification - join with subscriptions table
-    // This ensures we only show jobs from salon owners with active subscriptions
-    // For now, filter is based on status and expiration
+    // Verify salon owner subscriptions for each job
+    // Only show jobs from salon owners with active subscriptions
+    const verifiedJobs = []
+    for (const job of jobs) {
+      const subscription = await subscriptionsCollection.findOne({
+        userId: job.ownerId,
+        status: 'approved',
+        expiresAt: { $gt: new Date() }
+      })
+      
+      // Only include job if salon owner has active subscription
+      if (subscription) {
+        verifiedJobs.push(job)
+      }
+    }
     
     return NextResponse.json({
       success: true,
-      data: jobs,
+      data: verifiedJobs,
       pagination: {
         page,
         limit,
-        totalCount,
-        totalPages: Math.ceil(totalCount / limit)
+        totalCount: verifiedJobs.length, // Use verified count
+        totalPages: Math.ceil(verifiedJobs.length / limit)
       }
     })
 
