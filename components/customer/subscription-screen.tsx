@@ -60,6 +60,16 @@ export function SubscriptionScreen() {
   // Real-time approval status check (polls cloud storage)
   const { isApproved: cloudApproved, approvalData } = useApprovalStatus(user?.id, 2000)
   
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setUploadedFile(file)
+      const reader = new FileReader()
+      reader.onload = () => setPreviewUrl(reader.result as string)
+      reader.readAsDataURL(file)
+    }
+  }
+  
   const handleSubmit = async () => {
     if (!uploadedFile || !user) return
     
