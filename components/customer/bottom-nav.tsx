@@ -28,12 +28,12 @@ export function BottomNav({ unreadMessages = 0, unreadNotifications = 0 }: Botto
   
   // Memoize nav items so they re-render when language changes
   const jobSeekerNav: NavItem[] = useMemo(() => [
-    { id: 'home', label: t('findJobs'), icon: Home, step: user?.isSubscribed ? 'results' : 'discovery' },
+    { id: 'home', label: t('findJobs'), icon: Home, step: 'discovery' }, // Job seekers always have access
     { id: 'about', label: t('about'), icon: Info, step: 'about' },
     { id: 'contact', label: t('contact'), icon: Phone, step: 'contact' },
     { id: 'messages', label: t('messages'), icon: MessageCircle, step: 'messages', badge: unreadMessages },
     { id: 'profile', label: t('profile'), icon: User, step: 'profile' },
-  ], [t, user?.isSubscribed, unreadMessages, currentLanguage])
+  ], [t, unreadMessages, currentLanguage])
   
   const salonOwnerNav: NavItem[] = useMemo(() => [
     { id: 'home', label: t('dashboard'), icon: Building2, step: 'owner-panel' },

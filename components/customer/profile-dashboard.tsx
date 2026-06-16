@@ -77,7 +77,7 @@ export function ProfileDashboard() {
   const expiryDate = subscription?.expiresAt
   const daysRemaining = expiryDate
     ? Math.max(0, Math.ceil((new Date(expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-    : (user?.isSubscribed ? 30 : 0) // Default to 30 days if subscribed but no expiry set
+    : 0 // Job seekers don't have expiring subscriptions
 
   // Check if user has a completed profile (either from resume context or jobSeeker data)
   const hasCompletedProfile = Boolean(resume?.name || jobSeeker?.name)
@@ -251,7 +251,7 @@ export function ProfileDashboard() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => goToStep(user?.isSubscribed ? 'results' : 'discovery')}
+          onClick={() => goToStep('discovery')} // Job seekers always have access
           className="text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -282,31 +282,17 @@ export function ProfileDashboard() {
             </div>
           </div>
           
-          {/* Subscription Status */}
-          {user?.isSubscribed ? (
-            <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Crown className="w-5 h-5 text-primary" />
-                  <span className="font-semibold text-primary">Premium Active</span>
-                </div>
-                <span className="text-sm text-muted-foreground">{daysRemaining} days left</span>
+          {/* Job Seekers - Free Access, No Subscription Required */}
+          {user?.role === 'job_seeker' && (
+            <div className="p-4 bg-green-500/10 rounded-xl border border-green-500/20">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-500" />
+                <span className="font-semibold text-green-500">Free Access - Full Features Unlocked</span>
               </div>
-              <div className="h-2 bg-secondary/50 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-primary transition-all duration-500"
-                  style={{ width: `${Math.min(100, (daysRemaining / 30) * 100)}%` }}
-                />
-              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                All features are free for job seekers. Browse jobs, apply, and connect with salons at no cost.
+              </p>
             </div>
-          ) : (
-            <Button
-              onClick={() => goToStep('subscription')}
-              className="w-full h-12 bg-primary hover:bg-primary/90 gold-glow"
-            >
-              <Crown className="w-5 h-5 mr-2" />
-              Upgrade to Premium
-            </Button>
           )}
         </div>
       </div>
