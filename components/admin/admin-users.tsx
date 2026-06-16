@@ -236,11 +236,11 @@ const filteredUsers = users.filter(user => {
                   {/* Status */}
                   <div className="md:col-span-2">
                     <span className={`px-2 py-1 text-xs rounded-full ${
-                      user.isSubscribed 
+                      user.role === 'salon_owner' 
                         ? 'bg-green-500/20 text-green-400' 
-                        : 'bg-secondary text-muted-foreground'
+                        : 'bg-blue-500/20 text-blue-400'
                     }`}>
-                      {user.isSubscribed ? 'Subscribed' : 'Free'}
+                      {user.role === 'salon_owner' ? 'Salon Owner (Paid)' : 'Job Seeker (Free)'}
                     </span>
                   </div>
                   

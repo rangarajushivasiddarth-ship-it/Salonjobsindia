@@ -18,8 +18,7 @@ export function JobResults() {
   const [showSubscribeModal, setShowSubscribeModal] = useState(false)
   const [jobs, setJobs] = useState<Job[]>([])
 
-  // Check if user has active subscription
-  const isSubscribed = user?.isSubscribed === true
+  // Job seekers are always free - load all live jobs
 
   // Load real jobs from data store
   useEffect(() => {
@@ -174,27 +173,14 @@ export function JobResults() {
               </div>
               
               <div className="flex items-center justify-between pt-3 border-t border-border/30">
-                {isSubscribed ? (
-                  <a
-                    href={`tel:${job.contact}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex items-center gap-2 text-sm text-primary hover:underline"
-                  >
-                    <Phone className="w-4 h-4" />
-                    {job.contact}
-                  </a>
-                ) : (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setShowSubscribeModal(true)
-                    }}
-                    className="flex items-center gap-2 text-sm text-muted-foreground"
-                  >
-                    <Lock className="w-4 h-4" />
-                    <span className="blur-sm select-none">+91 98XXX XXXXX</span>
-                  </button>
-                )}
+                <a
+                  href={`tel:${job.contact}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-2 text-sm text-primary hover:underline"
+                >
+                  <Phone className="w-4 h-4" />
+                  {job.contact}
+                </a>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </div>
             </button>
@@ -284,36 +270,18 @@ export function JobResults() {
               
               <div className="mb-6">
                 <h4 className="font-semibold mb-2">Contact</h4>
-                {isSubscribed ? (
-                  <a
-                    href={`tel:${selectedJob.contact}`}
-                    className="flex items-center gap-3 p-4 bg-secondary/30 rounded-xl"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                      <Phone className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-semibold">{selectedJob.contact}</p>
-                      <p className="text-xs text-muted-foreground">Tap to call</p>
-                    </div>
-                  </a>
-                ) : (
-                  <button
-                    onClick={() => setShowSubscribeModal(true)}
-                    className="w-full flex items-center gap-3 p-4 bg-secondary/30 rounded-xl text-left"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                      <Lock className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold blur-sm select-none">+91 98XXX XXXXX</p>
-                      <p className="text-xs text-primary flex items-center gap-1">
-                        <Crown className="w-3 h-3" />
-                        Subscribe to view contact
-                      </p>
-                    </div>
-                  </button>
-                )}
+                <a
+                  href={`tel:${selectedJob.contact}`}
+                  className="flex items-center gap-3 p-4 bg-secondary/30 rounded-xl"
+                >
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Phone className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">{selectedJob.contact}</p>
+                    <p className="text-xs text-muted-foreground">Tap to call</p>
+                  </div>
+                </a>
               </div>
               
               <div className="flex gap-3">
