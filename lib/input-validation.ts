@@ -102,7 +102,7 @@ export const saveLocationSchema = z.object({
  * Returns parsed data or error response
  */
 export function validateInput<T>(
-  schema: z.ZodSchema,
+  schema: z.ZodType<T>,
   data: unknown
 ): { success: true; data: T } | { success: false; errors: Record<string, string> } {
   const result = schema.safeParse(data)

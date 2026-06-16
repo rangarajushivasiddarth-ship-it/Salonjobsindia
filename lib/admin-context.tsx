@@ -227,7 +227,7 @@ if (event.key === 'salonjobsindia_subscriptions' ||
       
       // Get user phone from subscription or user service
       const userPhone = (subscription as any).userPhone || UserService.getById(subscription.userId)?.phone
-      const planName = (subscription as any).planName || JOB_SEEKER_PLANS.find(p => p.id === (subscription as any).planType)?.name || 'Premium'
+      const planName = (subscription as any).planName || 'Premium'
       
       // Send WhatsApp notification
       if (userPhone) {

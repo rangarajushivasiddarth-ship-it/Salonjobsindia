@@ -1,36 +1,59 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { put, del } from '@vercel/blob';
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-// Handle POST - File upload to Vercel Blob
+// Map of file categories to Supabase storage buckets
+const BUCKET_MAPPING: Record<string, string> = {
+  'profile-photo': 'profile-photos',
+  'resume': 'resumes',
+  'payment-screenshot': 'payment-screenshots',
+  'verification-document': 'verification-documents',
+  'banner-logo': 'banner-logos',
+  'salon-gallery': 'salon-gallery',
+}
+
+// Initialize Supabase client only at runtime
+function getSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  
+  if (!url || !key) {
+    throw new Error('Supabase credentials not configured')
+  }
+  
+  return createClient(url, key)
+}
+
+// Handle POST - File upload to Supabase Storage
 export async function POST(request: NextRequest) {
   try {
-    // Check for BLOB token
-    if (!process.env.BLOB_READ_WRITE_TOKEN) {
-      console.error('[v0] BLOB_READ_WRITE_TOKEN not configured')
-      return NextResponse.json(
-        { error: 'Upload service not properly configured' },
-        { status: 503 }
-      )
-    }
+    const supabase = getSupabaseClient()
 
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const category = formData.get('category') as string;
+    const formData = await request.formData()
+    const file = formData.get('file') as File
+    const category = formData.get('category') as string
+    const userId = formData.get('userId') as string
 
     if (!file) {
       return NextResponse.json(
         { error: 'No file provided' },
         { status: 400 }
-      );
+      )
+    }
+
+    if (!category || !BUCKET_MAPPING[category]) {
+      return NextResponse.json(
+        { error: 'Invalid category. Must be one of: ' + Object.keys(BUCKET_MAPPING).join(', ') },
+        { status: 400 }
+      )
     }
 
     // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         { error: 'Invalid file type. Only JPEG, PNG, WebP, and PDF allowed' },
         { status: 400 }
-      );
+      )
     }
 
     // Validate file size (max 10MB)
@@ -38,76 +61,99 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'File too large. Max 10MB' },
         { status: 400 }
-      );
+      )
     }
 
     // Generate unique filename
-    const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substring(2, 9);
-    const filename = `${category}/${timestamp}-${randomId}-${file.name}`;
+    const timestamp = Date.now()
+    const randomId = Math.random().toString(36).substring(2, 9)
+    const extension = file.name.split('.').pop() || 'bin'
+    const filename = `${userId}/${timestamp}-${randomId}.${extension}`
+    const bucket = BUCKET_MAPPING[category]
 
-    // Upload to Vercel Blob
-    const buffer = await file.arrayBuffer();
-    const blob = await put(filename, buffer, {
-      access: 'public',
-      contentType: file.type,
-    });
+    // Upload to Supabase Storage
+    const buffer = await file.arrayBuffer()
+    const { data, error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(filename, buffer, {
+        contentType: file.type,
+        upsert: false,
+      })
 
-    console.log('[v0] File uploaded successfully:', blob.url);
+    if (uploadError || !data) {
+      console.error('[v0] Supabase upload error:', uploadError)
+      return NextResponse.json(
+        { error: 'Upload failed: ' + (uploadError?.message || 'Unknown error') },
+        { status: 500 }
+      )
+    }
+
+    // Generate public URL
+    const { data: publicData } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(data.path)
+
+    console.log('[v0] File uploaded successfully to Supabase:', data.path)
 
     return NextResponse.json(
       {
         success: true,
-        url: blob.url,
+        url: publicData.publicUrl,
+        path: data.path,
+        bucket: bucket,
         message: 'File uploaded successfully'
       },
       { status: 200 }
-    );
+    )
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    console.error('[v0] Upload error:', errorMessage);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+    console.error('[v0] Upload error:', errorMessage)
     return NextResponse.json(
       { error: 'Upload failed: ' + errorMessage },
       { status: 500 }
-    );
+    )
   }
 }
 
-// Handle DELETE - Delete file from Vercel Blob
+// Handle DELETE - Delete file from Supabase Storage
 export async function DELETE(request: NextRequest) {
   try {
-    if (!process.env.BLOB_READ_WRITE_TOKEN) {
-      console.error('[v0] BLOB_READ_WRITE_TOKEN not configured for delete');
-      return NextResponse.json(
-        { error: 'Delete service not properly configured' },
-        { status: 503 }
-      );
-    }
+    const supabase = getSupabaseClient()
 
-    const { url } = await request.json();
+    const { path, bucket } = await request.json()
 
-    if (!url) {
+    if (!path || !bucket) {
       return NextResponse.json(
-        { error: 'No URL provided' },
+        { error: 'Path and bucket are required' },
         { status: 400 }
-      );
+      )
     }
 
-    // Delete from Vercel Blob
-    await del(url);
-    
-    console.log('[v0] File deleted successfully:', url);
+    // Delete from Supabase Storage
+    const { error: deleteError } = await supabase.storage
+      .from(bucket)
+      .remove([path])
+
+    if (deleteError) {
+      console.error('[v0] Supabase delete error:', deleteError)
+      return NextResponse.json(
+        { error: 'Delete failed: ' + deleteError.message },
+        { status: 500 }
+      )
+    }
+
+    console.log('[v0] File deleted successfully:', path)
 
     return NextResponse.json(
       { success: true, message: 'File deleted' },
       { status: 200 }
-    );
+    )
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    console.error('[v0] Delete error:', errorMessage);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+    console.error('[v0] Delete error:', errorMessage)
     return NextResponse.json(
       { error: 'Delete failed: ' + errorMessage },
       { status: 500 }
-    );
+    )
   }
 }

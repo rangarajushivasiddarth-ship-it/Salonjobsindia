@@ -11,7 +11,6 @@ import jobRoutes from './routes/jobs.js';
 import applicationRoutes from './routes/applications.js';
 import subscriptionRoutes from './routes/subscriptions.js';
 import adminRoutes from './routes/admin.js';
-import uploadRoutes from './routes/uploads.js';
 
 dotenv.config();
 
@@ -59,7 +58,7 @@ app.use('/api/jobs', jobRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/uploads', uploadRoutes);
+// File uploads now handled by Next.js API route: /api/upload
 
 // 404 handler
 app.use((_req, res) => {

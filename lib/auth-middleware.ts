@@ -25,7 +25,7 @@ export async function verifyAuth(request: NextRequest): Promise<AuthPayload | nu
 
     const token = authHeader.slice(7)
     const verified = await jwtVerify(token, secret)
-    return verified.payload as AuthPayload
+    return verified.payload as unknown as AuthPayload
   } catch (error) {
     console.log('[v0] Token verification failed:', error)
     return null

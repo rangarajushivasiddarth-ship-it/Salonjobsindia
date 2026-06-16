@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase, ObjectId } from '@/lib/mongodb'
 import { requireAuth } from '@/lib/auth-middleware'
 import { validateInput, createApplicationSchema, updateResumeSchema } from '@/lib/input-validation'
+import { z } from 'zod'
 
 interface ApplicationBody {
   jobId: string
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const validation = validateInput(createApplicationSchema, body)
+    const validation = validateInput<typeof createApplicationSchema._type>(createApplicationSchema, body)
     if (!validation.success) {
       return NextResponse.json(
         { error: 'Invalid input', details: validation.errors },
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { jobId, userId, resumeUrl, coverLetter } = validation.data
+    const { jobId, userId, resumeUrl, coverLetter } = validation.data as z.infer<typeof createApplicationSchema>
     const jobSeekerId = authResult.auth.userId
 
     const db = await connectToDatabase()
