@@ -1,40 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectToDatabase, PaymentDocument, ObjectId } from '@/lib/mongodb'
-import { requireAuth } from '@/lib/auth-middleware'
-import { validateInput, approvePaymentSchema } from '@/lib/input-validation'
+import { connectDB } from '@/server/src/config/database'
+import Payment from '@/server/src/models/Payment'
+import Job from '@/server/src/models/Job'
+import mongoose from 'mongoose'
 
 // POST - Admin approve or reject payment
-// SECURITY: Requires admin authentication
 export async function POST(request: NextRequest) {
+  let session: mongoose.ClientSession | null = null
+  
   try {
-    // SECURITY FIX #1: Verify admin authentication
-    const authResult = await requireAuth(request, 'admin')
-    if (!authResult.success) {
-      return authResult.response
-    }
-
     const body = await request.json()
+    const { paymentId, action, reason, adminId } = body
     
-    // SECURITY FIX #2: Validate input with schema
-    const validation = validateInput(approvePaymentSchema, body)
-    if (!validation.success) {
+    if (!paymentId || !action || !adminId) {
       return NextResponse.json(
-        { error: 'Invalid input', details: validation.errors },
+        { error: 'Missing required fields: paymentId, action, adminId' },
         { status: 400 }
       )
     }
 
-    const { paymentId, action, reason } = validation.data
-    const adminId = authResult.auth.userId
+    if (!['approve', 'reject'].includes(action)) {
+      return NextResponse.json(
+        { error: 'Invalid action. Must be "approve" or "reject"' },
+        { status: 400 }
+      )
+    }
 
-    const db = await connectToDatabase()
-    const paymentsCollection = db.collection<PaymentDocument>('payments')
-    const jobsCollection = db.collection('jobs')
+    await connectDB()
+    
+    // Start session for atomic transaction
+    session = await mongoose.startSession()
+    session.startTransaction()
 
     // Get payment
-    const payment = await paymentsCollection.findOne({ _id: new ObjectId(paymentId) })
+    const payment = await Payment.findById(paymentId).session(session)
 
     if (!payment) {
+      await session.abortTransaction()
       return NextResponse.json(
         { error: 'Payment not found' },
         { status: 404 }
@@ -45,45 +47,31 @@ export async function POST(request: NextRequest) {
 
     if (action === 'approve') {
       // Update payment status
-      await paymentsCollection.updateOne(
-        { _id: new ObjectId(paymentId) },
-        {
-          $set: {
-            status: 'approved',
-            processedAt: new Date(),
-            processedBy: adminId,
-            updatedAt: new Date()
-          }
-        }
-      )
+      payment.status = 'approved'
+      payment.approvedBy = new mongoose.Types.ObjectId(adminId)
+      payment.approvedAt = new Date()
+      await payment.save({ session })
 
-      // If job publishing payment, make job live and SET PAYMENT ID
+      // If job publishing payment, make job live
       if (payment.type === 'job_publishing' && payment.jobId) {
-        const updateResult = await jobsCollection.updateOne(
-          { _id: new ObjectId(payment.jobId) },
+        const job = await Job.findByIdAndUpdate(
+          payment.jobId,
           {
-            $set: {
-              status: 'live', // SINGLE source of truth
-              isActive: true,
-              paymentId: paymentId, // CRITICAL: Set paymentId when approving payment
-              paymentApprovedAt: new Date(),
-              // Calculate expiration date based on validity
-              expiresAt: new Date(
-                Date.now() + (payment.validityDays || 30) * 24 * 60 * 60 * 1000
-              ),
-              updatedAt: new Date()
-            }
-          }
+            paymentStatus: 'approved',
+            visibility: 'public',
+            isLive: true,
+            approvedBy: new mongoose.Types.ObjectId(adminId),
+            approvedAt: new Date(),
+            status: 'active'
+          },
+          { new: true, session }
         )
 
-        if (updateResult.matchedCount === 0) {
+        if (!job) {
+          await session.abortTransaction()
           console.error('[v0] Job not found when approving payment:', payment.jobId)
-          // Log to dead letter queue for manual review
           return NextResponse.json(
-            {
-              success: false,
-              error: 'Payment approved but associated job not found. Please contact support.'
-            },
+            { error: 'Payment approved but associated job not found' },
             { status: 500 }
           )
         }
@@ -91,16 +79,8 @@ export async function POST(request: NextRequest) {
         console.log('[v0] Job made live after payment approval:', payment.jobId)
       }
 
-      // TODO: Add to audit log collection
-      // const auditCollection = db.collection('audit_logs')
-      // await auditCollection.insertOne({
-      //   action: 'payment_approved',
-      //   paymentId,
-      //   adminId,
-      //   timestamp: new Date(),
-      //   details: payment
-      // })
-
+      await session.commitTransaction()
+      
       return NextResponse.json({
         success: true,
         message: `Payment approved successfully${payment.jobId ? ' - Job is now live' : ''}`,
@@ -108,36 +88,29 @@ export async function POST(request: NextRequest) {
       })
     } else {
       // Reject payment
-      await paymentsCollection.updateOne(
-        { _id: new ObjectId(paymentId) },
-        {
-          $set: {
-            status: 'rejected',
-            processedAt: new Date(),
-            processedBy: adminId,
-            rejectionReason: reason || 'No reason provided',
-            updatedAt: new Date()
-          }
-        }
-      )
+      payment.status = 'rejected'
+      payment.approvedBy = new mongoose.Types.ObjectId(adminId)
+      payment.rejectionReason = reason || 'No reason provided'
+      await payment.save({ session })
 
-      // If job publishing payment, revert job to draft
+      // If job publishing payment, revert job
       if (payment.type === 'job_publishing' && payment.jobId) {
-        await jobsCollection.updateOne(
-          { _id: new ObjectId(payment.jobId) },
+        await Job.findByIdAndUpdate(
+          payment.jobId,
           {
-            $set: {
-              status: 'draft', // Back to draft, not live
-              isActive: false,
-              paymentId: '', // Clear payment ID
-              updatedAt: new Date()
-            }
-          }
+            paymentStatus: 'rejected',
+            visibility: 'private',
+            isLive: false,
+            status: 'draft'
+          },
+          { new: true, session }
         )
 
         console.log('[v0] Job reverted to draft after payment rejection:', payment.jobId)
       }
 
+      await session.commitTransaction()
+      
       return NextResponse.json({
         success: true,
         message: 'Payment rejected successfully',
@@ -145,11 +118,18 @@ export async function POST(request: NextRequest) {
       })
     }
   } catch (error) {
+    if (session) {
+      await session.abortTransaction()
+    }
     console.error('[v0] Error in payment approval:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error instanceof Error ? error.message : '' },
       { status: 500 }
     )
+  } finally {
+    if (session) {
+      await session.endSession()
+    }
   }
 }
 

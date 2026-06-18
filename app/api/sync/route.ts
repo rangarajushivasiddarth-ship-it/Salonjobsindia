@@ -136,6 +136,40 @@ export async function POST(request: NextRequest) {
     }
 
     if (type === 'job-payment') {
+      // First, create the job in database
+      const job = new Job({
+        ownerId: data.salonId,
+        title: data.jobTitle,
+        description: data.jobDetails?.description || 'Job posting',
+        salonName: data.salonName,
+        jobType: data.jobDetails?.jobType || 'full-time',
+        skills: data.jobDetails?.skills || [],
+        experienceRequired: data.jobDetails?.experience || 0,
+        salary: {
+          min: 0,
+          max: 0,
+          currency: 'INR',
+          period: 'monthly'
+        },
+        location: {
+          type: 'Point',
+          coordinates: [data.jobDetails?.location?.lng || 0, data.jobDetails?.location?.lat || 0],
+          address: data.jobDetails?.location?.address || '',
+          city: data.jobDetails?.location?.city || '',
+          state: data.jobDetails?.location?.state || ''
+        },
+        requirements: [],
+        benefits: [],
+        status: 'draft',
+        paymentStatus: 'pending_approval',
+        visibility: 'private',
+        isLive: false,
+        postedAt: new Date()
+      })
+
+      await job.save()
+
+      // Then create the payment linked to the job
       const payment = new Payment({
         userId: data.salonId,
         userName: data.ownerName,
@@ -146,19 +180,25 @@ export async function POST(request: NextRequest) {
         currency: 'INR',
         paymentMethod: 'screenshot',
         screenshotUrl: data.screenshotUrl,
+        jobId: job._id,
         planId: data.planId,
         planName: data.planName,
         status: 'pending',
-        metadata: { ...data }
+        metadata: { salonName: data.salonName, jobTitle: data.jobTitle }
       })
 
       await payment.save()
+
+      // Link payment to job
+      job.paymentId = payment._id
+      await job.save()
       
-      console.log(`[Sync API] Job payment submitted: ${payment._id}`)
+      console.log(`[Sync API] Job payment submitted: ${payment._id} for job: ${job._id}`)
       return NextResponse.json({ 
         success: true, 
         message: 'Job payment submitted',
-        paymentId: payment._id 
+        paymentId: payment._id,
+        jobId: job._id
       })
     }
 

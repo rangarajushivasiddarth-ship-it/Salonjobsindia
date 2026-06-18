@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { connectDB } from '@/server/src/config/database'
+import Payment from '@/server/src/models/Payment'
+import Job from '@/server/src/models/Job'
 
 // GET - Fetch payments with filters
 export async function GET(request: NextRequest) {
@@ -7,15 +10,23 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || 'pending'
     const type = searchParams.get('type') // job_publishing, contact_pack, job_seeker_subscription
     
-    // This would fetch from MongoDB in production
-    // For now, return structure for admin dashboard
+    await connectDB()
     
-    console.log('[v0] Fetching payments:', { status, type })
+    const query: Record<string, unknown> = { status }
+    if (type) query.type = type
+    
+    const payments = await Payment.find(query)
+      .populate('userId', 'name email phone')
+      .populate('jobId', 'title salonName')
+      .sort({ createdAt: -1 })
+      .lean()
+    
+    console.log(`[v0] Fetched ${payments.length} payments with status: ${status}`)
     
     return NextResponse.json({
       success: true,
-      data: [],
-      message: 'Payments endpoint - implement MongoDB query'
+      data: payments,
+      count: payments.length
     })
   } catch (error) {
     console.error('[v0] Error fetching payments:', error)
@@ -30,22 +41,74 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, type, jobId, resumeId, amount, screenshotUrl } = body
+    const { 
+      userId, 
+      userName,
+      userEmail,
+      userPhone,
+      type, 
+      jobId, 
+      amount, 
+      screenshotUrl,
+      salonName,
+      ownerName
+    } = body
     
+    // Validate required fields
     if (!userId || !type || !amount) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: userId, type, amount' },
+        { status: 400 }
+      )
+    }
+
+    // Job publishing payment requires jobId
+    if (type === 'job_publishing' && !jobId) {
+      return NextResponse.json(
+        { error: 'jobId required for job_publishing payment' },
         { status: 400 }
       )
     }
     
-    console.log('[v0] Creating payment record:', { userId, type, amount })
+    await connectDB()
+
+    // Create payment record
+    const payment = new Payment({
+      userId,
+      userName: ownerName || userName,
+      userEmail,
+      userPhone,
+      type,
+      amount,
+      currency: 'INR',
+      paymentMethod: 'screenshot',
+      screenshotUrl,
+      jobId: type === 'job_publishing' ? jobId : undefined,
+      status: 'pending',
+      metadata: { salonName }
+    })
+
+    await payment.save()
+
+    // If job publishing payment, update job with payment reference
+    if (type === 'job_publishing' && jobId) {
+      await Job.findByIdAndUpdate(
+        jobId,
+        {
+          paymentStatus: 'pending_approval',
+          paymentId: payment._id,
+          visibility: 'private',
+          isLive: false
+        },
+        { new: true }
+      )
+    }
     
-    // This would create payment in MongoDB in production
+    console.log(`[v0] Payment created: ${payment._id} for ${type}`)
     
     return NextResponse.json({
       success: true,
-      paymentId: `payment_${Date.now()}`,
+      paymentId: payment._id,
       message: 'Payment record created',
       status: 'pending'
     })
@@ -58,71 +121,4 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT - Update payment status (admin approval/rejection)
-export async function PUT(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { paymentId, action, adminId, reason } = body
-    
-    if (!paymentId || !action || !adminId) {
-      return NextResponse.json(
-        { error: 'Missing required fields: paymentId, action, adminId' },
-        { status: 400 }
-      )
-    }
-    
-    if (!['approve', 'reject'].includes(action)) {
-      return NextResponse.json(
-        { error: 'Invalid action. Must be "approve" or "reject"' },
-        { status: 400 }
-      )
-    }
-    
-    console.log(`[v0] Admin ${action}ing payment:`, { paymentId, adminId, reason })
-    
-    // In production, this would:
-    // 1. Update payment status in MongoDB
-    // 2. If approved for job publishing:
-    //    - Mark job as "live"
-    //    - Activate salon owner subscription
-    //    - Send notification to salon owner
-    // 3. If approved for contact pack:
-    //    - Add credits to salon owner account
-    //    - Create credit_transactions record
-    // 4. If rejected:
-    //    - Send rejection reason to user
-    //    - Update payment status to "rejected"
-    
-    const responseData = {
-      success: true,
-      paymentId,
-      action,
-      message: `Payment ${action}ed successfully`,
-      details: {
-        timestamp: new Date().toISOString(),
-        processedBy: adminId,
-        reason: reason || null
-      }
-    }
-    
-    if (action === 'approve') {
-      console.log(`[v0] Payment approved. Next steps:
-        - Update payment.status = "approved"
-        - Activate associated subscription/credits
-        - Make job visible to job seekers
-        - Send notification to user`)
-    } else {
-      console.log(`[v0] Payment rejected. Reason: ${reason || 'Not provided'}
-        - Update payment.status = "rejected"
-        - Send rejection notification to user`)
-    }
-    
-    return NextResponse.json(responseData)
-  } catch (error) {
-    console.error('[v0] Error updating payment:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
+
