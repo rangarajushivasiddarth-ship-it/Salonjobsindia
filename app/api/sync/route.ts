@@ -261,10 +261,13 @@ export async function PUT(request: NextRequest) {
         try {
           const job = await Job.findById(payment.jobId)
           if (job) {
-            job.status = 'active'
+            job.status = 'LIVE'
+            job.paymentStatus = 'approved'
+            job.isVisible = true
+            job.isLive = true
             job.postedAt = new Date()
             await job.save()
-            console.log(`[Sync API] Job ${payment.jobId} approved and set to active`)
+            console.log(`[Sync API] Job ${payment.jobId} approved and set to LIVE`)
           }
         } catch (jobError) {
           console.error('Error updating job:', jobError)

@@ -1,82 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectToDatabase, JobDocument, ObjectId } from '@/lib/mongodb'
+import { connectDB } from '@/server/src/config/database'
+import Job from '@/server/src/models/Job'
 
-// GET - Fetch jobs with pagination, filters, and subscription validation
+// GET - Fetch approved/live jobs for job seekers
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
     const search = searchParams.get('search') || ''
+    const city = searchParams.get('city') || ''
     const ownerId = searchParams.get('ownerId') || ''
-    const isActive = searchParams.get('isActive')
+    const type = searchParams.get('type') || 'all' // 'all' for public, 'owner' for salon owner's jobs
 
-    const db = await connectToDatabase()
-    const collection = db.collection<JobDocument>('jobs')
-    const subscriptionsCollection = db.collection('subscriptions')
+    await connectDB()
 
-    // Build query - FIX: Check status === 'live' AND expiration
-    const query: Record<string, unknown> = {
-      status: 'live', // Only show live jobs
-      expiresAt: { $gt: new Date() } // Only show non-expired jobs
+    // Build query for job seekers: only show LIVE, isVisible=true, approved payments
+    const query: any = {
+      status: 'LIVE',
+      isVisible: true,
+      paymentStatus: 'approved'
     }
-    
+
     if (search) {
-      query.$or = [
-        { salonName: { $regex: search, $options: 'i' } },
-        { 'location.address': { $regex: search, $options: 'i' } },
-        { role: { $regex: search, $options: 'i' } }
-      ]
+      query.$text = { $search: search }
     }
-    
+
+    if (city) {
+      query['location.city'] = { $regex: city, $options: 'i' }
+    }
+
     if (ownerId) {
-      query.salonId = ownerId
-    }
-    
-    if (isActive !== null && isActive !== undefined) {
-      query.isActive = isActive === 'true'
+      query.ownerId = ownerId
     }
 
     // Get total count
-    const totalCount = await collection.countDocuments(query)
+    const totalCount = await Job.countDocuments(query)
 
     // Get paginated results
-    const jobs = await collection
-      .find(query)
+    const jobs = await Job.find(query)
+      .select('title description salonName jobType skills salary location viewCount applicationCount postedAt expiresAt')
       .skip((page - 1) * limit)
       .limit(limit)
-      .sort({ createdAt: -1 })
-      .toArray()
+      .sort({ postedAt: -1 })
+      .lean()
 
-    // Verify salon owner subscriptions for each job
-    // Only show jobs from salon owners with active subscriptions
-    const verifiedJobs = []
-    for (const job of jobs) {
-      const subscription = await subscriptionsCollection.findOne({
-        userId: job.ownerId,
-        status: 'approved',
-        expiresAt: { $gt: new Date() }
-      })
-      
-      // Only include job if salon owner has active subscription
-      if (subscription) {
-        verifiedJobs.push(job)
-      }
-    }
-    
     return NextResponse.json({
       success: true,
-      data: verifiedJobs,
+      data: jobs,
       pagination: {
         page,
         limit,
-        totalCount: verifiedJobs.length, // Use verified count
-        totalPages: Math.ceil(verifiedJobs.length / limit)
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit)
       }
     })
 
   } catch (error) {
-    console.error('Error fetching jobs:', error)
+    console.error('[v0] Error fetching jobs:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -84,29 +65,28 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create new job (must have valid payment before going live)
+// POST - Create new job in DRAFT status (payment required before going live)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { 
-      salonId, 
+      ownerId, 
       salonName, 
-      role, 
-      skills = [], 
-      description = '', 
-      salaryType,
-      salaryFixed,
-      salaryRange,
-      experience = '',
-      jobType = 'full_time',
+      title, 
+      description = '',
+      jobType = 'full-time',
+      skills = [],
+      experienceRequired = 0,
+      salary = { min: 0, max: 0, currency: 'INR', period: 'monthly' },
       location = {},
-      contact = ''
+      requirements = [],
+      benefits = []
     } = body
 
     // Validate required fields
-    if (!salonId || !role || !salaryType) {
+    if (!ownerId || !salonName || !title) {
       return NextResponse.json(
-        { error: 'Missing required fields: salonId, role, salaryType' },
+        { error: 'Missing required fields: ownerId, salonName, title' },
         { status: 400 }
       )
     }
@@ -119,56 +99,48 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const db = await connectToDatabase()
-    const collection = db.collection<JobDocument>('jobs')
+    await connectDB()
 
-    const newJob: JobDocument = {
-      salonId,
-      salonName: salonName || '',
-      role,
-      skills,
+    // Create job in DRAFT status (not visible to seekers yet)
+    const job = new Job({
+      ownerId,
+      title,
       description,
-      salaryType,
-      salaryFixed: salaryFixed || '',
-      salaryRange: salaryRange || '',
-      experience,
+      salonName,
       jobType,
+      skills,
+      experienceRequired,
+      salary,
       location: {
-        lat: location.lat,
-        lng: location.lng,
+        type: 'Point',
+        coordinates: [location.lng, location.lat],
         address: location.address,
-        state: location.state || '',
         city: location.city || '',
-        area: location.area || '',
-        locality: location.locality || ''
+        state: location.state || ''
       },
-      contact,
-      status: 'pending_payment', // FIX: Start in pending_payment
-      editsUsed: 0,
-      maxEdits: 3,
-      viewsCount: 0,
-      applicationsCount: 0,
-      isVerified: false,
-      paymentId: '', // FIX: Will be set when payment approved (required)
-      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Default 1 year, updated on payment
-      isActive: false, // FIX: Not active until payment approved AND not expired
-      createdAt: new Date(),
-      updatedAt: new Date()
-    } as any
+      requirements,
+      benefits,
+      status: 'DRAFT', // Start in DRAFT
+      paymentStatus: 'none',
+      visibility: 'private',
+      isLive: false,
+      isVisible: false,
+      postedAt: new Date()
+    })
 
-    const result = await collection.insertOne(newJob)
-    
-    console.log('[v0] Job created with pending_payment status:', result.insertedId)
+    await job.save()
+
+    console.log('[v0] Job created in DRAFT status:', job._id)
 
     return NextResponse.json({
       success: true,
-      jobId: result.insertedId.toString(),
-      status: 'pending_payment',
-      message: 'Job created successfully. Please submit payment to make it live.'
+      jobId: job._id.toString(),
+      status: 'DRAFT',
+      message: 'Job saved as draft. Submit payment to publish and reach job seekers.'
     })
 
   } catch (error) {
-    console.error('Error creating job:', error)
+    console.error('[v0] Error creating job:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -176,46 +148,52 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT - Update job
+// PUT - Submit payment for job (transitions from DRAFT to PAYMENT_PENDING)
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { jobId, ...updateData } = body
+    const { jobId, screenshotUrl, amount, plan } = body
 
-    if (!jobId) {
+    if (!jobId || !screenshotUrl || !amount) {
       return NextResponse.json(
-        { error: 'Job ID is required' },
+        { error: 'Missing required fields: jobId, screenshotUrl, amount' },
         { status: 400 }
       )
     }
 
-    const db = await connectToDatabase()
-    const collection = db.collection<JobDocument>('jobs')
+    await connectDB()
 
-    const result = await collection.updateOne(
-      { _id: new ObjectId(jobId) },
+    const job = await Job.findByIdAndUpdate(
+      jobId,
       {
-        $set: {
-          ...updateData,
-          updatedAt: new Date()
-        }
-      }
+        status: 'PAYMENT_PENDING',
+        paymentStatus: 'pending',
+        paymentScreenshotUrl: screenshotUrl,
+        paymentAmount: amount,
+        paymentPlan: plan,
+        paymentSubmittedAt: new Date()
+      },
+      { new: true }
     )
 
-    if (result.matchedCount === 0) {
+    if (!job) {
       return NextResponse.json(
         { error: 'Job not found' },
         { status: 404 }
       )
     }
 
+    console.log('[v0] Job payment submitted:', jobId)
+
     return NextResponse.json({
       success: true,
-      message: 'Job updated successfully'
+      jobId: job._id,
+      status: 'PAYMENT_PENDING',
+      message: 'Payment submitted. Admin will review and approve within 24 hours.'
     })
 
   } catch (error) {
-    console.error('Error updating job:', error)
+    console.error('[v0] Error submitting payment:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -223,7 +201,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE - Delete job
+// DELETE - Delete job (only DRAFT jobs can be deleted)
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -236,17 +214,27 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const db = await connectToDatabase()
-    const collection = db.collection<JobDocument>('jobs')
+    await connectDB()
 
-    const result = await collection.deleteOne({ _id: new ObjectId(jobId) })
-
-    if (result.deletedCount === 0) {
+    const job = await Job.findById(jobId)
+    
+    if (!job) {
       return NextResponse.json(
         { error: 'Job not found' },
         { status: 404 }
       )
     }
+
+    if (job.status !== 'DRAFT') {
+      return NextResponse.json(
+        { error: 'Can only delete jobs in DRAFT status' },
+        { status: 400 }
+      )
+    }
+
+    await Job.findByIdAndDelete(jobId)
+
+    console.log('[v0] Job deleted:', jobId)
 
     return NextResponse.json({
       success: true,
@@ -254,7 +242,7 @@ export async function DELETE(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error deleting job:', error)
+    console.error('[v0] Error deleting job:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
