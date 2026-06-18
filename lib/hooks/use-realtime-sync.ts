@@ -167,12 +167,11 @@ export function useAdminSync(pollInterval = 3000) {
   
   const approveJobPayment = useCallback(async (id: string, adminId: string = 'admin') => {
     try {
-      const response = await fetch('/api/sync', {
-        method: 'PUT',
+      const response = await fetch('/api/payments/approve', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: 'job-payment',
-          id,
+          paymentId: id,
           action: 'approve',
           adminId,
         }),
@@ -193,12 +192,11 @@ export function useAdminSync(pollInterval = 3000) {
   
   const rejectJobPayment = useCallback(async (id: string, adminId: string = 'admin', reason?: string) => {
     try {
-      const response = await fetch('/api/sync', {
-        method: 'PUT',
+      const response = await fetch('/api/payments/approve', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: 'job-payment',
-          id,
+          paymentId: id,
           action: 'reject',
           adminId,
           reason,

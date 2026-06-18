@@ -176,6 +176,116 @@ export async function detectLocation(): Promise<LocationData> {
 }
 
 /**
+ * Retry location detection with exponential backoff
+ * @param maxRetries - Maximum number of retry attempts (default: 3)
+ * @param baseDelay - Base delay in milliseconds between retries (default: 1000)
+ */
+export async function detectLocationWithRetry(maxRetries = 3, baseDelay = 1000): Promise<LocationData> {
+  let lastError: GeolocationError | null = null
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      console.log(`[v0] Location detection attempt ${attempt + 1}/${maxRetries}`)
+      const location = await detectLocation()
+      return location
+    } catch (error) {
+      lastError = error as GeolocationError
+      console.warn(`[v0] Location detection attempt ${attempt + 1} failed:`, lastError.message)
+      
+      // Don't retry for permission denied or not supported
+      if (lastError.code === 'PERMISSION_DENIED' || lastError.code === 'NOT_SUPPORTED' || lastError.code === 'HTTPS_REQUIRED') {
+        throw lastError
+      }
+      
+      // Wait before retrying (exponential backoff)
+      if (attempt < maxRetries - 1) {
+        const delay = baseDelay * Math.pow(2, attempt)
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+  }
+  
+  // All retries exhausted
+  if (lastError) {
+    throw lastError
+  }
+  
+  throw {
+    code: 'UNKNOWN',
+    message: 'Failed to detect location after multiple attempts'
+  } as GeolocationError
+}
+
+/**
+ * Geocode an address string to coordinates
+ * Useful for manual location entry
+ */
+export async function geocodeAddress(address: string): Promise<LocationData> {
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
+
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&accept-language=en`,
+      {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'SalonJobsIndia/1.0'
+        }
+      }
+    )
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      throw new Error('Geocoding API error')
+    }
+
+    const data = await response.json()
+
+    if (!data || data.length === 0) {
+      throw new Error('Address not found')
+    }
+
+    const result = data[0]
+    const latitude = parseFloat(result.lat)
+    const longitude = parseFloat(result.lon)
+
+    // Now reverse geocode to get proper components
+    return reverseGeocode(latitude, longitude)
+  } catch (error) {
+    console.error('[v0] Geocoding failed:', error)
+    throw {
+      code: 'UNKNOWN',
+      message: 'Unable to find the location. Please check the address and try again.'
+    } as GeolocationError
+  }
+}
+
+/**
+ * Create a LocationData object from manual entry
+ * Useful for when user manually enters location details
+ */
+export function createManualLocation(
+  address: string,
+  city: string,
+  state: string,
+  latitude?: number,
+  longitude?: number
+): LocationData {
+  return {
+    latitude: latitude || 0,
+    longitude: longitude || 0,
+    address: address || `${city}, ${state}`,
+    city,
+    district: '',
+    state,
+    country: 'India',
+    formattedAddress: [address, city, state].filter(Boolean).join(', ')
+  }
+}
+
+/**
  * Save location to localStorage
  */
 export function cacheLocation(location: LocationData): void {

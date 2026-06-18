@@ -43,6 +43,14 @@ export interface IJob extends Document {
   status: 'draft' | 'active' | 'paused' | 'closed' | 'expired';
   isUrgent: boolean;
   isFeatured: boolean;
+
+  // Payment & visibility
+  paymentStatus: 'pending_approval' | 'approved' | 'rejected';
+  paymentId?: mongoose.Types.ObjectId;
+  visibility: 'private' | 'public';
+  isLive: boolean;
+  approvedBy?: mongoose.Types.ObjectId;
+  approvedAt?: Date;
   
   // Stats
   viewCount: number;
@@ -129,6 +137,35 @@ const jobSchema = new Schema<IJob>({
   },
   isUrgent: { type: Boolean, default: false },
   isFeatured: { type: Boolean, default: false },
+
+  paymentStatus: {
+    type: String,
+    enum: ['pending_approval', 'approved', 'rejected'],
+    default: 'pending_approval',
+    index: true
+  },
+  paymentId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Payment',
+    sparse: true
+  },
+  visibility: {
+    type: String,
+    enum: ['private', 'public'],
+    default: 'private',
+    index: true
+  },
+  isLive: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+  approvedBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    sparse: true
+  },
+  approvedAt: Date,
   
   viewCount: { type: Number, default: 0 },
   applicationCount: { type: Number, default: 0 },
@@ -146,7 +183,12 @@ jobSchema.index({ 'location': '2dsphere' });
 jobSchema.index({ status: 1, postedAt: -1 });
 jobSchema.index({ status: 1, skills: 1 });
 jobSchema.index({ ownerId: 1, status: 1 });
+jobSchema.index({ ownerId: 1, paymentStatus: 1 });
 jobSchema.index({ isUrgent: 1, isFeatured: 1, postedAt: -1 });
+// Job seeker visibility filter
+jobSchema.index({ isLive: 1, visibility: 1, paymentStatus: 1 });
+// Admin job payment review
+jobSchema.index({ paymentStatus: 1, createdAt: -1 });
 
 // Text index for search
 jobSchema.index({ 
