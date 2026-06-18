@@ -3,6 +3,7 @@ import { connectDB } from '@/server/src/config/database'
 import Payment from '@/server/src/models/Payment'
 import Job from '@/server/src/models/Job'
 import User from '@/server/src/models/User'
+import { createJobDualWrite, approveJobDualWrite } from '@/lib/adapters/dual-write-adapter'
 
 // GET - Retrieve all pending items (for admin polling)
 export async function GET(request: NextRequest) {
@@ -136,11 +137,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (type === 'job-payment') {
-      // DEBUG: Log what we're saving
-      console.log('[v0] [Sync API] Creating job with status=PAYMENT_PENDING, paymentStatus=pending')
+      console.log('[v0] [Sync API] Creating job with DUAL-WRITE (MongoDB + Supabase)')
       
-      // First, create the job in database with correct status for admin query
-      const job = new Job({
+      // Use dual-write adapter to save to both MongoDB and Supabase
+      const dualWriteResult = await createJobDualWrite({
         ownerId: data.salonId,
         title: data.jobTitle,
         description: data.jobDetails?.description || 'Job posting',
@@ -155,14 +155,12 @@ export async function POST(request: NextRequest) {
           period: 'monthly'
         },
         location: {
-          type: 'Point',
-          coordinates: [data.jobDetails?.location?.lng || 0, data.jobDetails?.location?.lat || 0],
+          lat: data.jobDetails?.location?.lat || 0,
+          lng: data.jobDetails?.location?.lng || 0,
           address: data.jobDetails?.location?.address || '',
           city: data.jobDetails?.location?.city || '',
           state: data.jobDetails?.location?.state || ''
         },
-        requirements: [],
-        benefits: [],
         status: 'PAYMENT_PENDING',
         paymentStatus: 'pending',
         visibility: 'private',
@@ -175,9 +173,7 @@ export async function POST(request: NextRequest) {
         postedAt: new Date()
       })
 
-      await job.save()
-
-      // Then create the payment linked to the job
+      // Also create payment record for backward compatibility
       const payment = new Payment({
         userId: data.salonId,
         userName: data.ownerName,
@@ -188,7 +184,7 @@ export async function POST(request: NextRequest) {
         currency: 'INR',
         paymentMethod: 'screenshot',
         screenshotUrl: data.screenshotUrl,
-        jobId: job._id,
+        jobId: dualWriteResult.mongodb.data?.id,
         planId: data.planId,
         planName: data.planName,
         status: 'pending',
@@ -197,16 +193,14 @@ export async function POST(request: NextRequest) {
 
       await payment.save()
 
-      // Link payment to job
-      job.paymentId = payment._id
-      await job.save()
+      console.log(`[v0] [Sync API] Job payment submitted - MongoDB: ${dualWriteResult.mongodb.success}, Supabase: ${dualWriteResult.supabase.success}`)
       
-      console.log(`[Sync API] Job payment submitted: ${payment._id} for job: ${job._id}`)
       return NextResponse.json({ 
-        success: true, 
+        success: dualWriteResult.status !== 'failed',
         message: 'Job payment submitted',
         paymentId: payment._id,
-        jobId: job._id
+        jobId: dualWriteResult.mongodb.data?.id,
+        dualWriteStatus: dualWriteResult.status
       })
     }
 
@@ -264,21 +258,17 @@ export async function PUT(request: NextRequest) {
 
       await payment.save()
 
-      // If approved, mark the job as active if it exists
+      // If approved, mark the job as LIVE with dual-write
       if (action === 'approve' && payment.jobId) {
         try {
-          const job = await Job.findById(payment.jobId)
-          if (job) {
-            job.status = 'LIVE'
-            job.paymentStatus = 'approved'
-            job.isVisible = true
-            job.isLive = true
-            job.postedAt = new Date()
-            await job.save()
-            console.log(`[Sync API] Job ${payment.jobId} approved and set to LIVE`)
-          }
+          console.log('[v0] [Sync API] Approving job with DUAL-WRITE')
+          const dualWriteResult = await approveJobDualWrite(
+            payment.jobId.toString(),
+            adminId
+          )
+          console.log(`[v0] [Sync API] Job approval - MongoDB: ${dualWriteResult.mongodb.success}, Supabase: ${dualWriteResult.supabase.success}`)
         } catch (jobError) {
-          console.error('Error updating job:', jobError)
+          console.error('[v0] [Sync API] Error updating job:', jobError)
         }
       }
 
