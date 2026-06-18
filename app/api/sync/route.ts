@@ -1,17 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-// Initialize Supabase client only at runtime
-function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  
-  if (!url || !key) {
-    throw new Error('Supabase credentials not configured')
-  }
-  
-  return createClient(url, key)
-}
+import { connectDB } from '@/server/src/config/database'
+import Payment from '@/server/src/models/Payment'
+import Job from '@/server/src/models/Job'
+import User from '@/server/src/models/User'
 
 // GET - Retrieve all pending items (for admin polling)
 export async function GET(request: NextRequest) {
@@ -21,67 +12,64 @@ export async function GET(request: NextRequest) {
   console.log(`[Sync API] GET request - type: ${type}, userId: ${userId}`)
 
   try {
-    const supabase = getSupabaseClient()
+    await connectDB()
     
     if (type === 'pending-subscriptions') {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('status', 'pending')
+      const payments = await Payment.find({
+        type: 'job_seeker_subscription',
+        status: 'pending'
+      })
+        .populate('userId', 'name email phone')
+        .lean()
 
-      if (error) throw error
-
-      console.log(`[Sync API] Returning ${data?.length || 0} pending subscriptions`)
-      return NextResponse.json({ success: true, data: data || [], timestamp: Date.now() })
+      console.log(`[Sync API] Returning ${payments.length} pending subscriptions`)
+      return NextResponse.json({ success: true, data: payments, timestamp: Date.now() })
     }
 
     if (type === 'pending-job-payments') {
-      const { data, error } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('status', 'pending')
-        .eq('type', 'job_publishing')
+      const payments = await Payment.find({
+        type: 'job_publishing',
+        status: 'pending'
+      })
+        .populate('userId', 'name email phone')
+        .lean()
 
-      if (error) throw error
-
-      console.log(`[Sync API] Returning ${data?.length || 0} pending job payments`)
-      return NextResponse.json({ success: true, data: data || [], timestamp: Date.now() })
+      console.log(`[Sync API] Returning ${payments.length} pending job payments`)
+      return NextResponse.json({ success: true, data: payments, timestamp: Date.now() })
     }
 
     if (type === 'check-approval' && userId) {
-      const { data: subscription, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('userId', userId)
-        .eq('status', 'approved')
-        .single()
+      const payment = await Payment.findOne({
+        userId,
+        status: 'approved'
+      })
+        .sort({ approvedAt: -1 })
+        .lean()
 
-      if (error && error.code !== 'PGRST116') throw error
-
-      console.log(`[Sync API] Checking approval for user ${userId}: ${subscription ? 'APPROVED' : 'NOT FOUND'}`)
+      console.log(`[Sync API] Checking approval for user ${userId}: ${payment ? 'APPROVED' : 'NOT FOUND'}`)
       return NextResponse.json({
         success: true,
-        approved: !!subscription,
-        data: subscription || null,
+        approved: !!payment,
+        data: payment || null,
         timestamp: Date.now()
       })
     }
 
     if (type === 'all-pending') {
-      const [subscriptions, jobPayments] = await Promise.all([
-        supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('status', 'pending'),
-        supabase
-          .from('payments')
-          .select('*')
-          .eq('status', 'pending')
-          .eq('type', 'job_publishing')
+      const [pendingSubs, pendingJobs] = await Promise.all([
+        Payment.find({
+          type: 'job_seeker_subscription',
+          status: 'pending'
+        })
+          .populate('userId', 'name email phone')
+          .lean(),
+        Payment.find({
+          type: 'job_publishing',
+          status: 'pending'
+        })
+          .populate('userId', 'name email phone')
+          .lean()
       ])
-
-      const pendingSubs = subscriptions.data || []
-      const pendingJobs = jobPayments.data || []
 
       console.log(`[Sync API] All pending - subs: ${pendingSubs.length}, jobs: ${pendingJobs.length}`)
 
@@ -95,16 +83,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (type === 'approved-jobs') {
-      const { data, error } = await supabase
-        .from('jobs')
-        .select('*')
-        .eq('status', 'live')
-        .order('createdAt', { ascending: false })
+      const jobs = await Job.find({ status: 'active' })
+        .sort({ postedAt: -1 })
+        .lean()
 
-      if (error) throw error
-
-      console.log(`[Sync API] Returning ${data?.length || 0} approved jobs`)
-      return NextResponse.json({ success: true, data: data || [], timestamp: Date.now() })
+      console.log(`[Sync API] Returning ${jobs.length} approved jobs`)
+      return NextResponse.json({ success: true, data: jobs, timestamp: Date.now() })
     }
 
     return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 })
@@ -122,36 +106,60 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Sync API] POST request - type: ${type}`, data)
 
-    const supabase = getSupabaseClient()
+    await connectDB()
 
     if (type === 'subscription') {
-      const { error } = await supabase
-        .from('subscriptions')
-        .upsert({
-          ...data,
-          status: 'pending',
-          createdAt: new Date().toISOString(),
-        })
+      const payment = new Payment({
+        userId: data.userId,
+        userName: data.userName,
+        userEmail: data.userEmail,
+        userPhone: data.userPhone,
+        type: 'job_seeker_subscription',
+        amount: data.planPrice,
+        currency: 'INR',
+        paymentMethod: 'screenshot',
+        screenshotUrl: data.screenshotUrl,
+        planId: data.planId,
+        planName: data.planName,
+        status: 'pending',
+        metadata: { ...data }
+      })
 
-      if (error) throw error
+      await payment.save()
 
-      console.log(`[Sync API] Subscription payment submitted: ${data.id}`)
-      return NextResponse.json({ success: true, message: 'Subscription payment submitted' })
+      console.log(`[Sync API] Subscription payment submitted: ${payment._id}`)
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Subscription payment submitted',
+        paymentId: payment._id 
+      })
     }
 
     if (type === 'job-payment') {
-      const { error } = await supabase
-        .from('payments')
-        .upsert({
-          ...data,
-          status: 'pending',
-          createdAt: new Date().toISOString(),
-        })
+      const payment = new Payment({
+        userId: data.salonId,
+        userName: data.ownerName,
+        userEmail: data.ownerEmail,
+        userPhone: data.ownerPhone,
+        type: 'job_publishing',
+        amount: data.planPrice,
+        currency: 'INR',
+        paymentMethod: 'screenshot',
+        screenshotUrl: data.screenshotUrl,
+        planId: data.planId,
+        planName: data.planName,
+        status: 'pending',
+        metadata: { ...data }
+      })
 
-      if (error) throw error
-
-      console.log(`[Sync API] Job payment submitted: ${data.id}`)
-      return NextResponse.json({ success: true, message: 'Job payment submitted' })
+      await payment.save()
+      
+      console.log(`[Sync API] Job payment submitted: ${payment._id}`)
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Job payment submitted',
+        paymentId: payment._id 
+      })
     }
 
     return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
@@ -169,104 +177,66 @@ export async function PUT(request: NextRequest) {
 
     console.log(`[Sync API] PUT request - type: ${type}, id: ${id}, action: ${action}`)
 
-    const supabase = getSupabaseClient()
+    await connectDB()
 
     if (type === 'subscription') {
-      const { data: subscription, error: fetchError } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('id', id)
-        .single()
+      const payment = await Payment.findById(id)
 
-      if (fetchError) throw fetchError
-
-      if (!subscription) {
+      if (!payment) {
         return NextResponse.json({ error: 'Subscription not found' }, { status: 404 })
       }
 
       const updatedStatus = action === 'approve' ? 'approved' : 'rejected'
-      const { error: updateError } = await supabase
-        .from('subscriptions')
-        .update({
-          status: updatedStatus,
-          approvedAt: new Date().toISOString(),
-          processedBy: adminId
-        })
-        .eq('id', id)
+      payment.status = updatedStatus
+      payment.approvedAt = new Date()
+      payment.approvedBy = adminId
 
-      if (updateError) throw updateError
+      await payment.save()
 
-      // Update user subscription status if approved
-      if (action === 'approve') {
-        const expiresAt = new Date()
-        expiresAt.setDate(expiresAt.getDate() + (subscription.planDuration || 30))
-
-        const { error: userError } = await supabase
-          .from('job_seekers')
-          .update({
-            isSubscribed: true,
-            subscriptionExpiresAt: expiresAt.toISOString()
-          })
-          .eq('id', subscription.userId)
-
-        if (userError) console.error('Error updating user subscription:', userError)
-
-        console.log(`[Sync API] User ${subscription.userId} approved for subscription`)
-      }
+      console.log(`[Sync API] Subscription payment ${action}d: ${id}`)
 
       return NextResponse.json({
         success: true,
         message: `Subscription ${action}d`,
-        subscription
+        payment: payment.toObject()
       })
     }
 
     if (type === 'job-payment') {
-      const { data: payment, error: fetchError } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('id', id)
-        .single()
-
-      if (fetchError) throw fetchError
+      const payment = await Payment.findById(id)
 
       if (!payment) {
         return NextResponse.json({ error: 'Job payment not found' }, { status: 404 })
       }
 
       const updatedStatus = action === 'approve' ? 'approved' : 'rejected'
-      const { error: updateError } = await supabase
-        .from('payments')
-        .update({
-          status: updatedStatus,
-          approvedAt: new Date().toISOString(),
-          processedBy: adminId
-        })
-        .eq('id', id)
+      payment.status = updatedStatus
+      payment.approvedAt = new Date()
+      payment.approvedBy = adminId
 
-      if (updateError) throw updateError
+      await payment.save()
 
-      // If approved, create the job
+      // If approved, mark the job as active if it exists
       if (action === 'approve' && payment.jobId) {
-        const { error: jobError } = await supabase
-          .from('jobs')
-          .update({
-            status: 'live',
-            isActive: true,
-            approvedAt: new Date().toISOString(),
-            paymentId: payment.id
-          })
-          .eq('id', payment.jobId)
-
-        if (jobError) console.error('Error updating job:', jobError)
-
-        console.log(`[Sync API] Job ${payment.jobId} approved and set to live`)
+        try {
+          const job = await Job.findById(payment.jobId)
+          if (job) {
+            job.status = 'active'
+            job.postedAt = new Date()
+            await job.save()
+            console.log(`[Sync API] Job ${payment.jobId} approved and set to active`)
+          }
+        } catch (jobError) {
+          console.error('Error updating job:', jobError)
+        }
       }
+
+      console.log(`[Sync API] Job payment ${action}d: ${id}`)
 
       return NextResponse.json({
         success: true,
         message: `Job payment ${action}d`,
-        payment
+        payment: payment.toObject()
       })
     }
 

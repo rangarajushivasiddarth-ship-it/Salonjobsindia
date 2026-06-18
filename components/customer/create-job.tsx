@@ -8,7 +8,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/lib/app-context'
 import { submitJobPayment, useApprovalStatus } from '@/lib/hooks/use-realtime-sync'
-import { detectLocation as detectLocationFromBrowser, cacheLocation, type LocationData, type GeolocationError } from '@/lib/location-utils'
+import { 
+  detectLocationWithRetry, 
+  geocodeAddress,
+  createManualLocation,
+  cacheLocation, 
+  type LocationData, 
+  type GeolocationError 
+} from '@/lib/location-utils'
 import Image from 'next/image'
 
 const ROLE_OPTIONS = [
@@ -127,7 +134,8 @@ export function CreateJob() {
     setErrors(prev => ({ ...prev, location: '' }))
     
     try {
-      const locationData = await detectLocationFromBrowser()
+      // Try with retry mechanism (3 attempts with exponential backoff)
+      const locationData = await detectLocationWithRetry(3, 1000)
       
       setFormData(prev => ({
         ...prev,
@@ -143,6 +151,34 @@ export function CreateJob() {
     } catch (error) {
       const geolocationError = error as GeolocationError
       console.error('[v0] Location detection failed:', geolocationError)
+      // Show error but allow manual entry instead of blocking
+      setErrors(prev => ({ 
+        ...prev, 
+        location: `${geolocationError.message} - You can enter your location manually below.` 
+      }))
+    } finally {
+      setDetectingLocation(false)
+    }
+  }
+
+  const handleManualLocationEntry = async (address: string) => {
+    setDetectingLocation(true)
+    try {
+      // Try to geocode the address
+      const locationData = await geocodeAddress(address)
+      setFormData(prev => ({
+        ...prev,
+        location: {
+          lat: locationData.latitude,
+          lng: locationData.longitude,
+          address: locationData.formattedAddress || locationData.address,
+        }
+      }))
+      cacheLocation(locationData)
+      setErrors(prev => ({ ...prev, location: '' }))
+    } catch (error) {
+      const geolocationError = error as GeolocationError
+      console.error('[v0] Manual location entry failed:', geolocationError)
       setErrors(prev => ({ ...prev, location: geolocationError.message }))
     } finally {
       setDetectingLocation(false)
