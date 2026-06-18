@@ -34,8 +34,11 @@ export async function GET(request: NextRequest) {
       query.ownerId = ownerId
     }
 
+    console.log('[v0] [Job Seeker] Query filters:', JSON.stringify(query))
+
     // Get total count
     const totalCount = await Job.countDocuments(query)
+    console.log('[v0] [Job Seeker] Total matching jobs:', totalCount)
 
     // Get paginated results
     const jobs = await Job.find(query)

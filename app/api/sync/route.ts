@@ -136,7 +136,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (type === 'job-payment') {
-      // First, create the job in database
+      // DEBUG: Log what we're saving
+      console.log('[v0] [Sync API] Creating job with status=PAYMENT_PENDING, paymentStatus=pending')
+      
+      // First, create the job in database with correct status for admin query
       const job = new Job({
         ownerId: data.salonId,
         title: data.jobTitle,
@@ -160,10 +163,15 @@ export async function POST(request: NextRequest) {
         },
         requirements: [],
         benefits: [],
-        status: 'draft',
-        paymentStatus: 'pending_approval',
+        status: 'PAYMENT_PENDING',
+        paymentStatus: 'pending',
         visibility: 'private',
         isLive: false,
+        isVisible: false,
+        paymentScreenshotUrl: data.screenshotUrl,
+        paymentAmount: data.planPrice,
+        paymentPlan: data.planName,
+        paymentSubmittedAt: new Date(),
         postedAt: new Date()
       })
 

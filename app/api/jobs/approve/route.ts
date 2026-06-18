@@ -43,18 +43,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify job is in PAYMENT_PENDING status
+    console.log(`[v0] Job status before approval: ${job.status}, paymentStatus: ${job.paymentStatus}`)
+    
     if (job.status !== 'PAYMENT_PENDING') {
       await session.abortTransaction()
+      console.error(`[v0] Job not in PAYMENT_PENDING, actual: ${job.status}`)
       return NextResponse.json(
-        { error: 'Job is not in PAYMENT_PENDING status' },
+        { error: `Job is not in PAYMENT_PENDING status, actual: ${job.status}` },
         { status: 400 }
       )
     }
 
     if (action === 'approve') {
+      console.log(`[v0] Approving job ${jobId} - updating status PAYMENT_PENDING → LIVE`)
+      
       // Atomic approval: transition job from PAYMENT_PENDING → APPROVED → LIVE
       // All updates happen in single transaction (all-or-nothing)
-      await Job.findByIdAndUpdate(
+      const updatedJob = await Job.findByIdAndUpdate(
         jobId,
         {
           status: 'LIVE',
@@ -69,6 +74,8 @@ export async function POST(request: NextRequest) {
         },
         { session, new: true }
       )
+
+      console.log(`[v0] Job updated, new status: ${updatedJob?.status}, paymentStatus: ${updatedJob?.paymentStatus}`)
 
       await session.commitTransaction()
 

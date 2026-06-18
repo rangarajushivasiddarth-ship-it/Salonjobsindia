@@ -7,6 +7,9 @@ export async function GET(request: NextRequest) {
   try {
     await connectDB()
 
+    // DEBUG: Log query
+    console.log('[v0] [Admin Pending] Querying jobs with status=PAYMENT_PENDING, paymentStatus=pending')
+
     // Query for jobs in PAYMENT_PENDING status
     const pendingJobs = await Job.find({
       status: 'PAYMENT_PENDING',
@@ -15,6 +18,8 @@ export async function GET(request: NextRequest) {
       .populate('ownerId', 'email phone name')
       .sort({ paymentSubmittedAt: -1 })
       .lean()
+
+    console.log('[v0] [Admin Pending] Found', pendingJobs.length, 'jobs')
 
     // Map to admin-friendly format
     const pendingJobPayments = pendingJobs.map(job => ({
