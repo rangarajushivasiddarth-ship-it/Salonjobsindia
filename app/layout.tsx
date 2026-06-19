@@ -35,38 +35,36 @@ export const metadata: Metadata = {
     canonical: 'https://saloonjobsindia.com',
   },
   openGraph: {
-    title: 'Salon Jobs India - Salon Recruitment & Beauty Jobs Platform',
-    description: 'Search salon jobs and beauty careers in India. Post salon positions and hire beauty professionals. Salon Jobs India connects salons with talented beauty staff.',
+    title: 'Salon Jobs India',
+    description: 'Find salon jobs and hire beauty professionals across India.',
     type: 'website',
     locale: 'en_IN',
     url: 'https://saloonjobsindia.com',
     siteName: 'Salon Jobs India',
     images: [
       {
-        url: '/images/logo.png',
-        width: 1200,
-        height: 630,
-        alt: 'Salon Jobs India - Beauty Professional Job Marketplace',
+        url: '/icons/icon-512x512.png?v=3',
+        width: 512,
+        height: 512,
+        alt: 'Salon Jobs India',
         type: 'image/png',
       }
     ],
   },
   twitter: {
-    card: 'summary_large_image',
-    title: 'Salon Jobs India - Beauty & Salon Recruitment',
-    description: 'Find salon jobs, beauty careers, and salon staff. Post salon positions on India\'s top salon job platform.',
-    creator: '@saloonjobsindia',
-    site: '@saloonjobsindia',
-    images: ['/images/logo.png'],
+    card: 'summary',
+    title: 'Salon Jobs India',
+    description: 'Find salon jobs and hire beauty professionals across India.',
+    images: ['/icons/icon-512x512.png?v=3'],
   },
   icons: {
     icon: [
-      {
-        url: '/images/salon-jobs-india-logo.png',
-        type: 'image/png',
-      },
+      { url: '/favicon-32x32.png?v=3', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png?v=3', sizes: '16x16', type: 'image/png' }
     ],
-    apple: '/images/salon-jobs-india-logo.png',
+    apple: [
+      { url: '/apple-touch-icon.png?v=3', sizes: '180x180', type: 'image/png' }
+    ]
   },
   appleWebApp: {
     capable: true,
