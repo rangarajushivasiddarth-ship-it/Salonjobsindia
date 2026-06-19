@@ -3,21 +3,26 @@
 import { Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
+import { useTransition } from 'react'
 
 function ShareContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const [, startTransition] = useTransition()
   
   const title = searchParams.get('title')
   const text = searchParams.get('text')
   const url = searchParams.get('url')
 
   useEffect(() => {
-    // If no shared params, redirect to jobs page
-    if (!title && !text && !url) {
-      router.push('/jobs')
+    // Only redirect if we're in the browser and have no params
+    if (typeof window !== 'undefined' && !title && !text && !url) {
+      // Use startTransition to prevent router dispatch before initialization
+      startTransition(() => {
+        router.push('/jobs')
+      })
     }
-  }, [title, text, url, router])
+  }, [title, text, url, router, startTransition])
 
   return (
     <div className="min-h-screen bg-white dark:bg-background p-4 md:p-6">
