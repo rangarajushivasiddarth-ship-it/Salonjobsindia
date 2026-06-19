@@ -805,39 +805,74 @@ export async function syncApprovedJobsFromCloud(): Promise<void> {
   if (typeof window === 'undefined') return
   
   try {
+    console.log('[v0] [DataStore] Syncing approved jobs from cloud')
     const response = await fetch('/api/sync?type=approved-jobs')
     const data = await response.json()
     
     if (data.success && Array.isArray(data.data)) {
-      const cloudJobs = data.data as Job[]
+      const cloudJobs = data.data as any[]
       const localJobs = getAllJobs()
+      
+      console.log(`[v0] [DataStore] Found ${cloudJobs.length} cloud jobs`)
       
       // Merge cloud jobs with local, avoiding duplicates
       let hasChanges = false
-      cloudJobs.forEach(cloudJob => {
-        const existingIndex = localJobs.findIndex(
-          j => j.id === cloudJob.id || 
-               (j.salonId === cloudJob.salonId && j.paymentId === cloudJob.paymentId)
-        )
+      cloudJobs.forEach((cloudJob: any) => {
+        const existingIndex = localJobs.findIndex(j => j.id === cloudJob.id)
         
         if (existingIndex === -1) {
-          // Add new job from cloud
-          localJobs.push({
-            ...cloudJob,
+          // Map Supabase job to local Job format
+          const mappedJob: Job = {
+            id: cloudJob.id,
+            salonId: cloudJob.owner_id || '',
+            salonName: cloudJob.salon_name || '',
+            salonMobile: '',
+            role: cloudJob.title || '',
+            customRole: '',
+            skills: Array.isArray(cloudJob.skills) ? cloudJob.skills : [],
+            customSkills: [],
+            salaryType: 'range' as const,
+            salaryFixed: undefined,
+            salaryRange: `${cloudJob.salary_min || 0} - ${cloudJob.salary_max || 0}`,
+            experience: `${cloudJob.experience_required || 0} years`,
+            jobType: (cloudJob.job_type === 'full-time' ? 'full_time' : 'part_time') as 'full_time' | 'part_time',
+            description: cloudJob.description || '',
+            location: {
+              lat: cloudJob.location_lat || 0,
+              lng: cloudJob.location_lng || 0,
+              address: cloudJob.location_address || '',
+              state: cloudJob.location_state || '',
+              city: cloudJob.location_city || '',
+              area: cloudJob.location_city || '',
+              locality: cloudJob.location_address || '',
+            },
+            contact: '',
+            status: 'live' as const,
+            editsUsed: 0,
+            maxEdits: 5,
+            viewsCount: cloudJob.views_count || 0,
+            applicationsCount: cloudJob.applications_count || 0,
             isActive: true,
-            status: 'live',
-          } as Job)
+            isVerified: false,
+            paymentId: cloudJob.payment_plan || '',
+            createdAt: new Date(cloudJob.created_at),
+            expiresAt: cloudJob.expires_at ? new Date(cloudJob.expires_at) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          }
+          
+          localJobs.push(mappedJob)
           hasChanges = true
+          console.log('[v0] [DataStore] Added cloud job to local cache:', mappedJob.id)
         }
       })
       
       if (hasChanges) {
         localStorage.setItem(JOBS_KEY, JSON.stringify(localJobs))
         dispatchDataUpdate(JOBS_KEY)
+        console.log('[v0] [DataStore] Saved changes to localStorage')
       }
     }
   } catch (error) {
-    console.error('Error syncing approved jobs from cloud:', error)
+    console.error('[v0] [DataStore] Error syncing approved jobs from cloud:', error)
   }
 }
 

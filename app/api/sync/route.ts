@@ -1,12 +1,14 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createJob, getPendingJobs, approveJob, rejectJob, logSync, getSyncLogs } from '@/lib/db/jobs'
+import { createJob, getPendingJobs, getLiveJobs, approveJob, rejectJob, logSync, getSyncLogs } from '@/lib/db/jobs'
 import { createApiError, validateRequired } from '@/lib/api-error-handler'
 
-// GET - Retrieve pending jobs or sync logs
+// GET - Retrieve jobs by type (pending, approved/live, logs)
 export async function GET(request: NextRequest) {
   const type = request.nextUrl.searchParams.get('type')
+  const city = request.nextUrl.searchParams.get('city')
+  const search = request.nextUrl.searchParams.get('search')
 
-  console.log(`[v0] [Sync API] GET request - type: ${type}`)
+  console.log(`[v0] [Sync API] GET request - type: ${type}, city: ${city}, search: ${search}`)
 
   try {
     if (type === 'pending-jobs' || type === 'pending-job-payments') {
@@ -15,6 +17,15 @@ export async function GET(request: NextRequest) {
         return createApiError('Failed to fetch pending jobs', 'SERVER_ERROR', 500)
       }
       console.log(`[v0] [Sync API] Returning ${result.data.length} pending jobs`)
+      return NextResponse.json({ success: true, data: result.data, count: result.data.length, timestamp: Date.now() })
+    }
+
+    if (type === 'approved-jobs' || type === 'live-jobs') {
+      const result = await getLiveJobs(city || undefined, search || undefined)
+      if (!result.success) {
+        return createApiError('Failed to fetch live jobs', 'SERVER_ERROR', 500)
+      }
+      console.log(`[v0] [Sync API] Returning ${result.data.length} live jobs`)
       return NextResponse.json({ success: true, data: result.data, count: result.data.length, timestamp: Date.now() })
     }
 
