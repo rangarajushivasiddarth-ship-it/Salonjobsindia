@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
         action: 'update',
         source: 'payments/POST',
         old_data: oldJobState,
-        new_data: { payment_status: 'pending_approval' },
+        new_data: { payment_status: 'pending' },
         status: 'failed',
         error_message: updateError.message,
       })
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Payment submitted successfully',
       jobId,
-      status: 'pending_approval',
+      status: 'pending',
       consistent: consistency.consistent,
     })
   } catch (error) {
