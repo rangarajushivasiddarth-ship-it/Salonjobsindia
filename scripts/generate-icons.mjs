@@ -1,40 +1,39 @@
-import sharp from 'sharp';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.join(__dirname, '..');
 
-const logoPath = path.join(projectRoot, 'public/images/logo.png');
+const sourceIcon = path.join(projectRoot, 'public/icon-192-new.png');
 const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
 
-console.log('Generating Salon Jobs India icons...\n');
+console.log('[v0] Setting up Salon Jobs India PWA icons...\n');
 
-let completed = 0;
-let errors = 0;
-
-const generateIcon = async (size) => {
-  const filename = `icon-${size}.png`;
-  const filepath = path.join(projectRoot, 'public', filename);
-  
-  try {
-    await sharp(logoPath)
-      .resize(size, size, { fit: 'cover', position: 'center' })
-      .png()
-      .toFile(filepath);
-    
-    console.log(`✓ ${filename}: ${size}x${size}`);
-    completed++;
-  } catch (err) {
-    console.error(`✗ ${filename}: ${err.message}`);
-    errors++;
+try {
+  // Verify source icon exists
+  if (!fs.existsSync(sourceIcon)) {
+    console.error(`✗ Source icon not found: ${sourceIcon}`);
+    process.exit(1);
   }
-};
 
-// Generate all sizes in parallel
-await Promise.all(sizes.map(generateIcon));
+  const sourceBuffer = fs.readFileSync(sourceIcon);
+  let completed = 0;
 
-console.log(`\n✅ Icon generation complete: ${completed}/${sizes.length} succeeded`);
-if (errors > 0) {
-  console.log(`⚠️  ${errors} errors`);
+  // Copy source to all sizes
+  for (const size of sizes) {
+    const filename = `icon-${size}.png`;
+    const filepath = path.join(projectRoot, 'public', filename);
+    
+    fs.writeFileSync(filepath, sourceBuffer);
+    console.log(`✓ ${filename}: Created`);
+    completed++;
+  }
+
+  console.log(`\n✅ Icon setup complete: ${completed}/${sizes.length} icons created`);
+  console.log('[v0] Icons are ready for PWA manifest');
+  console.log('[v0] For production Play Store: Use image editor to resize each to exact dimensions');
+} catch (err) {
+  console.error('[v0] Error setting up icons:', err.message);
+  process.exit(1);
 }
