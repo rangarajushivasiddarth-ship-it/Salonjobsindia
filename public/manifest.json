@@ -32,94 +32,10 @@
   ],
   "icons": [
     {
-      "src": "/icon-72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "/icon-72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icon-96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icon-128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icon-144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icon-152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icon-384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "maskable"
     },
     {
       "src": "/icon-512.png",
@@ -136,14 +52,14 @@
       "url": "/jobs",
       "icons": [
         {
-          "src": "/icon-192.png",
-          "sizes": "192x192",
+          "src": "/icon-512.png",
+          "sizes": "512x512",
           "type": "image/png",
           "purpose": "any"
         },
         {
-          "src": "/icon-192.png",
-          "sizes": "192x192",
+          "src": "/icon-512.png",
+          "sizes": "512x512",
           "type": "image/png",
           "purpose": "maskable"
         }
@@ -156,14 +72,14 @@
       "url": "/post-job",
       "icons": [
         {
-          "src": "/icon-192.png",
-          "sizes": "192x192",
+          "src": "/icon-512.png",
+          "sizes": "512x512",
           "type": "image/png",
           "purpose": "any"
         },
         {
-          "src": "/icon-192.png",
-          "sizes": "192x192",
+          "src": "/icon-512.png",
+          "sizes": "512x512",
           "type": "image/png",
           "purpose": "maskable"
         }
@@ -194,13 +110,5 @@
       "url": "https://play.google.com/store/apps/details?id=com.salon.jobs.india"
     }
   ],
-  "prefer_related_applications": false,
-  "scope_extensions": [
-    {
-      "origin": "https://salonjobsindia.com"
-    },
-    {
-      "origin": "https://www.salonjobsindia.com"
-    }
-  ]
+  "prefer_related_applications": false
 }
