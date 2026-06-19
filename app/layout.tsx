@@ -62,19 +62,11 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: '/favicon.ico',
-        type: 'image/x-icon',
-      },
-      {
-        url: '/images/logo.png',
+        url: '/images/salon-jobs-india-logo.png',
         type: 'image/png',
       },
-      {
-        url: '/images/fitonze-logo.jpeg',
-        type: 'image/jpeg',
-      },
     ],
-    apple: '/images/logo.png',
+    apple: '/images/salon-jobs-india-logo.png',
   },
   appleWebApp: {
     capable: true,
