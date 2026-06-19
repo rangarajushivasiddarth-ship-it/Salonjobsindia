@@ -2,27 +2,28 @@
 
 import { Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useEffect } from 'react'
-import { useTransition } from 'react'
+import { useEffect, useRef } from 'react'
 
 function ShareContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [, startTransition] = useTransition()
+  const redirectedRef = useRef(false)
   
   const title = searchParams.get('title')
   const text = searchParams.get('text')
   const url = searchParams.get('url')
 
   useEffect(() => {
-    // Only redirect if we're in the browser and have no params
-    if (typeof window !== 'undefined' && !title && !text && !url) {
-      // Use startTransition to prevent router dispatch before initialization
-      startTransition(() => {
+    // Only redirect once if no params - use ref to prevent duplicate redirects
+    if (!redirectedRef.current && !title && !text && !url) {
+      redirectedRef.current = true
+      // Schedule redirect for next tick to ensure router is ready
+      const timeoutId = setTimeout(() => {
         router.push('/jobs')
-      })
+      }, 0)
+      return () => clearTimeout(timeoutId)
     }
-  }, [title, text, url, router, startTransition])
+  }, [title, text, url, router])
 
   return (
     <div className="min-h-screen bg-white dark:bg-background p-4 md:p-6">

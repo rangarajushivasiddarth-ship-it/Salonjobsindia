@@ -32,8 +32,9 @@ export async function initializeBackgroundSync() {
       // Try to register background sync for job submissions
       try {
         // @ts-ignore - SyncManager API is not in all TS definitions
-        await registration.sync.register('sync-job-submission');
-        console.log('[BackgroundSync] Sync tag registered: sync-job-submission');
+        // Use short tag name - max 50 chars and must be valid
+        await registration.sync.register('jobs');
+        console.log('[BackgroundSync] Sync tag registered: jobs');
       } catch (err) {
         console.log('[BackgroundSync] Background sync registration failed:', err);
       }
@@ -44,7 +45,8 @@ export async function initializeBackgroundSync() {
     if ('periodicSync' in registration) {
       try {
         // @ts-ignore - periodicSync is experimental
-        await (registration as any).periodicSync.register('sync-jobs', {
+        // Use short tag name to avoid length issues
+        await (registration as any).periodicSync.register('sync', {
           minInterval: 24 * 60 * 60 * 1000, // 24 hours
         });
         console.log('[BackgroundSync] Periodic sync registered (24h)');
@@ -91,7 +93,8 @@ export async function queueForSync(
         const registration = await navigator.serviceWorker.ready;
         if ('sync' in registration) {
           // @ts-ignore - SyncManager API is not in all TS definitions
-          await registration.sync.register(`sync-${type}`);
+          // Use short, valid tag name (alphanumeric and hyphen only, max 50 chars)
+          await registration.sync.register('jobs');
           console.log('[BackgroundSync] Background sync tag registered:', type);
         }
       } catch (err) {
