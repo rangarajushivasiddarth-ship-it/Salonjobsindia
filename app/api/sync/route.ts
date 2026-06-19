@@ -81,9 +81,14 @@ export async function POST(request: NextRequest) {
       if (!jobResult.success) {
         console.error('[v0] [Sync API] Failed to create job:', jobResult.error)
         await logSync('job', 'unknown', 'create', 'supabase', 'failed', null, null, JSON.stringify(jobResult.error))
+        const errorMessage = jobResult.error instanceof Error 
+          ? jobResult.error.message 
+          : typeof jobResult.error === 'object' && jobResult.error !== null && 'message' in jobResult.error
+            ? (jobResult.error as any).message
+            : JSON.stringify(jobResult.error)
         return NextResponse.json({ 
           error: 'Failed to create job',
-          details: jobResult.error?.message || JSON.stringify(jobResult.error)
+          details: errorMessage
         }, { status: 500 })
       }
 
@@ -127,9 +132,14 @@ export async function PUT(request: NextRequest) {
       if (!result.success) {
         console.error('[v0] [Sync API] Failed to approve job:', result.error)
         await logSync('job', jobId, 'approve', 'supabase', 'failed', null, null, JSON.stringify(result.error))
+        const errorMessage = result.error instanceof Error 
+          ? result.error.message 
+          : typeof result.error === 'object' && result.error !== null && 'message' in result.error
+            ? (result.error as any).message
+            : JSON.stringify(result.error)
         return NextResponse.json({ 
           error: 'Failed to approve job',
-          details: result.error?.message || JSON.stringify(result.error)
+          details: errorMessage
         }, { status: 500 })
       }
 
