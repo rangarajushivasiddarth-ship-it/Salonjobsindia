@@ -246,9 +246,10 @@ export async function rejectJob(jobId: string, adminId: string, reason: string) 
     const { data, error } = await supabase
       .from('jobs')
       .update({
-        status: 'REJECTED',
+        status: 'EXPIRED',
         payment_status: 'rejected',
         rejection_reason: reason,
+        is_visible: false,
         updated_at: new Date().toISOString(),
       })
       .eq('id', jobId)
