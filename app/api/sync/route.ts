@@ -120,10 +120,16 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
+    return createApiError('Invalid type', 'INVALID_INPUT', 400)
   } catch (error) {
     console.error('[v0] [Sync API] POST error:', error)
-    return NextResponse.json({ error: 'Failed to submit' }, { status: 500 })
+    
+    // Handle JSON parsing errors
+    if (error instanceof SyntaxError) {
+      return createApiError('Invalid JSON', 'INVALID_INPUT', 400, { error: String(error) })
+    }
+    
+    return createApiError('Failed to submit', 'SERVER_ERROR', 500, { error: String(error) })
   }
 }
 
