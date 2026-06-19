@@ -123,10 +123,34 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-// Handle background sync for failed requests
+// Handle background sync for failed requests (Phase 4)
 self.addEventListener("sync", (event) => {
-  if (event.tag === "sync-jobs") {
+  console.log("[SW] Background sync event:", event.tag);
+
+  if (event.tag === "sync-job-submission") {
+    event.waitUntil(syncJobSubmission());
+  } else if (event.tag === "sync-profile-update") {
+    event.waitUntil(syncProfileUpdate());
+  } else if (event.tag === "sync-favorite-add") {
+    event.waitUntil(syncFavoriteAdd());
+  } else if (event.tag === "sync-jobs") {
     event.waitUntil(syncJobsData());
+  } else if (event.tag.startsWith("sync-")) {
+    // Generic sync handler for any sync-* tag
+    event.waitUntil(processGenericSync(event.tag));
+  }
+});
+
+// Handle periodic background sync (Phase 5)
+self.addEventListener("periodicsync", (event) => {
+  console.log("[SW] Periodic sync event:", event.tag);
+
+  if (event.tag === "sync-jobs") {
+    // Update job listings every 24 hours
+    event.waitUntil(syncJobsData());
+  } else if (event.tag === "sync-profile") {
+    // Update user profile periodically
+    event.waitUntil(syncUserProfile());
   }
 });
 
@@ -139,11 +163,13 @@ self.addEventListener("push", (event) => {
     badge: "/icon-96.png",
     tag: "salon-notification",
     requireInteraction: false,
+    url: "/jobs",
   };
 
   if (event.data) {
     try {
-      notificationData = event.data.json();
+      const jsonData = event.data.json();
+      notificationData = { ...notificationData, ...jsonData };
     } catch (e) {
       notificationData.body = event.data.text();
     }
@@ -157,6 +183,19 @@ self.addEventListener("push", (event) => {
       tag: notificationData.tag,
       requireInteraction: notificationData.requireInteraction,
       data: notificationData,
+      vibrate: [200, 100, 200],
+      actions: [
+        {
+          action: "open",
+          title: "View Job",
+          icon: "/icon-96.png",
+        },
+        {
+          action: "close",
+          title: "Dismiss",
+          icon: "/icon-96.png",
+        },
+      ],
     })
   );
 });
@@ -164,15 +203,23 @@ self.addEventListener("push", (event) => {
 // Handle notification clicks
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+
+  if (event.action === "close") {
+    return;
+  }
+
   const urlToOpen = event.notification.data?.url || "/jobs";
-  
+
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      // Check if app window is already open
       for (let i = 0; i < clientList.length; i++) {
-        if (clientList[i].url === urlToOpen && "focus" in clientList[i]) {
-          return clientList[i].focus();
+        const client = clientList[i];
+        if (client.url === urlToOpen && "focus" in client) {
+          return client.focus();
         }
       }
+      // Open new window if not found
       if (clients.openWindow) {
         return clients.openWindow(urlToOpen);
       }
@@ -180,16 +227,93 @@ self.addEventListener("notificationclick", (event) => {
   );
 });
 
-// Helper function for background sync
+// Handle notification close
+self.addEventListener("notificationclose", (event) => {
+  console.log("[SW] Notification closed:", event.notification.tag);
+});
+
+// Helper functions for syncing
+
 async function syncJobsData() {
   try {
-    const response = await fetch("/api/jobs");
+    console.log("[SW] Syncing jobs data");
+    const response = await fetch("/api/jobs?fresh=true");
     if (response.ok) {
       const cache = await caches.open(CACHE_NAMES.dynamic);
       await cache.put("/jobs", response.clone());
+      console.log("[SW] Jobs data synced successfully");
     }
   } catch (error) {
-    console.log("[SW] Sync failed:", error);
+    console.log("[SW] Jobs sync failed:", error);
+    throw error;
+  }
+}
+
+async function syncUserProfile() {
+  try {
+    console.log("[SW] Syncing user profile");
+    const response = await fetch("/api/profile");
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAMES.dynamic);
+      await cache.put("/api/profile", response.clone());
+      console.log("[SW] Profile synced successfully");
+    }
+  } catch (error) {
+    console.log("[SW] Profile sync failed:", error);
+    throw error;
+  }
+}
+
+async function syncJobSubmission() {
+  try {
+    console.log("[SW] Processing queued job submissions");
+    const response = await fetch("/api/sync/job-submissions");
+    if (response.ok) {
+      console.log("[SW] Job submissions synced");
+    }
+  } catch (error) {
+    console.log("[SW] Job submission sync failed:", error);
+    throw error;
+  }
+}
+
+async function syncProfileUpdate() {
+  try {
+    console.log("[SW] Processing queued profile updates");
+    const response = await fetch("/api/sync/profile-updates");
+    if (response.ok) {
+      console.log("[SW] Profile updates synced");
+    }
+  } catch (error) {
+    console.log("[SW] Profile update sync failed:", error);
+    throw error;
+  }
+}
+
+async function syncFavoriteAdd() {
+  try {
+    console.log("[SW] Processing queued favorite additions");
+    const response = await fetch("/api/sync/favorites");
+    if (response.ok) {
+      console.log("[SW] Favorites synced");
+    }
+  } catch (error) {
+    console.log("[SW] Favorite sync failed:", error);
+    throw error;
+  }
+}
+
+async function processGenericSync(tag) {
+  try {
+    console.log("[SW] Processing generic sync:", tag);
+    // Extract the type from the tag (e.g., "sync-custom-type" -> "custom-type")
+    const syncType = tag.substring(5);
+    const response = await fetch(`/api/sync/${syncType}`);
+    if (response.ok) {
+      console.log("[SW] Generic sync processed:", tag);
+    }
+  } catch (error) {
+    console.log("[SW] Generic sync failed:", tag, error);
     throw error;
   }
 }
