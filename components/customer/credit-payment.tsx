@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Upload, Check, Clock, Crown, Phone, AlertCircle, BadgeCheck, Shield } from 'lucide-react'
+import { ArrowLeft, Upload, Check, Clock, Crown, Phone, AlertCircle, BadgeCheck, Shield, Loader } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
 import { savePayment, getSalonProfileByOwnerId } from '@/lib/data-store'
@@ -31,8 +31,10 @@ export function CreditPayment() {
   const [selectedPack, setSelectedPack] = useState<SelectedPack | null>(null)
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null)
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   // Determine if this is a verified badge purchase
   const isVerifiedBadge = selectedPack?.type === 'verified_badge'
@@ -54,15 +56,50 @@ export function CreditPayment() {
     }
   }, []) // REMOVED goToStep - runs on mount only, redirects if no pack found
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeChange<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      setScreenshotFile(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setScreenshotPreview(reader.result as string)
+    if (!file) return
+
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Please upload an image file')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('File must be under 5MB')
+      return
+    }
+
+    setIsUploading(true)
+    setUploadError(null)
+
+    try {
+      // Create FormData for file upload
+      const formData = new FormData()
+      formData.append('file', file)
+
+      // Upload to Vercel Blob
+      const response = await fetch('/api/upload/screenshot', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error(await response.text())
       }
-      reader.readAsDataURL(file)
+
+      const { url } = await response.json()
+      
+      setScreenshotFile(file)
+      setScreenshotPreview(url)
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Upload failed'
+      console.error('[v0] Upload error:', errorMsg)
+      setUploadError(errorMsg)
+      setScreenshotFile(null)
+      setScreenshotPreview(null)
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -260,6 +297,13 @@ export function CreditPayment() {
         <div className="p-5 glass-card rounded-2xl mb-6">
           <h3 className="font-semibold mb-4">Upload Payment Screenshot</h3>
           
+          {uploadError && (
+            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg mb-4 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500" />
+              <span className="text-sm text-red-500">{uploadError}</span>
+            </div>
+          )}
+          
           {screenshotPreview ? (
             <div className="relative">
               <img 
@@ -267,27 +311,40 @@ export function CreditPayment() {
                 alt="Payment screenshot" 
                 className="w-full rounded-xl border border-border/50"
               />
-              <button
-                onClick={() => {
-                  setScreenshotFile(null)
-                  setScreenshotPreview(null)
-                }}
-                className="absolute top-2 right-2 p-2 bg-background/80 rounded-full"
-              >
-                <span className="text-xs">Change</span>
-              </button>
+              {!isUploading && (
+                <button
+                  onClick={() => {
+                    setScreenshotFile(null)
+                    setScreenshotPreview(null)
+                    setUploadError(null)
+                  }}
+                  className="absolute top-2 right-2 p-2 bg-background/80 rounded-full hover:bg-background transition-colors"
+                >
+                  <span className="text-xs font-medium">Change</span>
+                </button>
+              )}
             </div>
           ) : (
-            <label className="block">
-              <div className="p-8 border-2 border-dashed border-border/50 rounded-xl text-center cursor-pointer hover:border-primary/50 transition-colors">
-                <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground mb-1">Tap to upload screenshot</p>
-                <p className="text-xs text-muted-foreground">PNG, JPG up to 5MB</p>
+            <label className={`block cursor-pointer ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+              <div className="p-8 border-2 border-dashed border-border/50 rounded-xl text-center hover:border-primary/50 transition-colors">
+                {isUploading ? (
+                  <>
+                    <Loader className="w-10 h-10 mx-auto mb-3 text-primary animate-spin" />
+                    <p className="text-sm text-muted-foreground mb-1">Uploading screenshot...</p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground mb-1">Tap to upload screenshot</p>
+                    <p className="text-xs text-muted-foreground">PNG, JPG up to 5MB</p>
+                  </>
+                )}
               </div>
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
+                disabled={isUploading}
                 className="hidden"
               />
             </label>
