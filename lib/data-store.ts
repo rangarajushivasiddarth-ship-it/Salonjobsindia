@@ -1,6 +1,7 @@
 'use client'
 
 import type { Subscription, Job, User, SalonProfile, Payment, Alert, Application } from './types'
+import { syncSalonCreditsToSupabase } from './supabase-sync'
 
 // Storage keys
 const SUBSCRIPTIONS_KEY = 'salonjobsindia_subscriptions'
@@ -132,6 +133,12 @@ export function updateSalonCredits(ownerId: string, creditsToAdd: number): Salon
   if (profile) {
     profile.contactCredits = (profile.contactCredits || 0) + creditsToAdd
     saveSalonProfile(profile)
+    
+    // Sync to Supabase in background (non-blocking)
+    syncSalonCreditsToSupabase(profile).catch(err => {
+      console.warn('[v0] Failed to sync salon credits to Supabase:', err)
+    })
+    
     return profile
   }
   return null
@@ -155,6 +162,11 @@ export function deductSalonCredit(ownerId: string, candidateId: string): boolean
   profile.contactCredits = (profile.contactCredits || 0) - 1
   profile.unlockedCandidates = [...(profile.unlockedCandidates || []), candidateId]
   saveSalonProfile(profile)
+  
+  // Sync to Supabase in background (non-blocking)
+  syncSalonCreditsToSupabase(profile).catch(err => {
+    console.warn('[v0] Failed to sync salon credits after deduction:', err)
+  })
   
   // Create alert for credits low
   if (profile.contactCredits <= 5) {

@@ -56,7 +56,7 @@ export function CreditPayment() {
     }
   }, []) // REMOVED goToStep - runs on mount only, redirects if no pack found
 
-  const handleFileChange = async (e: React.ChangeChange<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
