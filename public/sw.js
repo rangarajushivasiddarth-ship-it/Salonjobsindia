@@ -1,19 +1,11 @@
-const CACHE_NAME = "salon-jobs-india-v30";
-const URLS_TO_CACHE = ["/", "/manifest.json"];
-
-// Icon and manifest files should always use network-first strategy
-const NETWORK_FIRST_PATTERNS = [
-  /\/manifest\.json/,
-  /\/icons\//,
-  /\/favicon-/,
-  /\/apple-touch-icon/,
-];
+const CACHE_NAME = "salon-jobs-india-clean-v1";
+const URLS_TO_CACHE = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(URLS_TO_CACHE))
   );
-  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
@@ -27,19 +19,7 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
-
-  // Network-first for icons, manifest, and favicons
-  if (NETWORK_FIRST_PATTERNS.some((pattern) => pattern.test(event.request.url))) {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
-    );
-    return;
-  }
-
-  // Cache-first for other assets
   event.respondWith(
-    caches.match(event.request).then((response) =>
-      response || fetch(event.request)
-    )
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
