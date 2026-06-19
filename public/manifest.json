@@ -1,83 +1,98 @@
 {
-  "name": "Salon Jobs India - Find Your Perfect Salon Career",
+  "id": "/",
+  "name": "Salon Jobs India",
   "short_name": "Salon Jobs",
-  "description": "Find your perfect salon career. Post jobs, hire professionals, and grow your salon business. Powered by FItonze Private Limited.",
+  "description": "Find salon jobs and hire beauty professionals across India.",
+  "lang": "en-IN",
+  "dir": "ltr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
   "background_color": "#ffffff",
-  "theme_color": "#D4AF37",
-  "orientation": "portrait-primary",
-  "prefer_related_applications": false,
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "categories": ["business", "productivity", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/maskable-icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/maskable-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Find Jobs",
       "short_name": "Jobs",
-      "description": "Browse salon job listings",
-      "url": "/?shortcut=jobs",
+      "description": "Browse salon jobs near you",
+      "url": "/jobs",
       "icons": [
         {
-          "src": "/images/logo.png",
+          "src": "/icons/icon-192x192.png",
           "sizes": "192x192",
           "type": "image/png"
         }
       ]
     },
     {
-      "name": "Post a Job",
+      "name": "Post Job",
       "short_name": "Post Job",
-      "description": "Post a new job listing",
-      "url": "/?shortcut=post-job",
+      "description": "Post a salon job opening",
+      "url": "/post-job",
       "icons": [
         {
-          "src": "/images/logo.png",
+          "src": "/icons/icon-192x192.png",
           "sizes": "192x192",
           "type": "image/png"
         }
       ]
-    }
-  ],
-  "icons": [
-    {
-      "src": "/images/logo.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/images/logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/favicon.ico",
-      "sizes": "any",
-      "type": "image/x-icon"
     }
   ],
   "screenshots": [
     {
-      "src": "/images/logo.png",
+      "src": "/screenshots/mobile-540x720.png",
       "sizes": "540x720",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Browse salon jobs near you"
+      "label": "Salon Jobs India mobile app home screen"
     },
     {
-      "src": "/images/logo.png",
+      "src": "/screenshots/desktop-1280x720.png",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Connect with top salons and professionals"
+      "label": "Salon Jobs India desktop home screen"
     }
   ],
-  "categories": ["business", "lifestyle", "productivity"],
-  "developers": [
-    {
-      "name": "FItonze Private Limited",
-      "url": "https://saloonjobsindia.com",
-      "email": "Saloonjobsindia@gmail.com"
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "share_target": {
+    "action": "/share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
     }
-  ]
+  },
+  "related_applications": [],
+  "prefer_related_applications": false
 }
