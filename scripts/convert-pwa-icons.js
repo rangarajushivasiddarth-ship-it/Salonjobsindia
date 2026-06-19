@@ -19,7 +19,7 @@ try {
   process.exit(1);
 }
 
-const SOURCE = path.join(__dirname, '../public/images/logo.png');
+const SOURCE = path.join(__dirname, '../public/salon-jobs-india-official-logo.png');
 const OUTDIR = path.join(__dirname, '../public/salon-jobs-icons');
 const SIZES = [72, 192, 512];
 
@@ -30,12 +30,12 @@ async function createIcons() {
       throw new Error(`Source file not found: ${SOURCE}`);
     }
 
-    // Verify source is a real PNG
+    // Verify source file and get metadata (accept PNG or JPEG)
     const sourceBuffer = fs.readFileSync(SOURCE);
     const metadata = await sharp(sourceBuffer).metadata();
     
-    if (metadata.format !== 'png') {
-      throw new Error(`Source file is not PNG format: ${metadata.format}`);
+    if (!['png', 'jpeg'].includes(metadata.format)) {
+      throw new Error(`Source file format not supported: ${metadata.format}`);
     }
 
     console.log(`[v0] Source logo: ${SOURCE}`);
