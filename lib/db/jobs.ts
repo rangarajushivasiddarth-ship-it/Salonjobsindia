@@ -148,6 +148,8 @@ export async function getLiveJobs(city?: string, search?: string) {
       .select('*')
       .eq('status', 'LIVE')
       .eq('is_visible', true)
+      .eq('is_live', true)
+      // CRITICAL FIX: Only show jobs with APPROVED payment status
       .eq('payment_status', 'approved')
       .order('posted_at', { ascending: false })
 

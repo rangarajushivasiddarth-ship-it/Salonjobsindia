@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth-middleware'
+import { requireAdminAuth, getAdminFromToken } from '@/lib/admin-auth'
 import { getPendingJobs } from '@/lib/db/jobs'
 
 // GET - Fetch all jobs with pending payment approvals for admin dashboard
 export async function GET(request: NextRequest) {
   try {
-    // SECURITY: Check for admin token
-    const authHeader = request.headers.get('Authorization')
-    if (!authHeader?.startsWith('Bearer admin_token_')) {
-      console.log('[v0] [Admin Pending] Unauthorized - no valid admin token')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Verify JWT admin token
+    const authError = await requireAdminAuth(request)
+    if (authError) {
+      return authError
     }
 
-    console.log('[v0] [Admin Pending] Fetching pending payments from Supabase')
+    const admin = await getAdminFromToken(request)
+
+    console.log('[v0] [Admin Pending] Admin', admin?.email, 'fetching pending payments from Supabase')
 
     // Call getPendingJobs to get jobs where status='PAYMENT_PENDING' AND payment_status='pending'
     const result = await getPendingJobs()

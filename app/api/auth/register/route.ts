@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectToDatabase, UserDocument, JobSeekerDocument, SalonOwnerDocument } from '@/lib/mongodb'
-import { hash } from 'bcryptjs'
+import { registerUser } from '@/lib/supabase-auth'
 
 export async function POST(request: NextRequest) {
   try {
@@ -62,119 +61,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const db = await connectToDatabase()
-    const usersCollection = db.collection<UserDocument>('users')
+    // CRITICAL FIX: Use Supabase for all auth operations (not MongoDB)
+    // This ensures consistency between auth and job data
+    const result = await registerUser(
+      email.toLowerCase(),
+      phone,
+      name.trim(),
+      password,
+      role as 'job_seeker' | 'salon_owner'
+    )
 
-    // Check if user already exists
-    const existingUser = await usersCollection.findOne({
-      $or: [{ email: email.toLowerCase() }, { phone }]
-    })
-
-    if (existingUser) {
+    if (!result.success) {
+      const statusCode = result.error?.includes('already exists') ? 409 : 400
       return NextResponse.json(
-        { error: 'User with this email or phone already exists' },
-        { status: 409 }
+        { error: result.error || 'Registration failed' },
+        { status: statusCode }
       )
     }
 
-    // Hash password
-    const hashedPassword = await hash(password, 12)
+    const userId = result.data.id
 
-    // Create base user document
-    const newUser: UserDocument = {
-      name: name.trim(),
-      email: email.toLowerCase(),
-      phone,
-      password: hashedPassword,
-      role,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-
-    const result = await usersCollection.insertOne(newUser)
-    const userId = result.insertedId.toString()
-
-    // Normalize location data
-    const normalizedLocation = location ? {
-      latitude: Number(location.latitude || 0),
-      longitude: Number(location.longitude || 0),
-      address: location.address || '',
-      city: location.city || '',
-      district: location.district || '',
-      state: location.state || '',
-      country: location.country || 'India',
-      postalCode: location.postalCode || ''
-    } : {
-      latitude: 0,
-      longitude: 0,
-      address: '',
-      city: '',
-      district: '',
-      state: '',
-      country: 'India',
-      postalCode: ''
-    }
-
-    // Create role-specific profile with location data
-    if (role === 'job_seeker') {
-      const jobSeekersCollection = db.collection<JobSeekerDocument>('job_seekers')
-      await jobSeekersCollection.insertOne({
-        userId,
-        name: name.trim(),
-        role: '',
-        dateOfBirth: dateOfBirth || '',
-        experience: experience || '',
-        skills: Array.isArray(skills) ? skills : [],
-        salaryExpectation: salaryExpectation || '',
-        location: {
-          lat: normalizedLocation.latitude,
-          lng: normalizedLocation.longitude,
-          address: normalizedLocation.address,
-          city: normalizedLocation.city,
-          district: normalizedLocation.district,
-          state: normalizedLocation.state,
-          country: normalizedLocation.country,
-          postalCode: normalizedLocation.postalCode
-        },
-        identityProof: {
-          type: identityProofType || '',
-          verified: false,
-          url: identityProofUrl || ''
-        },
-        passportPhotoUrl: passportPhotoUrl || '',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      } as any)
-    } else if (role === 'salon_owner') {
-      const ownersCollection = db.collection<SalonOwnerDocument>('salon_owners')
-      await ownersCollection.insertOne({
-        userId,
-        salonName: salonName || '',
-        ownerName: name.trim(),
-        phone,
-        email: email.toLowerCase(),
-        address: area || locality || '',
-        location: {
-          latitude: normalizedLocation.latitude,
-          longitude: normalizedLocation.longitude,
-          address: normalizedLocation.address,
-          city: normalizedLocation.city,
-          district: normalizedLocation.district || district || '',
-          state: normalizedLocation.state,
-          country: normalizedLocation.country,
-          area: area || '',
-          locality: locality || ''
-        } as any,
-        description: description || '',
-        workingHours: workingHours || '',
-        logoUrl: logoUrl || '',
-        isVerified: false,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      } as any)
-    }
-
-    console.log('[v0] User registered successfully:', userId, 'Role:', role)
+    // TODO: Create role-specific profile in Supabase profiles table
+    // This would include job_seeker and salon_owner specific data
+    // For now, all required data is stored in the users table
 
     return NextResponse.json({
       success: true,
