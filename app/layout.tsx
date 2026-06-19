@@ -43,10 +43,10 @@ export const metadata: Metadata = {
     siteName: 'Salon Jobs India',
     images: [
       {
-        url: '/icon-512.png',
-        width: 512,
-        height: 512,
-        alt: 'Salon Jobs India',
+        url: '/icons/salonjobs-icon-512-v2.png',
+        width: 1024,
+        height: 1024,
+        alt: 'Salon Jobs India Logo',
         type: 'image/png',
       }
     ],
@@ -55,15 +55,15 @@ export const metadata: Metadata = {
     card: 'summary',
     title: 'Salon Jobs India',
     description: 'Find salon jobs and hire beauty professionals across India.',
-    images: ['/icon-512.png'],
+    images: ['/icons/salonjobs-icon-512-v2.png'],
   },
   icons: {
     icon: [
-      { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon-16.png', sizes: '16x16', type: 'image/png' }
+      { url: '/icons/salonjobs-icon-96-v2.png', sizes: '96x96', type: 'image/png' },
+      { url: '/icons/salonjobs-icon-72-v2.png', sizes: '72x72', type: 'image/png' }
     ],
     apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
+      { url: '/apple-icon-v2.png', sizes: '180x180', type: 'image/png' }
     ]
   },
   appleWebApp: {
