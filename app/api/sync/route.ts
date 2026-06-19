@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
       
       // Create job in Supabase (use placeholder UUID if salonId is not a valid UUID)
       let ownerId = data.salonId
+      
       // Check if it's a valid UUID format, otherwise use placeholder
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ownerId)) {
         ownerId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
@@ -79,7 +80,6 @@ export async function POST(request: NextRequest) {
 
       if (!jobResult.success) {
         console.error('[v0] [Sync API] Failed to create job:', jobResult.error)
-        // Log sync failure
         await logSync('job', 'unknown', 'create', 'supabase', 'failed', null, null, JSON.stringify(jobResult.error))
         return NextResponse.json({ 
           error: 'Failed to create job',
