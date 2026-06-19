@@ -77,29 +77,31 @@ export function useAdminSync(pollInterval = 3000) {
   
   const fetchPending = useCallback(async () => {
     try {
-      const response = await fetch('/api/sync?type=all-pending', {
+      // Fetch job payments with pending approvals
+      const jobsResponse = await fetch('/api/admin/pending-jobs', {
         cache: 'no-store',
         headers: { 'Cache-Control': 'no-cache' },
       })
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch pending items')
+      if (!jobsResponse.ok) {
+        throw new Error('Failed to fetch pending jobs')
       }
       
-      const data = await response.json()
-      
-      if (data.success) {
-        setState(prev => ({
-          ...prev,
-          pendingSubscriptions: data.pendingSubscriptions || [],
-          pendingJobPayments: data.pendingJobPayments || [],
-          pendingJobAlerts: data.pendingJobAlerts || [],
-          totalPending: data.totalPending || 0,
-          lastSync: data.timestamp || Date.now(),
-          isLoading: false,
-          error: null,
-        }))
-      }
+      const jobsData = await jobsResponse.json()
+
+      // TODO: Fetch subscription payments if needed
+      // const subsResponse = await fetch('/api/admin/pending-subscriptions', ...)
+
+      setState(prev => ({
+        ...prev,
+        pendingSubscriptions: [], // TODO: Load from API
+        pendingJobPayments: jobsData.data || [],
+        pendingJobAlerts: [],
+        totalPending: (jobsData.count || 0),
+        lastSync: jobsData.timestamp || Date.now(),
+        isLoading: false,
+        error: null,
+      }))
     } catch (error) {
       console.error('[Realtime Sync] Admin fetch error:', error)
       setState(prev => ({
@@ -167,11 +169,11 @@ export function useAdminSync(pollInterval = 3000) {
   
   const approveJobPayment = useCallback(async (id: string, adminId: string = 'admin') => {
     try {
-      const response = await fetch('/api/payments/approve', {
+      const response = await fetch('/api/jobs/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          paymentId: id,
+          jobId: id,
           action: 'approve',
           adminId,
         }),
@@ -186,20 +188,21 @@ export function useAdminSync(pollInterval = 3000) {
       
       return { success: false, error: data.error }
     } catch (error) {
+      console.error('[v0] Error approving job:', error)
       return { success: false, error: 'Failed to approve' }
     }
   }, [fetchPending])
   
   const rejectJobPayment = useCallback(async (id: string, adminId: string = 'admin', reason?: string) => {
     try {
-      const response = await fetch('/api/payments/approve', {
+      const response = await fetch('/api/jobs/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          paymentId: id,
+          jobId: id,
           action: 'reject',
           adminId,
-          reason,
+          rejectionReason: reason,
         }),
       })
       
@@ -212,6 +215,7 @@ export function useAdminSync(pollInterval = 3000) {
       
       return { success: false, error: data.error }
     } catch (error) {
+      console.error('[v0] Error rejecting job:', error)
       return { success: false, error: 'Failed to reject' }
     }
   }, [fetchPending])

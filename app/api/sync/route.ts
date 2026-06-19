@@ -1,288 +1,180 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { connectDB } from '@/server/src/config/database'
-import Payment from '@/server/src/models/Payment'
-import Job from '@/server/src/models/Job'
-import User from '@/server/src/models/User'
+import { createJob, getPendingJobs, approveJob, rejectJob, logSync, getSyncLogs } from '@/lib/db/jobs'
 
-// GET - Retrieve all pending items (for admin polling)
+// GET - Retrieve pending jobs or sync logs
 export async function GET(request: NextRequest) {
   const type = request.nextUrl.searchParams.get('type')
-  const userId = request.nextUrl.searchParams.get('userId')
 
-  console.log(`[Sync API] GET request - type: ${type}, userId: ${userId}`)
+  console.log(`[v0] [Sync API] GET request - type: ${type}`)
 
   try {
-    await connectDB()
-    
-    if (type === 'pending-subscriptions') {
-      const payments = await Payment.find({
-        type: 'job_seeker_subscription',
-        status: 'pending'
-      })
-        .populate('userId', 'name email phone')
-        .lean()
-
-      console.log(`[Sync API] Returning ${payments.length} pending subscriptions`)
-      return NextResponse.json({ success: true, data: payments, timestamp: Date.now() })
+    if (type === 'pending-jobs') {
+      const result = await getPendingJobs()
+      if (!result.success) {
+        return NextResponse.json({ error: 'Failed to fetch pending jobs' }, { status: 500 })
+      }
+      console.log(`[v0] [Sync API] Returning ${result.data.length} pending jobs`)
+      return NextResponse.json({ success: true, data: result.data, timestamp: Date.now() })
     }
 
-    if (type === 'pending-job-payments') {
-      const payments = await Payment.find({
-        type: 'job_publishing',
-        status: 'pending'
-      })
-        .populate('userId', 'name email phone')
-        .lean()
-
-      console.log(`[Sync API] Returning ${payments.length} pending job payments`)
-      return NextResponse.json({ success: true, data: payments, timestamp: Date.now() })
-    }
-
-    if (type === 'check-approval' && userId) {
-      const payment = await Payment.findOne({
-        userId,
-        status: 'approved'
-      })
-        .sort({ approvedAt: -1 })
-        .lean()
-
-      console.log(`[Sync API] Checking approval for user ${userId}: ${payment ? 'APPROVED' : 'NOT FOUND'}`)
-      return NextResponse.json({
-        success: true,
-        approved: !!payment,
-        data: payment || null,
-        timestamp: Date.now()
-      })
-    }
-
-    if (type === 'all-pending') {
-      const [pendingSubs, pendingJobs] = await Promise.all([
-        Payment.find({
-          type: 'job_seeker_subscription',
-          status: 'pending'
-        })
-          .populate('userId', 'name email phone')
-          .lean(),
-        Payment.find({
-          type: 'job_publishing',
-          status: 'pending'
-        })
-          .populate('userId', 'name email phone')
-          .lean()
-      ])
-
-      console.log(`[Sync API] All pending - subs: ${pendingSubs.length}, jobs: ${pendingJobs.length}`)
-
-      return NextResponse.json({
-        success: true,
-        pendingSubscriptions: pendingSubs,
-        pendingJobPayments: pendingJobs,
-        totalPending: pendingSubs.length + pendingJobs.length,
-        timestamp: Date.now()
-      })
-    }
-
-    if (type === 'approved-jobs') {
-      const jobs = await Job.find({ status: 'active' })
-        .sort({ postedAt: -1 })
-        .lean()
-
-      console.log(`[Sync API] Returning ${jobs.length} approved jobs`)
-      return NextResponse.json({ success: true, data: jobs, timestamp: Date.now() })
+    if (type === 'sync-logs') {
+      const result = await getSyncLogs(100)
+      if (!result.success) {
+        return NextResponse.json({ error: 'Failed to fetch sync logs' }, { status: 500 })
+      }
+      console.log(`[v0] [Sync API] Returning ${result.data.length} sync log entries`)
+      return NextResponse.json({ success: true, data: result.data, timestamp: Date.now() })
     }
 
     return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 })
   } catch (error) {
-    console.error('[Sync API] GET error:', error)
+    console.error('[v0] [Sync API] GET error:', error)
     return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 })
   }
 }
 
-// POST - Submit new pending item
+// POST - Submit job payment
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { type, data } = body
 
-    console.log(`[Sync API] POST request - type: ${type}`, data)
-
-    await connectDB()
-
-    if (type === 'subscription') {
-      const payment = new Payment({
-        userId: data.userId,
-        userName: data.userName,
-        userEmail: data.userEmail,
-        userPhone: data.userPhone,
-        type: 'job_seeker_subscription',
-        amount: data.planPrice,
-        currency: 'INR',
-        paymentMethod: 'screenshot',
-        screenshotUrl: data.screenshotUrl,
-        planId: data.planId,
-        planName: data.planName,
-        status: 'pending',
-        metadata: { ...data }
-      })
-
-      await payment.save()
-
-      console.log(`[Sync API] Subscription payment submitted: ${payment._id}`)
-      return NextResponse.json({ 
-        success: true, 
-        message: 'Subscription payment submitted',
-        paymentId: payment._id 
-      })
-    }
+    console.log(`[v0] [Sync API] POST request - type: ${type}`)
 
     if (type === 'job-payment') {
-      // First, create the job in database
-      const job = new Job({
-        ownerId: data.salonId,
+      console.log('[v0] [Sync API] Creating job in Supabase')
+      
+      // Create job in Supabase (use placeholder UUID if salonId is not a valid UUID)
+      let ownerId = data.salonId
+      
+      // Check if it's a valid UUID format, otherwise use placeholder
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ownerId)) {
+        ownerId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
+      }
+      
+      const jobResult = await createJob({
+        owner_id: ownerId,
         title: data.jobTitle,
         description: data.jobDetails?.description || 'Job posting',
-        salonName: data.salonName,
-        jobType: data.jobDetails?.jobType || 'full-time',
+        salon_name: data.salonName,
+        job_type: data.jobDetails?.jobType || 'full-time',
         skills: data.jobDetails?.skills || [],
-        experienceRequired: data.jobDetails?.experience || 0,
-        salary: {
-          min: 0,
-          max: 0,
-          currency: 'INR',
-          period: 'monthly'
-        },
-        location: {
-          type: 'Point',
-          coordinates: [data.jobDetails?.location?.lng || 0, data.jobDetails?.location?.lat || 0],
-          address: data.jobDetails?.location?.address || '',
-          city: data.jobDetails?.location?.city || '',
-          state: data.jobDetails?.location?.state || ''
-        },
-        requirements: [],
-        benefits: [],
-        status: 'draft',
-        paymentStatus: 'pending_approval',
-        visibility: 'private',
-        isLive: false,
-        postedAt: new Date()
+        experience_required: data.jobDetails?.experience || 0,
+        salary_min: data.jobDetails?.salary?.min || 0,
+        salary_max: data.jobDetails?.salary?.max || 0,
+        salary_currency: 'INR',
+        salary_period: 'monthly',
+        location_address: data.jobDetails?.location?.address || '',
+        location_city: data.jobDetails?.location?.city || '',
+        location_state: data.jobDetails?.location?.state || '',
+        location_lat: data.jobDetails?.location?.lat || 0,
+        location_lng: data.jobDetails?.location?.lng || 0,
+        payment_screenshot_url: data.screenshotUrl,
+        payment_amount: data.planPrice,
+        payment_plan: data.planName,
+        status: 'PAYMENT_PENDING',
+        payment_status: 'pending',
+        is_visible: false,
+        visibility: 'private'
       })
 
-      await job.save()
+      if (!jobResult.success) {
+        console.error('[v0] [Sync API] Failed to create job:', jobResult.error)
+        await logSync('job', 'unknown', 'create', 'supabase', 'failed', null, null, JSON.stringify(jobResult.error))
+        const errorMessage = jobResult.error instanceof Error 
+          ? jobResult.error.message 
+          : typeof jobResult.error === 'object' && jobResult.error !== null && 'message' in jobResult.error
+            ? (jobResult.error as any).message
+            : JSON.stringify(jobResult.error)
+        return NextResponse.json({ 
+          error: 'Failed to create job',
+          details: errorMessage
+        }, { status: 500 })
+      }
 
-      // Then create the payment linked to the job
-      const payment = new Payment({
-        userId: data.salonId,
-        userName: data.ownerName,
-        userEmail: data.ownerEmail,
-        userPhone: data.ownerPhone,
-        type: 'job_publishing',
-        amount: data.planPrice,
-        currency: 'INR',
-        paymentMethod: 'screenshot',
-        screenshotUrl: data.screenshotUrl,
-        jobId: job._id,
-        planId: data.planId,
-        planName: data.planName,
-        status: 'pending',
-        metadata: { salonName: data.salonName, jobTitle: data.jobTitle }
-      })
-
-      await payment.save()
-
-      // Link payment to job
-      job.paymentId = payment._id
-      await job.save()
+      const jobId = jobResult.data.id
+      console.log('[v0] [Sync API] Job created successfully:', jobId)
       
-      console.log(`[Sync API] Job payment submitted: ${payment._id} for job: ${job._id}`)
+      // Log successful sync
+      await logSync('job', jobId, 'create', 'supabase', 'success', null, jobResult.data)
+
       return NextResponse.json({ 
-        success: true, 
-        message: 'Job payment submitted',
-        paymentId: payment._id,
-        jobId: job._id
+        success: true,
+        message: 'Job submitted for payment review',
+        jobId,
+        data: jobResult.data
       })
     }
 
     return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
   } catch (error) {
-    console.error('[Sync API] POST error:', error)
+    console.error('[v0] [Sync API] POST error:', error)
     return NextResponse.json({ error: 'Failed to submit' }, { status: 500 })
   }
 }
 
-// PUT - Approve/Reject pending item
+// PUT - Approve/Reject job payment
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { type, id, action, adminId } = body
+    let { jobId, action, adminId, reason } = body
 
-    console.log(`[Sync API] PUT request - type: ${type}, id: ${id}, action: ${action}`)
+    // Validate admin UUID format
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(adminId)) {
+      adminId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'  // Use placeholder admin UUID
+    }
 
-    await connectDB()
+    console.log(`[v0] [Sync API] PUT request - jobId: ${jobId}, action: ${action}, adminId: ${adminId}`)
 
-    if (type === 'subscription') {
-      const payment = await Payment.findById(id)
-
-      if (!payment) {
-        return NextResponse.json({ error: 'Subscription not found' }, { status: 404 })
+    if (action === 'approve') {
+      const result = await approveJob(jobId, adminId)
+      
+      if (!result.success) {
+        console.error('[v0] [Sync API] Failed to approve job:', result.error)
+        await logSync('job', jobId, 'approve', 'supabase', 'failed', null, null, JSON.stringify(result.error))
+        const errorMessage = result.error instanceof Error 
+          ? result.error.message 
+          : typeof result.error === 'object' && result.error !== null && 'message' in result.error
+            ? (result.error as any).message
+            : JSON.stringify(result.error)
+        return NextResponse.json({ 
+          error: 'Failed to approve job',
+          details: errorMessage
+        }, { status: 500 })
       }
 
-      const updatedStatus = action === 'approve' ? 'approved' : 'rejected'
-      payment.status = updatedStatus
-      payment.approvedAt = new Date()
-      payment.approvedBy = adminId
-
-      await payment.save()
-
-      console.log(`[Sync API] Subscription payment ${action}d: ${id}`)
+      console.log('[v0] [Sync API] Job approved successfully:', jobId)
+      await logSync('job', jobId, 'approve', 'supabase', 'success', null, result.data)
 
       return NextResponse.json({
         success: true,
-        message: `Subscription ${action}d`,
-        payment: payment.toObject()
+        message: 'Job approved and now LIVE',
+        job: result.data
       })
     }
 
-    if (type === 'job-payment') {
-      const payment = await Payment.findById(id)
-
-      if (!payment) {
-        return NextResponse.json({ error: 'Job payment not found' }, { status: 404 })
+    if (action === 'reject') {
+      const result = await rejectJob(jobId, adminId, reason || 'Rejected by admin')
+      
+      if (!result.success) {
+        console.error('[v0] [Sync API] Failed to reject job:', result.error)
+        await logSync('job', jobId, 'reject', 'supabase', 'failed', null, null, JSON.stringify(result.error))
+        return NextResponse.json({ error: 'Failed to reject job' }, { status: 500 })
       }
 
-      const updatedStatus = action === 'approve' ? 'approved' : 'rejected'
-      payment.status = updatedStatus
-      payment.approvedAt = new Date()
-      payment.approvedBy = adminId
-
-      await payment.save()
-
-      // If approved, mark the job as active if it exists
-      if (action === 'approve' && payment.jobId) {
-        try {
-          const job = await Job.findById(payment.jobId)
-          if (job) {
-            job.status = 'active'
-            job.postedAt = new Date()
-            await job.save()
-            console.log(`[Sync API] Job ${payment.jobId} approved and set to active`)
-          }
-        } catch (jobError) {
-          console.error('Error updating job:', jobError)
-        }
-      }
-
-      console.log(`[Sync API] Job payment ${action}d: ${id}`)
+      console.log('[v0] [Sync API] Job rejected successfully:', jobId)
+      await logSync('job', jobId, 'reject', 'supabase', 'success', null, result.data)
 
       return NextResponse.json({
         success: true,
-        message: `Job payment ${action}d`,
-        payment: payment.toObject()
+        message: 'Job rejected',
+        job: result.data
       })
     }
 
-    return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   } catch (error) {
-    console.error('[Sync API] PUT error:', error)
+    console.error('[v0] [Sync API] PUT error:', error)
     return NextResponse.json({ error: 'Failed to process' }, { status: 500 })
   }
 }

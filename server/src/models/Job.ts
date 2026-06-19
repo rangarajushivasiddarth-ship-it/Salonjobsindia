@@ -39,18 +39,24 @@ export interface IJob extends Document {
   requirements: string[];
   benefits: string[];
   
-  // Status
-  status: 'draft' | 'active' | 'paused' | 'closed' | 'expired';
+  // Unified Status Lifecycle: DRAFT → PAYMENT_PENDING → APPROVED → LIVE → EXPIRED → CLOSED
+  status: 'DRAFT' | 'PAYMENT_PENDING' | 'APPROVED' | 'LIVE' | 'EXPIRED' | 'CLOSED';
   isUrgent: boolean;
   isFeatured: boolean;
 
-  // Payment & visibility
-  paymentStatus: 'pending_approval' | 'approved' | 'rejected';
+  // Payment & visibility (Single Source of Truth)
+  paymentStatus: 'none' | 'pending' | 'approved' | 'rejected';
+  paymentScreenshotUrl?: string;
+  paymentAmount?: number;
+  paymentPlan?: string;
+  paymentSubmittedAt?: Date;
   paymentId?: mongoose.Types.ObjectId;
   visibility: 'private' | 'public';
   isLive: boolean;
+  isVisible: boolean; // Public visibility for job seekers
   approvedBy?: mongoose.Types.ObjectId;
   approvedAt?: Date;
+  rejectionReason?: string;
   
   // Stats
   viewCount: number;
@@ -132,18 +138,23 @@ const jobSchema = new Schema<IJob>({
   
   status: { 
     type: String, 
-    enum: ['draft', 'active', 'paused', 'closed', 'expired'],
-    default: 'active' 
+    enum: ['DRAFT', 'PAYMENT_PENDING', 'APPROVED', 'LIVE', 'EXPIRED', 'CLOSED'],
+    default: 'DRAFT',
+    index: true
   },
   isUrgent: { type: Boolean, default: false },
   isFeatured: { type: Boolean, default: false },
 
   paymentStatus: {
     type: String,
-    enum: ['pending_approval', 'approved', 'rejected'],
-    default: 'pending_approval',
+    enum: ['none', 'pending', 'approved', 'rejected'],
+    default: 'none',
     index: true
   },
+  paymentScreenshotUrl: String,
+  paymentAmount: Number,
+  paymentPlan: String,
+  paymentSubmittedAt: Date,
   paymentId: {
     type: Schema.Types.ObjectId,
     ref: 'Payment',
@@ -160,12 +171,18 @@ const jobSchema = new Schema<IJob>({
     default: false,
     index: true
   },
+  isVisible: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
   approvedBy: {
     type: Schema.Types.ObjectId,
     ref: 'User',
     sparse: true
   },
   approvedAt: Date,
+  rejectionReason: String,
   
   viewCount: { type: Number, default: 0 },
   applicationCount: { type: Number, default: 0 },
@@ -185,10 +202,12 @@ jobSchema.index({ status: 1, skills: 1 });
 jobSchema.index({ ownerId: 1, status: 1 });
 jobSchema.index({ ownerId: 1, paymentStatus: 1 });
 jobSchema.index({ isUrgent: 1, isFeatured: 1, postedAt: -1 });
-// Job seeker visibility filter
-jobSchema.index({ isLive: 1, visibility: 1, paymentStatus: 1 });
-// Admin job payment review
-jobSchema.index({ paymentStatus: 1, createdAt: -1 });
+// Job seeker visibility filter - only show LIVE + visible jobs
+jobSchema.index({ status: 1, isVisible: 1, postedAt: -1 });
+// Admin job payment review - find pending payments
+jobSchema.index({ paymentStatus: 1, status: 1, createdAt: -1 });
+// Find jobs by owner and payment status
+jobSchema.index({ ownerId: 1, paymentStatus: 1, createdAt: -1 });
 
 // Text index for search
 jobSchema.index({ 
