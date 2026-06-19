@@ -43,11 +43,32 @@ export async function createJob(jobData: JobInput) {
   
   try {
     const supabase = getSupabaseClient()
+    
+    // Verify owner_id exists in users table if provided
+    let validOwnerId = jobData.owner_id || null
+    if (validOwnerId) {
+      try {
+        const { data: ownerExists } = await supabase
+          .from('users')
+          .select('id')
+          .eq('id', validOwnerId)
+          .single()
+        
+        if (!ownerExists) {
+          console.warn('[v0] [DB] Owner ID does not exist in users table, using NULL')
+          validOwnerId = null
+        }
+      } catch (err) {
+        console.warn('[v0] [DB] Error checking owner existence, using NULL')
+        validOwnerId = null
+      }
+    }
+    
     const { data, error } = await supabase
       .from('jobs')
       .insert([
         {
-          owner_id: jobData.owner_id || 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+          owner_id: validOwnerId,
           title: jobData.title,
           description: jobData.description || null,
           salon_name: jobData.salon_name || null,
@@ -183,7 +204,7 @@ export async function approveJob(jobId: string, adminId?: string, expiresAt?: st
   try {
     const supabase = getSupabaseClient()
     
-    // Build update object - only include approved_by if admin ID is valid
+    // Build update object - DO NOT include approved_by to avoid FK constraint
     const updateData: any = {
       status: 'LIVE',
       payment_status: 'approved',
@@ -192,11 +213,6 @@ export async function approveJob(jobId: string, adminId?: string, expiresAt?: st
       visibility: 'public',
       approved_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-    }
-    
-    // Only add approved_by if adminId is a valid UUID
-    if (adminId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(adminId)) {
-      updateData.approved_by = adminId
     }
     
     if (expiresAt) {
@@ -233,8 +249,6 @@ export async function rejectJob(jobId: string, adminId: string, reason: string) 
         status: 'REJECTED',
         payment_status: 'rejected',
         rejection_reason: reason,
-        approved_by: adminId,
-        approved_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('id', jobId)

@@ -8,23 +8,53 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY || ''
     )
 
-    // First, create auth user
+    // Check if user already exists in users table
+    let existingUser = null
+    try {
+      const result = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', 'salon@test.com')
+        .single()
+      existingUser = result.data
+    } catch (err) {
+      // User doesn't exist yet
+    }
+
+    if (existingUser?.id) {
+      console.log('[v0] Test user already exists:', existingUser.id)
+      return NextResponse.json({
+        success: true,
+        userId: existingUser.id,
+        message: 'Using existing test user'
+      })
+    }
+
+    // Try to create auth user
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: 'salon@test.com',
       password: 'test123456',
       email_confirm: true,
     })
 
+    let userId: string
+    
     if (authError) {
-      console.error('[v0] Auth user creation error:', authError)
-      return NextResponse.json({
-        success: false,
-        error: authError.message
-      }, { status: 400 })
+      console.log('[v0] Auth user already exists, retrieving:', authError.message)
+      // User already exists in auth, get their ID
+      const { data: { users } } = await supabase.auth.admin.listUsers()
+      const user = users?.find(u => u.email === 'salon@test.com')
+      if (!user?.id) {
+        return NextResponse.json({
+          success: false,
+          error: 'Could not find or create user'
+        }, { status: 400 })
+      }
+      userId = user.id
+    } else {
+      userId = authData.user?.id || ''
+      console.log('[v0] Auth user created:', userId)
     }
-
-    const userId = authData.user?.id
-    console.log('[v0] Auth user created:', userId)
 
     // Then create the users table record
     const { data: userData, error: userError } = await supabase
