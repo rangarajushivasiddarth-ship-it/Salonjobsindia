@@ -1,89 +1,175 @@
 {
+  "$schema": "https://json.schemastore.org/web-manifest-combined.json",
   "id": "/",
-  "name": "Salon Jobs India",
+  "name": "Salon Jobs India - Find Beauty & Hair Jobs",
   "short_name": "Salon Jobs",
-  "description": "Find salon jobs and hire beauty professionals across India.",
+  "description": "Find salon jobs and hire beauty professionals across India. Connect with hair stylists, beauticians, nail technicians, and more.",
   "lang": "en-IN",
   "dir": "ltr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "browser"],
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#ffffff",
   "theme_color": "#000000",
-  "orientation": "portrait",
-  "categories": ["business", "lifestyle"],
-  "icons": [
-    {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    },
-    {
-      "src": "/maskable-icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/maskable-icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
-  ],
+  "orientation": "portrait-primary",
+  "categories": ["business", "lifestyle", "productivity"],
   "screenshots": [
     {
       "src": "/screenshots/mobile-540x720.png",
       "sizes": "540x720",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Salon Jobs India mobile app"
+      "label": "Salon Jobs India mobile app home screen"
     },
     {
       "src": "/screenshots/desktop-1280x720.png",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Salon Jobs India desktop app"
+      "label": "Salon Jobs India desktop app home screen"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "shortcuts": [
     {
       "name": "Find Jobs",
-      "short_name": "Jobs",
-      "description": "Browse salon jobs near you",
+      "short_name": "Find Jobs",
+      "description": "Browse available salon jobs near you",
       "url": "/jobs",
       "icons": [
         {
           "src": "/icon-192.png",
           "sizes": "192x192",
-          "type": "image/png"
+          "type": "image/png",
+          "purpose": "any"
+        },
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png",
+          "purpose": "maskable"
         }
       ]
     },
     {
       "name": "Post Job",
       "short_name": "Post Job",
-      "description": "Post a salon job opening",
+      "description": "Post a new salon job opening",
       "url": "/post-job",
       "icons": [
         {
           "src": "/icon-192.png",
           "sizes": "192x192",
-          "type": "image/png"
+          "type": "image/png",
+          "purpose": "any"
+        },
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png",
+          "purpose": "maskable"
         }
       ]
     }
   ],
-  "launch_handler": {
-    "client_mode": "navigate-existing"
-  },
   "share_target": {
     "action": "/share",
     "method": "GET",
@@ -93,6 +179,28 @@
       "url": "url"
     }
   },
-  "related_applications": [],
-  "prefer_related_applications": false
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+salonstatus",
+      "url": "/status?url=%s"
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.salon.jobs.india"
+    }
+  ],
+  "prefer_related_applications": false,
+  "scope_extensions": [
+    {
+      "origin": "https://salonjobsindia.com"
+    },
+    {
+      "origin": "https://www.salonjobsindia.com"
+    }
+  ]
 }
