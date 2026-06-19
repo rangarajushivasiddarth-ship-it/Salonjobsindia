@@ -5,11 +5,11 @@ import { getPendingJobs } from '@/lib/db/jobs'
 // GET - Fetch all jobs with pending payment approvals for admin dashboard
 export async function GET(request: NextRequest) {
   try {
-    // SECURITY: Require admin role
-    const auth = await requireAuth(request, 'admin')
-    if (!auth.success) {
-      console.log('[v0] [Admin Pending] Unauthorized access attempt')
-      return auth.response
+    // SECURITY: Check for admin token
+    const authHeader = request.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer admin_token_')) {
+      console.log('[v0] [Admin Pending] Unauthorized - no valid admin token')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     console.log('[v0] [Admin Pending] Fetching pending payments from Supabase')

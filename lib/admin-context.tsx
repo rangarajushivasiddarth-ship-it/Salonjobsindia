@@ -184,6 +184,18 @@ if (event.key === 'salonjobsindia_subscriptions' ||
     const validPassword = 'admin123'
     
     if (email === validEmail && password === validPassword) {
+      // Generate JWT token for API authentication
+      const token = 'admin_token_' + Date.now() // Placeholder token
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      
+      // Store session with token
+      localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify({
+        isAuthenticated: true,
+        token,
+        email,
+        expiresAt,
+      }))
+      
       setState(prev => ({
         ...prev,
         isAuthenticated: true,
