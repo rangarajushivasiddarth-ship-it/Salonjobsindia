@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/auth-middleware'
 import { createJob, getPendingJobs, getLiveJobs, approveJob, rejectJob, logSync, getSyncLogs } from '@/lib/db/jobs'
 import { createApiError, validateRequired } from '@/lib/api-error-handler'
 
@@ -136,13 +137,18 @@ export async function POST(request: NextRequest) {
 // PUT - Approve/Reject job payment
 export async function PUT(request: NextRequest) {
   try {
+    // SECURITY: Require admin role
+    const auth = await requireAuth(request, 'admin')
+    if (!auth.success) {
+      console.log('[v0] [Sync API] Unauthorized approve/reject attempt')
+      return auth.response
+    }
+
     const body = await request.json()
     let { jobId, action, adminId, reason } = body
 
-    // Validate admin UUID format
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(adminId)) {
-      adminId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'  // Use placeholder admin UUID
-    }
+    // Use authenticated admin ID instead of from request body
+    adminId = auth.auth.userId
 
     console.log(`[v0] [Sync API] PUT request - jobId: ${jobId}, action: ${action}, adminId: ${adminId}`)
 
