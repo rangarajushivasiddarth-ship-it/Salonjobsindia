@@ -32,61 +32,31 @@
   ],
   "icons": [
     {
-      "src": "/icons/salonjobs-icon-72-v2.png",
+      "src": "/pwa-icons/salonjobs-72-v4.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/salonjobs-icon-96-v2.png",
+      "src": "/pwa-icons/salonjobs-192-v4.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/salonjobs-icon-128-v2.png",
+      "src": "/pwa-icons/salonjobs-512-v4.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/salonjobs-icon-144-v2.png",
-      "sizes": "1024x1024",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/salonjobs-icon-152-v2.png",
-      "sizes": "1024x1024",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/salonjobs-icon-192-v2.png",
-      "sizes": "1024x1024",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/salonjobs-icon-384-v2.png",
-      "sizes": "1024x1024",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/salonjobs-icon-512-v2.png",
-      "sizes": "1024x1024",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/salonjobs-icon-192-v2.png",
+      "src": "/pwa-icons/salonjobs-192-v4.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/icons/salonjobs-icon-512-v2.png",
+      "src": "/pwa-icons/salonjobs-512-v4.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "maskable"
@@ -100,13 +70,13 @@
       "url": "/jobs",
       "icons": [
         {
-          "src": "/icons/salonjobs-icon-192-v2.png",
+          "src": "/pwa-icons/salonjobs-192-v4.png",
           "sizes": "1024x1024",
           "type": "image/png",
           "purpose": "any"
         },
         {
-          "src": "/icons/salonjobs-icon-192-v2.png",
+          "src": "/pwa-icons/salonjobs-192-v4.png",
           "sizes": "1024x1024",
           "type": "image/png",
           "purpose": "maskable"
@@ -120,13 +90,13 @@
       "url": "/post-job",
       "icons": [
         {
-          "src": "/icons/salonjobs-icon-192-v2.png",
+          "src": "/pwa-icons/salonjobs-192-v4.png",
           "sizes": "1024x1024",
           "type": "image/png",
           "purpose": "any"
         },
         {
-          "src": "/icons/salonjobs-icon-192-v2.png",
+          "src": "/pwa-icons/salonjobs-192-v4.png",
           "sizes": "1024x1024",
           "type": "image/png",
           "purpose": "maskable"
