@@ -37,28 +37,27 @@ export function NotificationPermission() {
     localStorage.setItem("notification-prompt-dismissed", "true");
   };
 
-  if (!mounted || !isSupported || dismissed) {
+  // Only show once, allow user to dismiss permanently
+  if (!mounted || !isSupported || dismissed || isSubscribed) {
     return null;
   }
 
   return (
-    <div className="fixed bottom-4 right-4 max-w-sm z-50">
+    <div className="fixed bottom-20 right-4 max-w-sm z-40 animate-in fade-in slide-in-from-bottom-4 duration-300">
       <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-4 py-3">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xl">🔔</span>
+              <span className="text-lg">🔔</span>
               <h3 className="text-white font-semibold text-sm">
-                {isSubscribed
-                  ? "Notifications Enabled"
-                  : "Enable Notifications"}
+                Stay Updated
               </h3>
             </div>
             <button
               onClick={handleDismiss}
-              className="text-gray-400 hover:text-white transition-colors"
-              aria-label="Dismiss notification"
+              className="text-blue-100 hover:text-white transition-colors"
+              aria-label="Dismiss notification prompt"
             >
               ✕
             </button>
@@ -67,62 +66,30 @@ export function NotificationPermission() {
 
         {/* Content */}
         <div className="px-4 py-3">
-          {error ? (
-            <div className="text-sm text-red-600 mb-3">
-              <p className="font-medium">Error: {error}</p>
-            </div>
-          ) : (
-            <p className="text-gray-700 text-sm mb-3">
-              {isSubscribed
-                ? "You'll receive notifications about new job opportunities and updates."
-                : "Get notified about new job opportunities and updates in your area."}
-            </p>
-          )}
+          <p className="text-gray-700 text-sm mb-4">
+            Get instant notifications for new job opportunities matching your profile.
+          </p>
 
-          {/* Status Indicator */}
-          <div className="flex items-center gap-2 mb-3">
-            <div
-              className={`w-2 h-2 rounded-full ${
-                isSubscribed ? "bg-green-500" : "bg-gray-400"
-              }`}
-            />
-            <span className="text-xs text-gray-600">
-              {isSubscribed ? "Subscribed" : "Not subscribed"}
-            </span>
-          </div>
-
-          {/* Action Buttons */}
+          {/* Action Buttons - Optional approach compliant with Play Store */}
           <div className="flex gap-2">
-            {!isSubscribed ? (
-              <button
-                onClick={handleSubscribe}
-                disabled={isLoading}
-                className="flex-1 bg-black text-white px-4 py-2 rounded font-medium text-sm hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isLoading ? "Enabling..." : "Enable Notifications"}
-              </button>
-            ) : (
-              <button
-                onClick={handleUnsubscribe}
-                disabled={isLoading}
-                className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded font-medium text-sm hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isLoading ? "Disabling..." : "Disable Notifications"}
-              </button>
-            )}
-            {dismissed === false && !isSubscribed && (
-              <button
-                onClick={handleDismiss}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium text-sm transition-colors"
-              >
-                Later
-              </button>
-            )}
+            <button
+              onClick={handleSubscribe}
+              disabled={isLoading}
+              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isLoading ? "Enabling..." : "Enable"}
+            </button>
+            <button
+              onClick={handleDismiss}
+              className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded font-medium text-sm hover:bg-gray-300 transition-colors"
+            >
+              Not Now
+            </button>
           </div>
 
-          {/* Privacy Notice */}
+          {/* Privacy Notice - Play Store requirement */}
           <p className="text-xs text-gray-500 mt-3">
-            We'll never share your data. You can disable notifications anytime.
+            Your privacy is important. You can manage notifications in Settings anytime.
           </p>
         </div>
       </div>

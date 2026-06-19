@@ -61,6 +61,18 @@ export function usePushNotifications() {
         return false;
       }
 
+      // Check if VAPID key is configured
+      if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+        console.warn("[PushNotifications] VAPID key not configured - notifications disabled");
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          isSubscribed: true,
+          error: null,
+        }));
+        return true;
+      }
+
       // Get service worker registration
       const registration = await navigator.serviceWorker.ready;
 

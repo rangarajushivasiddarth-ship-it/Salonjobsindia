@@ -88,7 +88,7 @@ export interface Job {
     lng: number
     address: string
   }
-  status: 'draft' | 'payment_pending' | 'pending_approval' | 'approved' | 'live' | 'rejected'
+  status: 'draft' | 'payment_pending' | 'live' | 'rejected' | 'approved' | 'DRAFT' | 'PAYMENT_PENDING' | 'LIVE' | 'REJECTED' | 'APPROVED'
   paymentId?: string
   paymentScreenshot?: string
   isActive: boolean
@@ -400,7 +400,7 @@ export const JobService = {
   
   getLiveJobs: (filters?: { role?: string; location?: string; limit?: number }): Job[] => {
     let jobs = getFromStorage<Job>(STORAGE_KEYS.JOBS)
-    jobs = jobs.filter(j => j.status === 'live' && j.isActive)
+    jobs = jobs.filter(j => (j.status === 'live' || j.status === 'LIVE') && j.isActive)
     
     if (filters?.role) {
       jobs = jobs.filter(j => 
@@ -418,7 +418,7 @@ export const JobService = {
   
   getPendingApproval: (): Job[] => {
     const jobs = getFromStorage<Job>(STORAGE_KEYS.JOBS)
-    return jobs.filter(j => j.status === 'pending_approval')
+    return jobs.filter(j => j.status === 'payment_pending' || j.status === 'PAYMENT_PENDING')
   },
   
   applyToJob: async (jobId: string, seekerId: string): Promise<boolean> => {
@@ -440,9 +440,9 @@ export const JobService = {
     const jobs = getFromStorage<Job>(STORAGE_KEYS.JOBS)
     return {
       total: jobs.length,
-      live: jobs.filter(j => j.status === 'live').length,
-      pending: jobs.filter(j => j.status === 'pending_approval').length,
-      draft: jobs.filter(j => j.status === 'draft').length,
+      live: jobs.filter(j => j.status === 'live' || j.status === 'LIVE').length,
+      pending: jobs.filter(j => j.status === 'payment_pending' || j.status === 'PAYMENT_PENDING').length,
+      draft: jobs.filter(j => j.status === 'draft' || j.status === 'DRAFT').length,
     }
   }
 }
@@ -650,8 +650,8 @@ export const AdminService = {
       jobSeekers: users.filter(u => u.role === 'job_seeker').length,
       salonOwners: users.filter(u => u.role === 'salon_owner' || u.role === 'employer').length,
       totalJobs: jobs.length,
-      liveJobs: jobs.filter(j => j.status === 'live').length,
-      pendingJobApprovals: jobs.filter(j => j.status === 'pending_approval').length,
+      liveJobs: jobs.filter(j => j.status === 'live' || j.status === 'LIVE').length,
+      pendingJobApprovals: jobs.filter(j => j.status === 'payment_pending' || j.status === 'PAYMENT_PENDING').length,
       totalSubscriptions: subscriptions.length,
       activeSubscriptions: subscriptions.filter(s => s.status === 'approved').length,
       pendingPayments: payments.filter(p => p.status === 'pending').length,

@@ -280,12 +280,14 @@ export function CreateJob() {
       screenshotUrl: paymentScreenshot,
     })
     
-    if (cloudResult.success) {
-      // Successfully submitted to cloud
-    } else {
+    if (!cloudResult.success) {
       console.error('[CreateJob] Cloud sync failed:', cloudResult.error)
+      setErrors({ submit: `Failed to submit payment to server: ${cloudResult.error || 'Unknown error'}. Please try again.` })
+      setIsLoading(false)
+      return
     }
     
+    // Only proceed if cloud submission was successful
     setSavedJob(jobDraft)
     setIsLoading(false)
     setCurrentStep('pending')
@@ -521,6 +523,11 @@ export function CreateJob() {
         {/* Submit Button */}
         <div className="relative z-10 p-6 bg-gradient-to-t from-background via-background to-transparent">
           <div className="max-w-md mx-auto">
+            {errors.submit && (
+              <div className="mb-4 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
+                <p className="text-sm text-destructive">{errors.submit}</p>
+              </div>
+            )}
             <Button
               onClick={handleSubmitPayment}
               disabled={isLoading || !paymentScreenshot}
