@@ -1,5 +1,12 @@
-const CACHE_NAME = "salon-jobs-india-v5";
+const CACHE_NAME = "salon-jobs-india-logo-final-v1";
 const URLS_TO_CACHE = ["/", "/manifest.json"];
+
+// Icon and manifest files should always use network-first strategy
+const NETWORK_FIRST_PATTERNS = [
+  /\/manifest\.json/,
+  /\/icons\//,
+  /\/sji-/,
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -20,7 +27,18 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
+  // Network-first for icons, manifest, and favicons
+  if (NETWORK_FIRST_PATTERNS.some((pattern) => pattern.test(event.request.url))) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Cache-first for other assets
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    caches.match(event.request).then((response) =>
+      response || fetch(event.request)
+    )
   );
 });
