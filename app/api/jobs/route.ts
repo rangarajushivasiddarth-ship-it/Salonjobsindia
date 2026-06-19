@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/server/src/config/database'
 import Job from '@/server/src/models/Job'
+import { getLiveJobs } from '@/lib/adapters/dual-read-adapter'
 
-// GET - Fetch approved/live jobs for job seekers
+// GET - Fetch approved/live jobs for job seekers (DUAL-READ: Supabase primary, MongoDB fallback)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -11,46 +12,32 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const city = searchParams.get('city') || ''
     const ownerId = searchParams.get('ownerId') || ''
-    const type = searchParams.get('type') || 'all' // 'all' for public, 'owner' for salon owner's jobs
 
     await connectDB()
 
-    // Build query for job seekers: only show LIVE, isVisible=true, approved payments
-    const query: any = {
-      status: 'LIVE',
-      isVisible: true,
-      paymentStatus: 'approved'
-    }
+    console.log('[v0] [Job Seeker] Querying live jobs with dual-read (page: ' + page + ', search: ' + search + ', city: ' + city + ')')
 
-    if (search) {
-      query.$text = { $search: search }
-    }
+    // Use dual-read adapter: queries Supabase first, falls back to MongoDB
+    const dualReadResult = await getLiveJobs(city, search, limit * 2)
+    
+    console.log('[v0] [Job Seeker] Data source: ' + dualReadResult.source + ', duration: ' + dualReadResult.duration + 'ms')
 
-    if (city) {
-      query['location.city'] = { $regex: city, $options: 'i' }
-    }
+    let jobs = dualReadResult.data || []
 
+    // Apply additional filters if needed
     if (ownerId) {
-      query.ownerId = ownerId
+      jobs = jobs.filter(j => j.owner_id === ownerId || j.ownerId === ownerId)
     }
 
-    console.log('[v0] [Job Seeker] Query filters:', JSON.stringify(query))
-
-    // Get total count
-    const totalCount = await Job.countDocuments(query)
-    console.log('[v0] [Job Seeker] Total matching jobs:', totalCount)
-
-    // Get paginated results
-    const jobs = await Job.find(query)
-      .select('title description salonName jobType skills salary location viewCount applicationCount postedAt expiresAt')
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .sort({ postedAt: -1 })
-      .lean()
+    // Apply pagination
+    const totalCount = jobs.length
+    jobs = jobs.slice((page - 1) * limit, page * limit)
 
     return NextResponse.json({
       success: true,
       data: jobs,
+      source: dualReadResult.source,
+      duration: dualReadResult.duration,
       pagination: {
         page,
         limit,

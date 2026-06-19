@@ -1,52 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/server/src/config/database'
 import Job from '@/server/src/models/Job'
+import { getPendingJobs } from '@/lib/adapters/dual-read-adapter'
 
-// GET - Fetch all jobs with pending payment approvals for admin dashboard
+// GET - Fetch all jobs with pending payment approvals for admin dashboard (DUAL-READ: Supabase primary)
 export async function GET(request: NextRequest) {
   try {
     await connectDB()
 
-    // DEBUG: Log query
-    console.log('[v0] [Admin Pending] Querying jobs with status=PAYMENT_PENDING, paymentStatus=pending')
+    console.log('[v0] [Admin Pending] Fetching pending payments with dual-read')
 
-    // Query for jobs in PAYMENT_PENDING status
-    const pendingJobs = await Job.find({
-      status: 'PAYMENT_PENDING',
-      paymentStatus: 'pending'
-    })
-      .populate('ownerId', 'email phone name')
-      .sort({ paymentSubmittedAt: -1 })
-      .lean()
-
-    console.log('[v0] [Admin Pending] Found', pendingJobs.length, 'jobs')
+    // Use dual-read adapter: queries Supabase first, falls back to MongoDB
+    const dualReadResult = await getPendingJobs(100)
+    
+    console.log('[v0] [Admin Pending] Data source: ' + dualReadResult.source + ', found: ' + dualReadResult.data.length + ', duration: ' + dualReadResult.duration + 'ms')
 
     // Map to admin-friendly format
-    const pendingJobPayments = pendingJobs.map(job => ({
-      id: job._id.toString(),
-      jobId: job._id.toString(),
-      ownerId: job.ownerId?._id?.toString() || '',
-      salonName: job.salonName,
-      ownerName: (job.ownerId as any)?.name || 'Unknown',
-      ownerPhone: (job.ownerId as any)?.phone || '',
-      ownerEmail: (job.ownerId as any)?.email || '',
+    const pendingJobPayments = dualReadResult.data.map((job: any) => ({
+      id: job.id || job._id?.toString() || job._id,
+      jobId: job.id || job._id?.toString() || job._id,
+      ownerId: job.owner_id || job.ownerId || '',
+      salonName: job.salon_name || job.salonName,
+      ownerName: 'Unknown',
+      ownerPhone: '',
+      ownerEmail: '',
       jobTitle: job.title,
       jobDetails: {
         description: job.description,
-        skills: job.skills,
-        salary: job.salary
+        skills: job.skills || [],
+        salary: { min: job.salary_min, max: job.salary_max }
       },
-      planName: job.paymentPlan || 'Standard',
-      planPrice: job.paymentAmount || 0,
-      screenshotUrl: job.paymentScreenshotUrl,
+      planName: job.payment_plan || job.paymentPlan || 'Standard',
+      planPrice: job.payment_amount || job.paymentAmount || 0,
+      screenshotUrl: job.payment_screenshot_url || job.paymentScreenshotUrl,
       status: 'pending',
-      createdAt: job.paymentSubmittedAt?.toISOString() || job.createdAt.toISOString()
+      createdAt: job.payment_submitted_at || job.paymentSubmittedAt || new Date().toISOString()
     }))
 
     return NextResponse.json({
       success: true,
       data: pendingJobPayments,
       count: pendingJobPayments.length,
+      source: dualReadResult.source,
+      duration: dualReadResult.duration,
       timestamp: Date.now()
     })
   } catch (error) {
