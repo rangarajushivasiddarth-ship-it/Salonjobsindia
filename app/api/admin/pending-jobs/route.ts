@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/auth-middleware'
 import { getPendingJobs } from '@/lib/db/jobs'
 
 // GET - Fetch all jobs with pending payment approvals for admin dashboard
 export async function GET(request: NextRequest) {
   try {
+    // SECURITY: Require admin role
+    const auth = await requireAuth(request, 'admin')
+    if (!auth.success) {
+      console.log('[v0] [Admin Pending] Unauthorized access attempt')
+      return auth.response
+    }
+
     console.log('[v0] [Admin Pending] Fetching pending payments from Supabase')
 
     const result = await getPendingJobs()
