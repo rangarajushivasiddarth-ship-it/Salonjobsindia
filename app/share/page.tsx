@@ -2,20 +2,26 @@
 
 import { Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 function ShareContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const redirectedRef = useRef(false)
   
   const title = searchParams.get('title')
   const text = searchParams.get('text')
   const url = searchParams.get('url')
 
   useEffect(() => {
-    // If no shared params, redirect to jobs page
-    if (!title && !text && !url) {
-      router.push('/jobs')
+    // Only redirect once if no params - use ref to prevent duplicate redirects
+    if (!redirectedRef.current && !title && !text && !url) {
+      redirectedRef.current = true
+      // Schedule redirect for next tick to ensure router is ready
+      const timeoutId = setTimeout(() => {
+        router.push('/jobs')
+      }, 0)
+      return () => clearTimeout(timeoutId)
     }
   }, [title, text, url, router])
 
