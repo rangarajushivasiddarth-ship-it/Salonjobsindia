@@ -11,9 +11,14 @@ const STATIC_CACHE_URLS = [
   "/",
   "/manifest.json",
   "/offline.html",
-  "/pwa-icons/salonjobs-72-v4.png",
-  "/pwa-icons/salonjobs-192-v4.png",
-  "/pwa-icons/salonjobs-512-v4.png",
+  "/salon-jobs-icons/72.png",
+  "/salon-jobs-icons/96.png",
+  "/salon-jobs-icons/128.png",
+  "/salon-jobs-icons/144.png",
+  "/salon-jobs-icons/152.png",
+  "/salon-jobs-icons/192.png",
+  "/salon-jobs-icons/384.png",
+  "/salon-jobs-icons/512.png",
 ];
 
 // Install event - cache essential resources
@@ -154,8 +159,8 @@ self.addEventListener("push", (event) => {
   let notificationData = {
     title: "Salon Jobs India",
     body: "New job opportunities available",
-    icon: "/pwa-icons/salonjobs-192-v4.png",
-    badge: "/pwa-icons/salonjobs-72-v4.png",
+    icon: "/salon-jobs-icons/192.png",
+    badge: "/salon-jobs-icons/72.png",
     tag: "salon-notification",
     requireInteraction: false,
     url: "/jobs",
@@ -183,12 +188,12 @@ self.addEventListener("push", (event) => {
         {
           action: "open",
           title: "View Job",
-          icon: "/pwa-icons/salonjobs-72-v4.png",
+          icon: "/salon-jobs-icons/72.png",
         },
         {
           action: "close",
           title: "Dismiss",
-          icon: "/pwa-icons/salonjobs-72-v4.png",
+          icon: "/salon-jobs-icons/72.png",
         },
       ],
     })
