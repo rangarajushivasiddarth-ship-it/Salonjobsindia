@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import ServiceWorkerRegister from '@/components/service-worker-register'
+import RootLayoutClient from '@/components/root-layout-client'
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -94,31 +95,31 @@ export const viewport: Viewport = {
   userScalable: false,
 }
 
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  'name': 'Salon Jobs India',
+  'description': 'India\'s premier salon job marketplace connecting job seekers with salon owners',
+  'url': 'https://saloonjobsindia.com',
+  'applicationCategory': 'BusinessApplication',
+  'offers': {
+    '@type': 'Offer',
+    'price': '0',
+    'priceCurrency': 'INR'
+  },
+  'creator': {
+    '@type': 'Organization',
+    'name': 'FItonze Private Limited',
+    'url': 'https://saloonjobsindia.com',
+    'email': 'Saloonjobsindia@gmail.com'
+  }
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const structuredData = {
-    '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    'name': 'Salon Jobs India',
-    'description': 'India\'s premier salon job marketplace connecting job seekers with salon owners',
-    'url': 'https://saloonjobsindia.com',
-    'applicationCategory': 'BusinessApplication',
-    'offers': {
-      '@type': 'Offer',
-      'price': '0',
-      'priceCurrency': 'INR'
-    },
-    'creator': {
-      '@type': 'Organization',
-      'name': 'FItonze Private Limited',
-      'url': 'https://saloonjobsindia.com',
-      'email': 'Saloonjobsindia@gmail.com'
-    }
-  }
-
   return (
     <html lang="en" className="dark bg-background">
       <head>
@@ -145,9 +146,11 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} font-sans antialiased min-h-screen`}>
-        {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
-        <ServiceWorkerRegister />
+        <RootLayoutClient>
+          {children}
+          {process.env.NODE_ENV === 'production' && <Analytics />}
+          <ServiceWorkerRegister />
+        </RootLayoutClient>
       </body>
     </html>
   )
