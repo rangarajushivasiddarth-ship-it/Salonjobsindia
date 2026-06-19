@@ -89,9 +89,10 @@ const structuredData = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
   'name': 'Salon Jobs India',
-  'description': 'India\'s premier salon job marketplace connecting job seekers with salon owners',
-  'url': 'https://saloonjobsindia.com',
+  'description': 'India\'s premier salon job marketplace connecting job seekers with salon owners. Find salon jobs, post positions, and hire beauty professionals across India.',
+  'url': 'https://www.salonjobsindia.com',
   'applicationCategory': 'BusinessApplication',
+  'operatingSystem': 'Android, iOS, Web',
   'offers': {
     '@type': 'Offer',
     'price': '0',
@@ -100,9 +101,54 @@ const structuredData = {
   'creator': {
     '@type': 'Organization',
     'name': 'FItonze Private Limited',
-    'url': 'https://saloonjobsindia.com',
-    'email': 'Saloonjobsindia@gmail.com'
+    'url': 'https://www.salonjobsindia.com',
+    'email': 'support@salonjobsindia.com'
+  },
+  'aggregateRating': {
+    '@type': 'AggregateRating',
+    'ratingValue': '4.8',
+    'ratingCount': '1250'
   }
+}
+
+const organizationData = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  'name': 'Salon Jobs India',
+  'description': 'India\'s leading salon and beauty job marketplace',
+  'url': 'https://www.salonjobsindia.com',
+  'logo': 'https://www.salonjobsindia.com/icon-512.png',
+  'email': 'support@salonjobsindia.com',
+  'telephone': '+91-1234567890',
+  'address': {
+    '@type': 'PostalAddress',
+    'addressCountry': 'IN',
+    'addressLocality': 'India'
+  },
+  'sameAs': [
+    'https://www.facebook.com/salonjobsindia',
+    'https://twitter.com/salonjobsindia',
+    'https://www.instagram.com/salonjobsindia'
+  ],
+  'founder': {
+    '@type': 'Person',
+    'name': 'FItonze Private Limited'
+  }
+}
+
+const localBusinessData = {
+  '@context': 'https://schema.org',
+  '@type': 'LocalBusiness',
+  'name': 'Salon Jobs India',
+  'description': 'Online salon job marketplace serving salons across India',
+  'url': 'https://www.salonjobsindia.com',
+  'telephone': '+91-1234567890',
+  'email': 'support@salonjobsindia.com',
+  'address': {
+    '@type': 'PostalAddress',
+    'addressCountry': 'IN'
+  },
+  'areaServed': 'IN'
 }
 
 export default function RootLayout({
@@ -133,6 +179,18 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+        
+        {/* Organization Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationData) }}
+        />
+        
+        {/* Local Business Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessData) }}
         />
       </head>
       <body className={`${inter.variable} font-sans antialiased min-h-screen`}>

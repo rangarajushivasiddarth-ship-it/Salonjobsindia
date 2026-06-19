@@ -1,25 +1,75 @@
+# Salon Jobs India - robots.txt
+# Optimized for search engine crawling and indexing
+
+# Default rules for all user agents
 User-agent: *
 Allow: /
+
+# Disallow private/admin sections
 Disallow: /admin
 Disallow: /api/
 Disallow: /private/
+Disallow: /error/
+Disallow: /share/
+Disallow: /*.json$
+Disallow: /*.pdf$
+Disallow: /admin/*
+Disallow: /api/*
 
-# Sitemap for Google to discover all pages and metadata
+# Allow crawling of dynamic job content
+Allow: /jobs
+Allow: /job-seekers
+Allow: /salons
+
+# Avoid crawling sensitive paths
+Disallow: /auth/
+Disallow: /register
+Disallow: /login
+Disallow: /checkout
+Disallow: /payments
+
+# Sitemaps for improved discoverability
+Sitemap: https://www.salonjobsindia.com/sitemap.xml
 Sitemap: https://salonjobsindia.com/sitemap.xml
 
-# Aggressive crawling for Google - force homepage recrawl
+# Google-specific aggressive crawling
 User-agent: Googlebot
 Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /auth/
 Crawl-delay: 0
 Request-rate: 50/1s
 
-# Aggressive crawling for Bing
+# Bing-specific crawling
 User-agent: Bingbot
 Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /auth/
 Crawl-delay: 0
 Request-rate: 30/1s
 
-# Force homepage re-indexing every day
+# Yandex crawling
+User-agent: Yandexbot
+Allow: /
+Disallow: /admin
+Crawl-delay: 1
+
+# Block bad bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+# Crawl policy for all bots
 User-agent: *
 Visit-time: any
 Visit-interval: 1d
+
+# Preferred host (for domain consolidation)
+Prefer-Host: https://www.salonjobsindia.com

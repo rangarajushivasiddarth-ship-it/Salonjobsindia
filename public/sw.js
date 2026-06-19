@@ -180,16 +180,66 @@ self.addEventListener("notificationclick", (event) => {
   );
 });
 
+// Background Sync event - triggered when app goes online
+self.addEventListener("sync", (event) => {
+  console.log("[SW] Background sync event:", event.tag);
+  
+  if (event.tag === "sync-jobs-india") {
+    event.waitUntil(syncJobsData());
+  }
+});
+
+// Periodic Sync event - triggered periodically by the browser
+self.addEventListener("periodicsync", (event) => {
+  console.log("[SW] Periodic sync event:", event.tag);
+  
+  if (event.tag === "sync-jobs-india") {
+    event.waitUntil(syncJobsDataPeriodic());
+  }
+});
+
 // Helper function for background sync
 async function syncJobsData() {
   try {
+    console.log("[SW] Starting background sync for jobs");
     const response = await fetch("/api/jobs");
     if (response.ok) {
       const cache = await caches.open(CACHE_NAMES.dynamic);
       await cache.put("/jobs", response.clone());
+      console.log("[SW] Jobs data synced successfully");
     }
   } catch (error) {
-    console.log("[SW] Sync failed:", error);
+    console.log("[SW] Background sync failed:", error);
+    throw error;
+  }
+}
+
+// Helper function for periodic sync (runs every 1 hour or as configured)
+async function syncJobsDataPeriodic() {
+  try {
+    console.log("[SW] Starting periodic sync");
+    
+    // Sync jobs
+    const jobsResponse = await fetch("/api/jobs");
+    if (jobsResponse.ok) {
+      const cache = await caches.open(CACHE_NAMES.dynamic);
+      await cache.put("/jobs", jobsResponse.clone());
+    }
+    
+    // Sync user profile if available
+    try {
+      const profileResponse = await fetch("/api/job-seekers");
+      if (profileResponse.ok) {
+        const cache = await caches.open(CACHE_NAMES.dynamic);
+        await cache.put("/job-seekers", profileResponse.clone());
+      }
+    } catch (e) {
+      console.log("[SW] Could not sync profile during periodic sync");
+    }
+    
+    console.log("[SW] Periodic sync completed successfully");
+  } catch (error) {
+    console.log("[SW] Periodic sync failed:", error);
     throw error;
   }
 }
