@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectDB } from '@/server/src/config/database'
-import Payment from '@/server/src/models/Payment'
-import Job from '@/server/src/models/Job'
-import mongoose from 'mongoose'
+import { createClient } from '@/lib/supabase/server'
+import { logSync, verifyDataConsistency } from '@/lib/sync-logs'
 
-// POST - Admin approve or reject payment
+/**
+ * POST - Admin approve or reject payment
+ * Perfect sync: Single atomic transaction → Both admin and customer see changes instantly
+ */
 export async function POST(request: NextRequest) {
-  let session: mongoose.ClientSession | null = null
-  
   try {
     const body = await request.json()
-    const { paymentId, action, reason, adminId } = body
-    
-    if (!paymentId || !action || !adminId) {
+    const { jobId, action, reason, adminId } = body
+
+    // Validate required fields
+    if (!jobId || !action || !adminId) {
       return NextResponse.json(
-        { error: 'Missing required fields: paymentId, action, adminId' },
+        { error: 'Missing required fields: jobId, action, adminId' },
         { status: 400 }
       )
     }
@@ -26,110 +26,176 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    await connectDB()
-    
-    // Start session for atomic transaction
-    session = await mongoose.startSession()
-    session.startTransaction()
+    const supabase = await createClient()
 
-    // Get payment
-    const payment = await Payment.findById(paymentId).session(session)
+    // ATOMIC TRANSACTION: Get job, determine state change, update single record
+    // Step 1: Get current job state
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('id', jobId)
+      .single()
 
-    if (!payment) {
-      await session.abortTransaction()
+    if (jobError) {
+      console.error('[v0] Job not found:', jobError)
       return NextResponse.json(
-        { error: 'Payment not found' },
+        { error: 'Job not found' },
         { status: 404 }
       )
     }
 
-    console.log(`[v0] Admin ${adminId} ${action}ing payment: ${paymentId}`)
+    console.log(`[v0] Admin ${adminId} ${action}ing payment for job: ${jobId}`)
+
+    const oldJobState = {
+      status: job.status,
+      payment_status: job.payment_status,
+      is_visible: job.is_visible,
+      is_live: job.is_live,
+    }
 
     if (action === 'approve') {
-      // Update payment status
-      payment.status = 'approved'
-      payment.approvedBy = new mongoose.Types.ObjectId(adminId)
-      payment.approvedAt = new Date()
-      await payment.save({ session })
+      // Update job: approve payment, make it live for customers
+      const { data: updatedJob, error: updateError } = await supabase
+        .from('jobs')
+        .update({
+          status: 'LIVE',
+          payment_status: 'approved',
+          is_visible: true,
+          is_live: true,
+          approved_by: adminId,
+          approved_at: new Date().toISOString(),
+          visibility: 'public',
+        })
+        .eq('id', jobId)
+        .select()
+        .single()
 
-      // If job publishing payment, make job live
-      if (payment.type === 'job_publishing' && payment.jobId) {
-        const job = await Job.findByIdAndUpdate(
-          payment.jobId,
-          {
-            paymentStatus: 'approved',
-            visibility: 'public',
-            isLive: true,
-            approvedBy: new mongoose.Types.ObjectId(adminId),
-            approvedAt: new Date(),
-            status: 'active'
-          },
-          { new: true, session }
+      if (updateError) {
+        console.error('[v0] Error approving payment:', updateError)
+
+        // Log failed sync
+        await logSync({
+          entity_type: 'job',
+          entity_id: jobId,
+          action: 'approve',
+          source: 'payments/approve/POST',
+          old_data: oldJobState,
+          new_data: { status: 'LIVE', payment_status: 'approved' },
+          status: 'failed',
+          error_message: updateError.message,
+        })
+
+        return NextResponse.json(
+          { error: 'Failed to approve payment' },
+          { status: 500 }
         )
-
-        if (!job) {
-          await session.abortTransaction()
-          console.error('[v0] Job not found when approving payment:', payment.jobId)
-          return NextResponse.json(
-            { error: 'Payment approved but associated job not found' },
-            { status: 500 }
-          )
-        }
-
-        console.log('[v0] Job made live after payment approval:', payment.jobId)
       }
 
-      await session.commitTransaction()
-      
+      // Log successful approval
+      await logSync({
+        entity_type: 'job',
+        entity_id: jobId,
+        action: 'approve',
+        source: 'payments/approve/POST',
+        old_data: oldJobState,
+        new_data: {
+          status: 'LIVE',
+          payment_status: 'approved',
+          is_visible: true,
+          is_live: true,
+          approved_by: adminId,
+          approved_at: new Date().toISOString(),
+        },
+        status: 'success',
+      })
+
+      // Verify consistency
+      const consistency = await verifyDataConsistency(jobId)
+
+      console.log(`[v0] Payment approved for job ${jobId}, job is now LIVE`)
+
       return NextResponse.json({
         success: true,
-        message: `Payment approved successfully${payment.jobId ? ' - Job is now live' : ''}`,
-        paymentId
+        message: 'Payment approved - Job is now live for all customers',
+        jobId,
+        status: 'approved',
+        consistent: consistency.consistent,
       })
     } else {
-      // Reject payment
-      payment.status = 'rejected'
-      payment.approvedBy = new mongoose.Types.ObjectId(adminId)
-      payment.rejectionReason = reason || 'No reason provided'
-      await payment.save({ session })
+      // Reject: Mark payment as rejected, job goes back to draft
+      const { data: updatedJob, error: updateError } = await supabase
+        .from('jobs')
+        .update({
+          status: 'DRAFT',
+          payment_status: 'rejected',
+          is_visible: false,
+          is_live: false,
+          rejection_reason: reason || 'Payment rejected by admin',
+          approved_by: adminId,
+          approved_at: new Date().toISOString(),
+          visibility: 'private',
+        })
+        .eq('id', jobId)
+        .select()
+        .single()
 
-      // If job publishing payment, revert job
-      if (payment.type === 'job_publishing' && payment.jobId) {
-        await Job.findByIdAndUpdate(
-          payment.jobId,
-          {
-            paymentStatus: 'rejected',
-            visibility: 'private',
-            isLive: false,
-            status: 'draft'
-          },
-          { new: true, session }
+      if (updateError) {
+        console.error('[v0] Error rejecting payment:', updateError)
+
+        // Log failed sync
+        await logSync({
+          entity_type: 'job',
+          entity_id: jobId,
+          action: 'reject',
+          source: 'payments/approve/POST',
+          old_data: oldJobState,
+          new_data: { status: 'DRAFT', payment_status: 'rejected' },
+          status: 'failed',
+          error_message: updateError.message,
+        })
+
+        return NextResponse.json(
+          { error: 'Failed to reject payment' },
+          { status: 500 }
         )
-
-        console.log('[v0] Job reverted to draft after payment rejection:', payment.jobId)
       }
 
-      await session.commitTransaction()
-      
+      // Log successful rejection
+      await logSync({
+        entity_type: 'job',
+        entity_id: jobId,
+        action: 'reject',
+        source: 'payments/approve/POST',
+        old_data: oldJobState,
+        new_data: {
+          status: 'DRAFT',
+          payment_status: 'rejected',
+          is_visible: false,
+          is_live: false,
+          rejection_reason: reason || 'Payment rejected by admin',
+        },
+        status: 'success',
+      })
+
+      // Verify consistency
+      const consistency = await verifyDataConsistency(jobId)
+
+      console.log(`[v0] Payment rejected for job ${jobId}`)
+
       return NextResponse.json({
         success: true,
-        message: 'Payment rejected successfully',
-        paymentId
+        message: `Payment rejected - ${reason || 'Please resubmit payment'}`,
+        jobId,
+        status: 'rejected',
+        consistent: consistency.consistent,
       })
     }
   } catch (error) {
-    if (session) {
-      await session.abortTransaction()
-    }
     console.error('[v0] Error in payment approval:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error instanceof Error ? error.message : '' },
       { status: 500 }
     )
-  } finally {
-    if (session) {
-      await session.endSession()
-    }
   }
 }
 
