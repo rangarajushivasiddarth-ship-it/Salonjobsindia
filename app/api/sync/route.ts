@@ -1,35 +1,47 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createJob, getPendingJobs, approveJob, rejectJob, logSync, getSyncLogs } from '@/lib/db/jobs'
+import { createJob, getPendingJobs, getLiveJobs, approveJob, rejectJob, logSync, getSyncLogs } from '@/lib/db/jobs'
+import { createApiError, validateRequired } from '@/lib/api-error-handler'
 
-// GET - Retrieve pending jobs or sync logs
+// GET - Retrieve jobs by type (pending, approved/live, logs)
 export async function GET(request: NextRequest) {
   const type = request.nextUrl.searchParams.get('type')
+  const city = request.nextUrl.searchParams.get('city')
+  const search = request.nextUrl.searchParams.get('search')
 
-  console.log(`[v0] [Sync API] GET request - type: ${type}`)
+  console.log(`[v0] [Sync API] GET request - type: ${type}, city: ${city}, search: ${search}`)
 
   try {
-    if (type === 'pending-jobs') {
+    if (type === 'pending-jobs' || type === 'pending-job-payments') {
       const result = await getPendingJobs()
       if (!result.success) {
-        return NextResponse.json({ error: 'Failed to fetch pending jobs' }, { status: 500 })
+        return createApiError('Failed to fetch pending jobs', 'SERVER_ERROR', 500)
       }
       console.log(`[v0] [Sync API] Returning ${result.data.length} pending jobs`)
-      return NextResponse.json({ success: true, data: result.data, timestamp: Date.now() })
+      return NextResponse.json({ success: true, data: result.data, count: result.data.length, timestamp: Date.now() })
+    }
+
+    if (type === 'approved-jobs' || type === 'live-jobs') {
+      const result = await getLiveJobs(city || undefined, search || undefined)
+      if (!result.success) {
+        return createApiError('Failed to fetch live jobs', 'SERVER_ERROR', 500)
+      }
+      console.log(`[v0] [Sync API] Returning ${result.data.length} live jobs`)
+      return NextResponse.json({ success: true, data: result.data, count: result.data.length, timestamp: Date.now() })
     }
 
     if (type === 'sync-logs') {
       const result = await getSyncLogs(100)
       if (!result.success) {
-        return NextResponse.json({ error: 'Failed to fetch sync logs' }, { status: 500 })
+        return createApiError('Failed to fetch sync logs', 'SERVER_ERROR', 500)
       }
       console.log(`[v0] [Sync API] Returning ${result.data.length} sync log entries`)
       return NextResponse.json({ success: true, data: result.data, timestamp: Date.now() })
     }
 
-    return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 })
+    return createApiError('Invalid type parameter', 'INVALID_INPUT', 400, { type })
   } catch (error) {
     console.error('[v0] [Sync API] GET error:', error)
-    return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 })
+    return createApiError('Failed to fetch data', 'SERVER_ERROR', 500, { error: String(error) })
   }
 }
 
@@ -40,6 +52,11 @@ export async function POST(request: NextRequest) {
     const { type, data } = body
 
     console.log(`[v0] [Sync API] POST request - type: ${type}`)
+
+    const validation = validateRequired(body, ['type', 'data'])
+    if (!validation.valid) {
+      return validation.error
+    }
 
     if (type === 'job-payment') {
       console.log('[v0] [Sync API] Creating job in Supabase')
@@ -86,10 +103,7 @@ export async function POST(request: NextRequest) {
           : typeof jobResult.error === 'object' && jobResult.error !== null && 'message' in jobResult.error
             ? (jobResult.error as any).message
             : JSON.stringify(jobResult.error)
-        return NextResponse.json({ 
-          error: 'Failed to create job',
-          details: errorMessage
-        }, { status: 500 })
+        return createApiError('Failed to create job', 'SERVER_ERROR', 500, { details: errorMessage })
       }
 
       const jobId = jobResult.data.id
@@ -106,10 +120,16 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
+    return createApiError('Invalid type', 'INVALID_INPUT', 400)
   } catch (error) {
     console.error('[v0] [Sync API] POST error:', error)
-    return NextResponse.json({ error: 'Failed to submit' }, { status: 500 })
+    
+    // Handle JSON parsing errors
+    if (error instanceof SyntaxError) {
+      return createApiError('Invalid JSON', 'INVALID_INPUT', 400, { error: String(error) })
+    }
+    
+    return createApiError('Failed to submit', 'SERVER_ERROR', 500, { error: String(error) })
   }
 }
 

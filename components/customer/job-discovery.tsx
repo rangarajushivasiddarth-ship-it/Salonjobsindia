@@ -84,17 +84,55 @@ export function JobDiscovery() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
 
-  // Get user location
+  // Get user location with permission handling
   useEffect(() => {
-    if (resume?.location?.lat && resume?.location?.lng) {
-      setUserLocation({ lat: resume.location.lat, lng: resume.location.lng })
-    } else if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => setUserLocation({ lat: 12.9716, lng: 77.5946 }) // Default to Bangalore
-      )
+    const getLocation = async () => {
+      try {
+        // First check if user has location in resume
+        if (resume?.location?.lat && resume?.location?.lng) {
+          setUserLocation({ lat: resume.location.lat, lng: resume.location.lng })
+          return
+        }
+
+        // Try to get geolocation
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const location = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+              setUserLocation(location)
+              
+              // Save to backend for future use
+              if (user?.id) {
+                fetch('/api/location/save', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    userId: user.id,
+                    latitude: location.lat,
+                    longitude: location.lng,
+                  })
+                }).catch(err => console.log('[v0] Location save failed:', err))
+              }
+            },
+            (error) => {
+              console.log('[v0] Geolocation error:', error.message)
+              // Fallback to default Bangalore location
+              setUserLocation({ lat: 12.9716, lng: 77.5946 })
+            },
+            { timeout: 10000, maximumAge: 3600000 }
+          )
+        } else {
+          // Geolocation not available
+          setUserLocation({ lat: 12.9716, lng: 77.5946 })
+        }
+      } catch (err) {
+        console.log('[v0] Location detection error:', err)
+        setUserLocation({ lat: 12.9716, lng: 77.5946 })
+      }
     }
-  }, [resume])
+
+    getLocation()
+  }, [resume, user?.id])
 
   // Calculate distance between two points
   const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
