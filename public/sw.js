@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-jobs-india-clean-v1";
+const CACHE_NAME = "salon-jobs-india-final-v1";
 const URLS_TO_CACHE = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
