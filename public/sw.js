@@ -1,11 +1,12 @@
-const CACHE_NAME = "salon-jobs-india-logo-final-v1";
+const CACHE_NAME = "salon-jobs-india-v30";
 const URLS_TO_CACHE = ["/", "/manifest.json"];
 
 // Icon and manifest files should always use network-first strategy
 const NETWORK_FIRST_PATTERNS = [
   /\/manifest\.json/,
   /\/icons\//,
-  /\/sji-/,
+  /\/favicon-/,
+  /\/apple-touch-icon/,
 ];
 
 self.addEventListener("install", (event) => {
