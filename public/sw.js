@@ -1,5 +1,5 @@
 // Version for cache busting
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v4";
 const CACHE_NAMES = {
   static: `salon-jobs-india-static-${CACHE_VERSION}`,
   dynamic: `salon-jobs-india-dynamic-${CACHE_VERSION}`,
@@ -11,14 +11,9 @@ const STATIC_CACHE_URLS = [
   "/",
   "/manifest.json",
   "/offline.html",
-  "/icon-72.png",
-  "/icon-96.png",
-  "/icon-128.png",
-  "/icon-144.png",
-  "/icon-152.png",
-  "/icon-192.png",
-  "/icon-384.png",
-  "/icon-512.png",
+  "/pwa-icons/salonjobs-72-v4.png",
+  "/pwa-icons/salonjobs-192-v4.png",
+  "/pwa-icons/salonjobs-512-v4.png",
 ];
 
 // Install event - cache essential resources
@@ -159,8 +154,8 @@ self.addEventListener("push", (event) => {
   let notificationData = {
     title: "Salon Jobs India",
     body: "New job opportunities available",
-    icon: "/icon-192.png",
-    badge: "/icon-96.png",
+    icon: "/pwa-icons/salonjobs-192-v4.png",
+    badge: "/pwa-icons/salonjobs-72-v4.png",
     tag: "salon-notification",
     requireInteraction: false,
     url: "/jobs",
@@ -188,12 +183,12 @@ self.addEventListener("push", (event) => {
         {
           action: "open",
           title: "View Job",
-          icon: "/icon-96.png",
+          icon: "/pwa-icons/salonjobs-72-v4.png",
         },
         {
           action: "close",
           title: "Dismiss",
-          icon: "/icon-96.png",
+          icon: "/pwa-icons/salonjobs-72-v4.png",
         },
       ],
     })
