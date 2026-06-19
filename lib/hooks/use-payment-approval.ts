@@ -18,7 +18,7 @@ export function usePaymentApproval() {
   })
 
   const approvePayment = useCallback(async (
-    paymentId: string,
+    jobId: string,
     type: 'job_publishing' | 'job_seeker_subscription' | 'contact_pack'
   ): Promise<{ success: boolean; error?: string }> => {
     setState(prev => ({ ...prev, isLoading: true, error: null, success: false }))
@@ -28,9 +28,8 @@ export function usePaymentApproval() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          paymentId,
+          jobId,
           action: 'approve',
-          type,
           adminId: 'admin',
         }),
         cache: 'no-store',
@@ -50,7 +49,7 @@ export function usePaymentApproval() {
         isLoading: false,
         error: null,
         success: true,
-        lastApprovedId: paymentId,
+        lastApprovedId: jobId,
       }))
 
       // Reset success state after 2 seconds
@@ -60,10 +59,10 @@ export function usePaymentApproval() {
 
       // Force refetch of all data by dispatching global event
       window.dispatchEvent(new CustomEvent('salonjobsindia_payment_approved', {
-        detail: { paymentId, type },
+        detail: { jobId, type },
       }))
 
-      console.log('[v0] Payment approved and revalidation triggered:', paymentId)
+      console.log('[v0] Payment approved and revalidation triggered:', jobId)
 
       return { success: true }
     } catch (error) {
@@ -74,7 +73,7 @@ export function usePaymentApproval() {
   }, [])
 
   const rejectPayment = useCallback(async (
-    paymentId: string,
+    jobId: string,
     type: 'job_publishing' | 'job_seeker_subscription' | 'contact_pack',
     reason?: string
   ): Promise<{ success: boolean; error?: string }> => {
@@ -85,9 +84,8 @@ export function usePaymentApproval() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          paymentId,
+          jobId,
           action: 'reject',
-          type,
           reason,
           adminId: 'admin',
         }),
@@ -107,7 +105,7 @@ export function usePaymentApproval() {
         isLoading: false,
         error: null,
         success: true,
-        lastApprovedId: paymentId,
+        lastApprovedId: jobId,
       }))
 
       setTimeout(() => {
@@ -115,10 +113,10 @@ export function usePaymentApproval() {
       }, 2000)
 
       window.dispatchEvent(new CustomEvent('salonjobsindia_payment_rejected', {
-        detail: { paymentId, type },
+        detail: { jobId, type },
       }))
 
-      console.log('[v0] Payment rejected and revalidation triggered:', paymentId)
+      console.log('[v0] Payment rejected and revalidation triggered:', jobId)
 
       return { success: true }
     } catch (error) {

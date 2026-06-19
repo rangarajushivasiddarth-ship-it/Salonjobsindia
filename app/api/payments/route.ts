@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     const { data: updatedJob, error: updateError } = await supabase
       .from('jobs')
       .update({
-        payment_status: 'pending_approval',
+        payment_status: 'pending',
         payment_amount: amount,
         payment_screenshot_url: screenshotUrl,
         payment_submitted_at: new Date().toISOString(),
@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
       source: 'payments/POST',
       old_data: oldJobState,
       new_data: {
-        payment_status: 'pending_approval',
+        payment_status: 'pending',
         payment_amount: amount,
         payment_screenshot_url: screenshotUrl,
         payment_submitted_at: new Date().toISOString(),
