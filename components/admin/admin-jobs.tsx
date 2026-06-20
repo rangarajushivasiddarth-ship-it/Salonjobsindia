@@ -188,21 +188,7 @@ export function AdminJobs() {
       isRead: false,
     })
     
-    // Add notification for salon owner
-    if (typeof window !== 'undefined') {
-      const notificationsKey = `fitonze_notifications_${payment.salonOwnerId}`
-      const existingNotifications = localStorage.getItem(notificationsKey)
-      const notifications = existingNotifications ? JSON.parse(existingNotifications) : []
-      notifications.unshift({
-        id: `notif_${Date.now()}`,
-        type: 'payment_approved',
-        title: 'Job is Now Live!',
-        message: `Your job post for "${payment.jobRole}" has been approved and is now visible to job seekers. 30 contact credits have been added to your account.`,
-        isRead: false,
-        createdAt: new Date(),
-      })
-      localStorage.setItem(notificationsKey, JSON.stringify(notifications))
-    }
+    // Notifications handled by Supabase alerts created above
     
     // Refresh pending payments
     setPendingPayments(prev => prev.filter(p => p.id !== payment.id))
@@ -232,34 +218,6 @@ export function AdminJobs() {
     }
     
     // All data now persisted in Supabase - no localStorage needed
-      
-      // Update job status in pending jobs
-      const pendingJobsKey = `fitonze_pending_jobs_${payment.salonOwnerId}`
-      const pendingJobs = localStorage.getItem(pendingJobsKey)
-      if (pendingJobs) {
-        const jobs = JSON.parse(pendingJobs)
-        const updated = jobs.map((j: { id: string; status: string }) => 
-          j.id === payment.jobId 
-            ? { ...j, status: 'rejected' }
-            : j
-        )
-        localStorage.setItem(pendingJobsKey, JSON.stringify(updated))
-      }
-      
-      // Add notification for salon owner
-      const notificationsKey = `fitonze_notifications_${payment.salonOwnerId}`
-      const existingNotifications = localStorage.getItem(notificationsKey)
-      const notifications = existingNotifications ? JSON.parse(existingNotifications) : []
-      notifications.unshift({
-        id: `notif_${Date.now()}`,
-        type: 'payment_rejected',
-        title: 'Payment Rejected',
-        message: `Your payment for "${payment.jobRole}" was rejected. ${rejectionReason ? `Reason: ${rejectionReason}` : 'Please contact support.'}`,
-        isRead: false,
-        createdAt: new Date(),
-      })
-      localStorage.setItem(notificationsKey, JSON.stringify(notifications))
-    }
     
     // Refresh pending payments
     setPendingPayments(prev => prev.filter(p => p.id !== payment.id))

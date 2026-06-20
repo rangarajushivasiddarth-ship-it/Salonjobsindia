@@ -327,7 +327,6 @@ export default {
   jobService,
   creditService,
   creditTransactionService,
-  fileMetadataService,
   subscriptionService,
   paymentService,
   getSupabaseClient,
