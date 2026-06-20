@@ -1,5 +1,5 @@
-// Version for cache busting - updated for correct PWA icons
-const CACHE_VERSION = "v5";
+// Version for cache busting - using official Salon Jobs India logo
+const CACHE_VERSION = "v6";
 const CACHE_NAMES = {
   static: `salon-jobs-india-static-${CACHE_VERSION}`,
   dynamic: `salon-jobs-india-dynamic-${CACHE_VERSION}`,
