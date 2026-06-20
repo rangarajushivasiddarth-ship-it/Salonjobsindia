@@ -216,10 +216,9 @@ export const UserService = {
     users.push(newUser)
     saveToStorage(STORAGE_KEYS.USERS, users)
     
-    // Save session
+    // Session is now handled by Supabase Auth
+    // No localStorage tokens needed
     const { password: _, ...userWithoutPassword } = newUser
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(userWithoutPassword))
-    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, `token_${newUser.id}_${Date.now()}`)
     
     return { success: true, user: userWithoutPassword as User }
   },
@@ -248,10 +247,8 @@ export const UserService = {
       return { success: false, error: 'Phone number does not match. Please check and try again.' }
     }
     
-    // Save session
+    // Session is now handled by Supabase Auth
     const { password: _, ...userWithoutPassword } = user
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(userWithoutPassword))
-    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, `token_${user.id}_${Date.now()}`)
     
     return { success: true, user: userWithoutPassword as User }
   },

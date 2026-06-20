@@ -52,15 +52,6 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Contact unlocked successfully',
       creditsUsed: cost,
-      contact: {
-        // These would come from the database
-        name: 'Job Seeker Name',
-        phone: '+91 98765 43210',
-        email: 'jobseeker@example.com',
-        location: 'Mumbai, Maharashtra',
-        profileUrl: '/profile/jobseeker123'
-      },
-      remainingCredits: 9, // salonOwner.credits - cost
       timestamp: new Date().toISOString()
     })
   } catch (error) {
