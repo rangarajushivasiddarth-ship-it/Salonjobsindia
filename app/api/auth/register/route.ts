@@ -81,10 +81,6 @@ export async function POST(request: NextRequest) {
 
     const userId = result.data.id
 
-    // TODO: Create role-specific profile in Supabase profiles table
-    // This would include job_seeker and salon_owner specific data
-    // For now, all required data is stored in the users table
-
     return NextResponse.json({
       success: true,
       userId,

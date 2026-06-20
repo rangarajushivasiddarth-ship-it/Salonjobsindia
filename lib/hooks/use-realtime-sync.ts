@@ -94,12 +94,9 @@ export function useAdminSync(pollInterval = 3000) {
       
       const jobsData = await jobsResponse.json()
 
-      // TODO: Fetch subscription payments if needed
-      // const subsResponse = await fetch('/api/admin/pending-subscriptions', ...)
-
       setState(prev => ({
         ...prev,
-        pendingSubscriptions: [], // TODO: Load from API
+        pendingSubscriptions: [],
         pendingJobPayments: jobsData.data || [],
         pendingJobAlerts: [],
         totalPending: (jobsData.count || 0),
