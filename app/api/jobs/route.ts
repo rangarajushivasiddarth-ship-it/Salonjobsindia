@@ -54,4 +54,94 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Note: POST/PUT/DELETE operations for jobs are handled via /api/sync endpoint
+// POST - Create a new job
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const {
+      title,
+      salonName,
+      description,
+      location,
+      salary,
+      experience,
+      jobType,
+      skills,
+      status,
+      payment_status,
+    } = body
+
+    // Validate required fields
+    if (!title || !salonName) {
+      return NextResponse.json(
+        { error: 'Missing required fields: title, salonName' },
+        { status: 400 }
+      )
+    }
+
+    const { createClient } = await import('@/lib/supabase/server')
+    const supabase = await createClient()
+
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    console.log(`[v0] Creating new job: ${title} for user: ${user.id}`)
+
+    // Create job record
+    const { data: job, error: createError } = await supabase
+      .from('jobs')
+      .insert({
+        title,
+        salon_name: salonName,
+        description,
+        owner_id: user.id,
+        location_address: location?.address,
+        location_city: location?.city,
+        location_state: location?.state,
+        location_lat: location?.lat,
+        location_lng: location?.lng,
+        salary_min: salary?.min,
+        salary_max: salary?.max,
+        experience_required: experience,
+        job_type: jobType,
+        skills: skills || [],
+        status: status || 'DRAFT',
+        payment_status: payment_status || 'pending',
+        is_visible: false,
+        is_live: false,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single()
+
+    if (createError) {
+      console.error('[v0] Error creating job:', createError)
+      return NextResponse.json(
+        { error: 'Failed to create job' },
+        { status: 500 }
+      )
+    }
+
+    console.log(`[v0] Job created successfully: ${job.id}`)
+
+    return NextResponse.json({
+      success: true,
+      jobId: job.id,
+      message: 'Job created successfully',
+      job,
+    })
+  } catch (error) {
+    console.error('[v0] Error in POST jobs:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

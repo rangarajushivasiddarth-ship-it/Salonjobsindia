@@ -26,7 +26,7 @@ export function AdminPayments() {
     rejectJobPayment,
   } = useAdminSync(2000) // Poll every 2 seconds
   
-  const [selectedPayment, setSelectedPayment] = useState<string | null>(null)
+  const [selectedPayment, setSelectedPayment] = useState<{ id: string; type: 'subscription' | 'job-payment' | 'local' } | null>(null)
   const [confirmAction, setConfirmAction] = useState<{ id: string; type: 'subscription' | 'job-payment' | 'local'; action: 'approve' | 'reject' } | null>(null)
   const [activeTab, setActiveTab] = useState<'subscriptions' | 'jobs' | 'local'>('subscriptions')
 
@@ -201,7 +201,7 @@ export function AdminPayments() {
                   {payment.screenshotUrl && (
                     <Button
                       variant="outline"
-                      onClick={() => setSelectedPayment(payment.id)}
+                      onClick={() => setSelectedPayment({ id: payment.id, type: 'subscription' })}
                       className="flex items-center gap-2"
                     >
                       <Eye className="w-4 h-4" />
@@ -275,7 +275,7 @@ export function AdminPayments() {
                   {payment.screenshotUrl && (
                     <Button
                       variant="outline"
-                      onClick={() => setSelectedPayment(payment.id)}
+                      onClick={() => setSelectedPayment({ id: payment.id, type: 'job-payment' })}
                       className="flex items-center gap-2"
                     >
                       <Eye className="w-4 h-4" />
@@ -391,15 +391,20 @@ export function AdminPayments() {
             </div>
             <div className="p-6">
               {(() => {
-                // Check all sources for the payment
-                const cloudSub = pendingSubscriptions.find(p => p.id === selectedPayment)
-                const cloudJob = pendingJobPayments.find(p => p.id === selectedPayment)
-                const localPayment = localPendingPayments.find(p => p.id === selectedPayment)
+                // Check all sources for the payment based on type
+                let screenshotUrl = null
                 
-                const screenshotUrl = cloudSub?.screenshotUrl || 
-                                      cloudJob?.screenshotUrl || 
-                                      localPayment?.screenshotUrl || 
-                                      (localPayment as unknown as Record<string, unknown>)?.paymentScreenshot as string
+                if (selectedPayment.type === 'subscription') {
+                  const cloudSub = pendingSubscriptions.find(p => p.id === selectedPayment.id)
+                  screenshotUrl = cloudSub?.screenshotUrl
+                } else if (selectedPayment.type === 'job-payment') {
+                  const cloudJob = pendingJobPayments.find(p => p.id === selectedPayment.id)
+                  screenshotUrl = cloudJob?.screenshotUrl
+                } else {
+                  const localPayment = localPendingPayments.find(p => p.id === selectedPayment.id)
+                  screenshotUrl = localPayment?.screenshotUrl || 
+                                  (localPayment as unknown as Record<string, unknown>)?.paymentScreenshot as string
+                }
                 
                 if (screenshotUrl) {
                   return (
@@ -408,6 +413,7 @@ export function AdminPayments() {
                         src={screenshotUrl}
                         alt="Payment screenshot"
                         className="w-full max-h-[70vh] object-contain bg-secondary/30"
+                        crossOrigin="anonymous"
                       />
                     </div>
                   )

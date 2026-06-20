@@ -239,58 +239,113 @@ export function CreateJob() {
     }
 
     setIsLoading(true)
+    setErrors({})
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    // Create job draft with pending approval status
-    const jobDraft: JobDraft = {
-      id: `job_${Date.now()}`,
-      ...formData,
-      status: 'pending_approval',
-      paymentScreenshot,
-      createdAt: new Date(),
-    }
-    
-    // Save to localStorage
-    if (typeof window !== 'undefined') {
-      const existingJobs = localStorage.getItem(`salonjobsindia_pending_jobs_${user?.id}`)
-      const jobs: JobDraft[] = existingJobs ? JSON.parse(existingJobs) : []
-      jobs.push(jobDraft)
-      localStorage.setItem(`salonjobsindia_pending_jobs_${user?.id}`, JSON.stringify(jobs))
-    }
-    
-    // IMPORTANT: Submit to cloud sync API for cross-device real-time sync
-    const cloudResult = await submitJobPayment({
-      salonId: user?.id || '',
-      salonName: formData.salonName,
-      ownerName: user?.name || '',
-      ownerPhone: user?.phone || '',
-      ownerEmail: user?.email,
-      jobTitle: formData.role || formData.customRole || 'Job Posting',
-      jobDetails: {
+    try {
+      // Step 1: Convert base64 image to File object for upload
+      const base64Data = paymentScreenshot.split(',')[1]
+      const binaryString = atob(base64Data)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      const imageFile = new File([bytes], `screenshot-${Date.now()}.png`, { type: 'image/png' })
+
+      // Step 2: Upload screenshot to server
+      console.log('[CreateJob] Uploading screenshot...')
+      const uploadFormData = new FormData()
+      uploadFormData.append('file', imageFile)
+
+      const uploadResponse = await fetch('/api/upload/screenshot', {
+        method: 'POST',
+        body: uploadFormData,
+      })
+
+      if (!uploadResponse.ok) {
+        const uploadError = await uploadResponse.json()
+        throw new Error(uploadError.error || 'Failed to upload screenshot')
+      }
+
+      const uploadResult = await uploadResponse.json()
+      const screenshotUrl = uploadResult.url
+
+      console.log('[CreateJob] Screenshot uploaded successfully:', screenshotUrl)
+
+      // Step 3: Create job in database first (to get job ID)
+      // First, we need to create an empty job in Supabase
+      const createJobResponse = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.role || formData.customRole || 'Job Posting',
+          salonName: formData.salonName,
+          description: formData.description || '',
+          location: formData.location,
+          salary: formData.salary,
+          experience: formData.experience,
+          status: 'DRAFT',
+          payment_status: 'pending',
+        }),
+      })
+
+      if (!createJobResponse.ok) {
+        const createError = await createJobResponse.json()
+        throw new Error(createError.error || 'Failed to create job')
+      }
+
+      const jobData = await createJobResponse.json()
+      const jobId = jobData.jobId
+
+      console.log('[CreateJob] Job created:', jobId)
+
+      // Step 4: Submit payment with screenshot URL
+      console.log('[CreateJob] Submitting payment...')
+      const paymentResponse = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId,
+          userId: user?.id,
+          amount: JOB_POST_PRICE,
+          screenshotUrl,
+        }),
+      })
+
+      if (!paymentResponse.ok) {
+        const paymentError = await paymentResponse.json()
+        throw new Error(paymentError.error || 'Failed to submit payment')
+      }
+
+      const paymentResult = await paymentResponse.json()
+
+      console.log('[CreateJob] Payment submitted successfully')
+
+      // Create job draft for local state
+      const jobDraft: JobDraft = {
+        id: jobId,
         ...formData,
-        salary: formData.salary,
-        experience: formData.experience,
-        location: formData.location,
-      },
-      planId: 'single_job_post',
-      planName: 'Job Posting',
-      planPrice: JOB_POST_PRICE,
-      screenshotUrl: paymentScreenshot,
-    })
-    
-    if (!cloudResult.success) {
-      console.error('[CreateJob] Cloud sync failed:', cloudResult.error)
-      setErrors({ submit: `Failed to submit payment to server: ${cloudResult.error || 'Unknown error'}. Please try again.` })
+        status: 'pending_approval',
+        paymentScreenshot: screenshotUrl,
+        createdAt: new Date(),
+      }
+
+      // Save to localStorage for quick reference
+      if (typeof window !== 'undefined') {
+        const existingJobs = localStorage.getItem(`salonjobsindia_pending_jobs_${user?.id}`)
+        const jobs: JobDraft[] = existingJobs ? JSON.parse(existingJobs) : []
+        jobs.push(jobDraft)
+        localStorage.setItem(`salonjobsindia_pending_jobs_${user?.id}`, JSON.stringify(jobs))
+      }
+
+      setSavedJob(jobDraft)
+      setCurrentStep('pending')
+    } catch (error) {
+      console.error('[CreateJob] Payment submission error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      setErrors({ submit: `Failed to submit payment: ${errorMessage}. Please try again.` })
+    } finally {
       setIsLoading(false)
-      return
     }
-    
-    // Only proceed if cloud submission was successful
-    setSavedJob(jobDraft)
-    setIsLoading(false)
-    setCurrentStep('pending')
   }
 
   // Pending Approval Screen - with real-time approval checking
