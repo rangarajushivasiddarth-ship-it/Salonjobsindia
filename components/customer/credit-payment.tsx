@@ -78,7 +78,7 @@ export function CreditPayment() {
       const formData = new FormData()
       formData.append('file', file)
 
-      // Upload to Vercel Blob
+      // Upload to Supabase Storage
       const response = await fetch('/api/upload/screenshot', {
         method: 'POST',
         body: formData,

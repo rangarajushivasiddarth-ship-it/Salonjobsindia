@@ -39,11 +39,11 @@ export function AdminJobs() {
   const [confirmAction, setConfirmAction] = useState<{ payment: JobPaymentRequest; action: 'approve' | 'reject' } | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
 
-  // Load pending job payments from API (Blob storage)
+  // Load pending job payments from API (Supabase database)
   useEffect(() => {
     const loadPendingPayments = async () => {
       try {
-        // Fetch from the sync API that reads from Blob storage
+        // Fetch from the sync API that reads from Supabase database
         const response = await fetch('/api/sync?type=pending-job-payments')
         if (response.ok) {
           const result = await response.json()
@@ -112,7 +112,7 @@ export function AdminJobs() {
 
   const handleApprovePayment = async (payment: JobPaymentRequest) => {
     try {
-      // Call API to approve the payment in Blob storage
+      // Call API to approve the payment in Supabase database
       const response = await fetch('/api/sync', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -244,7 +244,7 @@ export function AdminJobs() {
 
   const handleRejectPayment = async (payment: JobPaymentRequest) => {
     try {
-      // Call API to reject the payment in Blob storage
+      // Call API to reject the payment in Supabase database
       const response = await fetch('/api/sync', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
