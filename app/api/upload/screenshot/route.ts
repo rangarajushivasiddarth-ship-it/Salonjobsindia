@@ -2,6 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
+    // Get authenticated user
+    const { createClient } = await import('@/lib/supabase/server')
+    const supabase = await createClient()
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const formData = await request.formData()
     const file = formData.get('file') as File
 
@@ -31,11 +44,9 @@ export async function POST(request: NextRequest) {
     // Convert file to buffer
     const buffer = await file.arrayBuffer()
 
-    // Upload to Supabase Storage
-    const { createClient } = await import('@/lib/supabase/server')
-    const supabase = await createClient()
-
-    const fileName = `payment-screenshot-${Date.now()}-${Math.random().toString(36).substring(7)}.${file.name.split('.').pop()}`
+    // Upload with userId in path to match RLS policies
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${user.id}/payment-screenshot-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
     
     const { data, error } = await supabase
       .storage

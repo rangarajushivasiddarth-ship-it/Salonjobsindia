@@ -1,19 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdminAuth, getAdminFromToken } from '@/lib/admin-auth'
+import { createClient } from '@/lib/supabase/server'
 import { getPendingJobs } from '@/lib/db/jobs'
 
 // GET - Fetch all jobs with pending payment approvals for admin dashboard
 export async function GET(request: NextRequest) {
   try {
-    // Verify JWT admin token
-    const authError = await requireAdminAuth(request)
-    if (authError) {
-      return authError
+    // Verify Supabase auth (user must be logged in)
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      console.log('[v0] [Admin Pending] Unauthorized access attempt')
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
     }
 
-    const admin = await getAdminFromToken(request)
-
-    console.log('[v0] [Admin Pending] Admin', admin?.email, 'fetching pending payments from Supabase')
+    console.log('[v0] [Admin Pending] User', user.email, 'fetching pending payments from Supabase')
 
     // Call getPendingJobs to get jobs where status='PAYMENT_PENDING' AND payment_status='pending'
     const result = await getPendingJobs()
