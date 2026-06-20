@@ -114,13 +114,16 @@ export async function POST(request: NextRequest) {
 
       console.log(`[v0] Payment approved for job ${jobId}, job is now LIVE`)
 
-    return NextResponse.json({
-      success: true,
-      message: 'Payment submitted successfully',
-      jobId,
-      status: 'pending',
-      consistent: consistency.consistent,
-    })
+      return NextResponse.json({
+        success: true,
+        message: 'Payment approved successfully - job is now live',
+        jobId,
+        status: 'approved',
+        jobStatus: 'LIVE',
+        isVisible: true,
+        isLive: true,
+        consistent: consistency.consistent,
+      })
     } else {
       // Reject: Mark payment as rejected, job goes back to draft
       const { data: updatedJob, error: updateError } = await supabase

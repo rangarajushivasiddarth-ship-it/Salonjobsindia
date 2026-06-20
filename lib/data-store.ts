@@ -962,8 +962,17 @@ export function getJobsByStatus(status: Job['status']): Job[] {
 
 // Get only LIVE jobs visible to Job Seekers
 export function getLiveJobs(): Job[] {
+  // Only return jobs that are truly approved and live
+  // Filters: payment_status must be 'approved', status must be 'LIVE', and job must be visible & active
   return getAllJobs()
-    .filter(j => j.status === 'live' && j.isActive)
+    .filter(j => {
+      // Check if job has real-time sync properties from Supabase
+      const hasApprovedPayment = (j as any).payment_status === 'approved' || (j as any).is_live === true
+      const isLiveStatus = j.status === 'live' || (j as any).status === 'LIVE'
+      const isVisible = (j as any).is_visible !== false && j.isActive
+      
+      return hasApprovedPayment && isLiveStatus && isVisible
+    })
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 }
 

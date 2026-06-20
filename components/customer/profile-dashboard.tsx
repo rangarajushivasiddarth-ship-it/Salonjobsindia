@@ -52,17 +52,39 @@ export function ProfileDashboard() {
     return () => clearInterval(interval)
   }, [loadData])
 
-  // Handle job preference update
+  // Handle job preference update - syncs to database via API
   const handlePreferenceUpdate = async (newPreference: 'looking_for_work' | 'not_looking_for_job') => {
     if (!user?.id) return
     
     setIsUpdatingPreference(true)
     try {
+      // Call API to sync preference to Supabase
+      const response = await fetch('/api/job-seekers/preference', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preference: newPreference }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to update preference')
+      }
+
+      const result = await response.json()
+      
+      // Update local state after successful API call
+      setJobPreference(newPreference)
+      
+      // Also update local data store for immediate UI feedback
       const updated = updateJobSeekerPreference(user.id, newPreference)
       if (updated) {
-        setJobPreference(newPreference)
         setJobSeeker(updated)
       }
+      
+      console.log('[v0] Job preference updated successfully:', newPreference)
+    } catch (error) {
+      console.error('[v0] Error updating preference:', error)
+      // Show error to user could be added here
     } finally {
       setIsUpdatingPreference(false)
     }
