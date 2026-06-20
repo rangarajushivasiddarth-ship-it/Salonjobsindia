@@ -89,11 +89,13 @@ export function useAdminSync(pollInterval = 3000) {
       })
       
       if (!jobsResponse.ok) {
-        throw new Error('Failed to fetch pending jobs')
+        throw new Error(`HTTP ${jobsResponse.status}: Failed to fetch pending jobs`)
       }
       
       const jobsData = await jobsResponse.json()
 
+      // CRITICAL FIX: Show ONLINE even if no pending payments
+      // Only show error if actual fetch/API failed, not if just empty
       setState(prev => ({
         ...prev,
         pendingSubscriptions: [],
@@ -102,7 +104,7 @@ export function useAdminSync(pollInterval = 3000) {
         totalPending: (jobsData.count || 0),
         lastSync: jobsData.timestamp || Date.now(),
         isLoading: false,
-        error: null,
+        error: null, // NO error just because payments list is empty!
       }))
     } catch (error) {
       console.error('[Realtime Sync] Admin fetch error:', error)
