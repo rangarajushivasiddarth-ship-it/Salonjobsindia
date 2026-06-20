@@ -253,44 +253,6 @@ export const creditTransactionService = {
   },
 }
 
-// File Metadata
-export const fileMetadataService = {
-  async create(fileData: any) {
-    const supabase = getSupabaseClient()
-    const { data, error } = await supabase
-      .from('file_metadata')
-      .insert([fileData])
-      .select()
-
-    if (error) throw error
-    return data?.[0]
-  },
-
-  async getByFilePath(filePath: string) {
-    const supabase = getSupabaseClient()
-    const { data, error } = await supabase
-      .from('file_metadata')
-      .select('*')
-      .eq('file_path', filePath)
-      .single()
-
-    if (error && error.code !== 'PGRST116') throw error
-    return data
-  },
-
-  async getByUserId(userId: string) {
-    const supabase = getSupabaseClient()
-    const { data, error } = await supabase
-      .from('file_metadata')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-
-    if (error) throw error
-    return data || []
-  },
-}
-
 // Subscriptions & Payments
 export const subscriptionService = {
   async getByUserId(userId: string) {

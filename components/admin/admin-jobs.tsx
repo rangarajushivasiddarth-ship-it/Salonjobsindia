@@ -81,15 +81,8 @@ export function AdminJobs() {
         }
       } catch (error) {
         console.error('[AdminJobs] Error loading pending payments:', error)
-        // Fallback to localStorage for backwards compatibility
-        // Guard against server-side rendering
-        if (typeof window !== 'undefined') {
-          const stored = localStorage.getItem('fitonze_admin_job_payments')
-          if (stored) {
-            const payments: JobPaymentRequest[] = JSON.parse(stored)
-            setPendingPayments(payments.filter(p => p.status === 'pending'))
-          }
-        }
+        // No fallback - use Supabase only
+        setPendingPayments([])
       }
     }
     
@@ -131,34 +124,8 @@ export function AdminJobs() {
       console.error('[AdminJobs] Error approving payment:', error)
     }
     
-    // Also update localStorage for backwards compatibility
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('fitonze_admin_job_payments')
-      if (stored) {
-        const payments: JobPaymentRequest[] = JSON.parse(stored)
-        const updated = payments.map(p => 
-          p.id === payment.id 
-            ? { ...p, status: 'approved' as const, processedAt: new Date() }
-            : p
-        )
-        localStorage.setItem('fitonze_admin_job_payments', JSON.stringify(updated))
-      }
-      
-      // Update job status in pending jobs and get job details
-      const pendingJobsKey = `fitonze_pending_jobs_${payment.salonOwnerId}`
-      const pendingJobs = localStorage.getItem(pendingJobsKey)
-      
-      if (pendingJobs) {
-        const jobs = JSON.parse(pendingJobs)
-        const updated = jobs.map((j: { id: string; status: string }) => {
-          if (j.id === payment.jobId) {
-            return { ...j, status: 'live' }
-          }
-          return j
-        })
-        localStorage.setItem(pendingJobsKey, JSON.stringify(updated))
-      }
-    }
+    // Data is now persisted in Supabase database only
+    // UI will refresh automatically when admin fetches pending jobs
     
     // Get salon profile for verification badge status
     const salonProfile = getSalonProfileByOwnerId(payment.salonOwnerId)
@@ -264,18 +231,7 @@ export function AdminJobs() {
       console.error('[AdminJobs] Error rejecting payment:', error)
     }
     
-    // Also update localStorage for backwards compatibility
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('fitonze_admin_job_payments')
-      if (stored) {
-        const payments: JobPaymentRequest[] = JSON.parse(stored)
-        const updated = payments.map(p => 
-          p.id === payment.id 
-            ? { ...p, status: 'rejected' as const, processedAt: new Date(), rejectionReason }
-            : p
-        )
-        localStorage.setItem('fitonze_admin_job_payments', JSON.stringify(updated))
-      }
+    // All data now persisted in Supabase - no localStorage needed
       
       // Update job status in pending jobs
       const pendingJobsKey = `fitonze_pending_jobs_${payment.salonOwnerId}`

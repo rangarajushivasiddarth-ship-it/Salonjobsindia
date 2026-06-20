@@ -166,16 +166,8 @@ export async function DELETE(request: NextRequest) {
       throw new Error(`Storage delete failed: ${error.message}`)
     }
 
-    // Delete metadata from database
-    const { error: metadataError } = await supabase
-      .from('file_metadata')
-      .delete()
-      .eq('file_path', path)
-
-    if (metadataError) {
-      console.error('[v0] Metadata delete error:', metadataError)
-      // Don't throw - file was deleted successfully
-    }
+    // File metadata is stored in storage metadata, not in separate table
+    // No additional database cleanup needed
 
     console.log('[v0] File deleted successfully:', path)
 
