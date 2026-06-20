@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { put } from '@vercel/blob'
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,17 +31,41 @@ export async function POST(request: NextRequest) {
     // Convert file to buffer
     const buffer = await file.arrayBuffer()
 
-    // Upload to Vercel Blob
-    const blob = await put(`payments/screenshots/${Date.now()}-${file.name}`, buffer, {
-      access: 'private',
-      contentType: file.type,
-    })
+    // Upload to Supabase Storage
+    const { createClient } = await import('@/lib/supabase/server')
+    const supabase = await createClient()
 
-    console.log('[v0] Screenshot uploaded to Blob:', blob.url)
+    const fileName = `payment-screenshot-${Date.now()}-${Math.random().toString(36).substring(7)}.${file.name.split('.').pop()}`
+    
+    const { data, error } = await supabase
+      .storage
+      .from('payment-screenshots')
+      .upload(fileName, buffer, {
+        contentType: file.type,
+        upsert: false,
+      })
+
+    if (error) {
+      console.error('[v0] Supabase upload error:', error)
+      return NextResponse.json(
+        { error: 'Upload failed: ' + error.message },
+        { status: 500 }
+      )
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase
+      .storage
+      .from('payment-screenshots')
+      .getPublicUrl(fileName)
+
+    const screenshotUrl = urlData.publicUrl
+
+    console.log('[v0] Screenshot uploaded to Supabase Storage:', screenshotUrl)
 
     return NextResponse.json({
       success: true,
-      url: blob.url,
+      url: screenshotUrl,
       message: 'Screenshot uploaded successfully'
     })
   } catch (error) {
