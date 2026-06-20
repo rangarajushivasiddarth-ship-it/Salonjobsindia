@@ -1,5 +1,5 @@
-// Version for cache busting
-const CACHE_VERSION = "v4";
+// Version for cache busting - updated for correct PWA icons
+const CACHE_VERSION = "v5";
 const CACHE_NAMES = {
   static: `salon-jobs-india-static-${CACHE_VERSION}`,
   dynamic: `salon-jobs-india-dynamic-${CACHE_VERSION}`,
@@ -11,14 +11,9 @@ const STATIC_CACHE_URLS = [
   "/",
   "/manifest.json",
   "/offline.html",
-  "/salon-jobs-icons/72.png",
-  "/salon-jobs-icons/96.png",
-  "/salon-jobs-icons/128.png",
-  "/salon-jobs-icons/144.png",
-  "/salon-jobs-icons/152.png",
-  "/salon-jobs-icons/192.png",
-  "/salon-jobs-icons/384.png",
-  "/salon-jobs-icons/512.png",
+  "/icon-72.png",
+  "/icon-192.png",
+  "/icon-512.png",
 ];
 
 // Install event - cache essential resources
