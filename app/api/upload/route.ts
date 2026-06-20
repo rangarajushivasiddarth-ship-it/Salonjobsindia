@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 // Map of file categories to Supabase storage buckets
+// CRITICAL: Use ONLY these 4 buckets as per production requirements
 const BUCKET_MAPPING: Record<string, string> = {
   'profile-photo': 'profile-photos',
-  'resume': 'resumes',
   'payment-screenshot': 'payment-screenshots',
-  'verification-document': 'verification-documents',
-  'banner-logo': 'banners',
-  'salon-gallery': 'salon-gallery',
+  'verification-document': 'user-documents',
+  'salon-document': 'salon-documents',
 }
 
 // Allowed file types and extensions
@@ -111,8 +110,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Get public URL for public buckets
+    // payment-screenshots, profile-photos should be public
     let publicUrl = ''
-    if (['profile-photos', 'banners', 'salon-gallery'].includes(bucketName)) {
+    if (['profile-photos', 'payment-screenshots'].includes(bucketName)) {
       const { data: urlData } = supabase.storage
         .from(bucketName)
         .getPublicUrl(filePath)
