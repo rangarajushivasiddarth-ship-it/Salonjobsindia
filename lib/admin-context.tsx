@@ -178,31 +178,8 @@ if (event.key === 'salonjobsindia_subscriptions' ||
   const login = useCallback(async (email: string, password: string) => {
     await new Promise(resolve => setTimeout(resolve, 500))
     
-    // Admin credentials validation
-    // Default credentials: admin@salonjobsindia.com / admin123
-    const validEmail = 'admin@salonjobsindia.com'
-    const validPassword = 'admin123'
-    
-    if (email === validEmail && password === validPassword) {
-      // Generate JWT token for API authentication
-      const token = 'admin_token_' + Date.now() // Placeholder token
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-      
-      // Store session with token
-      localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify({
-        isAuthenticated: true,
-        token,
-        email,
-        expiresAt,
-      }))
-      
-      setState(prev => ({
-        ...prev,
-        isAuthenticated: true,
-        currentView: 'dashboard',
-      }))
-      return true
-    }
+    // Use Supabase auth instead of hardcoded credentials in production
+    // This is a placeholder - actual auth should use Supabase or your auth provider
     return false
   }, [])
 

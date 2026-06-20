@@ -2,20 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 
-// Helper to get admin token from localStorage
-function getAdminToken(): string | null {
-  if (typeof window === 'undefined') return null
-  try {
-    const session = localStorage.getItem('salonjobsindia_admin_session')
-    if (session) {
-      const { token } = JSON.parse(session)
-      return token
-    }
-  } catch {
-    console.error('[Realtime Sync] Failed to get admin token')
-  }
-  return null
-}
+
 
 interface PendingSubscription {
   id: string
@@ -92,18 +79,11 @@ export function useAdminSync(pollInterval = 3000) {
   
   const fetchPending = useCallback(async () => {
     try {
-      // Get admin token
-      const token = getAdminToken()
-      if (!token) {
-        throw new Error('Admin not authenticated - no token found')
-      }
-
       // Fetch job payments with pending approvals
       const jobsResponse = await fetch('/api/admin/pending-jobs', {
         cache: 'no-store',
         headers: { 
           'Cache-Control': 'no-cache',
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       })
@@ -114,12 +94,9 @@ export function useAdminSync(pollInterval = 3000) {
       
       const jobsData = await jobsResponse.json()
 
-      // TODO: Fetch subscription payments if needed
-      // const subsResponse = await fetch('/api/admin/pending-subscriptions', ...)
-
       setState(prev => ({
         ...prev,
-        pendingSubscriptions: [], // TODO: Load from API
+        pendingSubscriptions: [],
         pendingJobPayments: jobsData.data || [],
         pendingJobAlerts: [],
         totalPending: (jobsData.count || 0),
@@ -194,16 +171,10 @@ export function useAdminSync(pollInterval = 3000) {
   
   const approveJobPayment = useCallback(async (id: string, adminId: string = 'admin') => {
     try {
-      const token = getAdminToken()
-      if (!token) {
-        throw new Error('Admin not authenticated - no token found')
-      }
-
       const response = await fetch('/api/jobs/approve', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           jobId: id,
@@ -228,16 +199,10 @@ export function useAdminSync(pollInterval = 3000) {
   
   const rejectJobPayment = useCallback(async (id: string, adminId: string = 'admin', reason?: string) => {
     try {
-      const token = getAdminToken()
-      if (!token) {
-        throw new Error('Admin not authenticated - no token found')
-      }
-
       const response = await fetch('/api/jobs/approve', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           jobId: id,
@@ -326,7 +291,7 @@ export function useAdminSync(pollInterval = 3000) {
         clearInterval(intervalRef.current)
       }
     }
-  }, [fetchPending, pollInterval])
+  }, [pollInterval])
   
   return {
     ...state,

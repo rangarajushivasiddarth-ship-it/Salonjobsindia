@@ -119,25 +119,7 @@ export async function POST(request: NextRequest) {
       publicUrl = urlData.publicUrl
     }
 
-    // Save metadata to Supabase database
-    const { error: metadataError } = await supabase
-      .from('file_metadata')
-      .insert({
-        user_id: userId,
-        file_name: file.name,
-        file_path: filePath,
-        file_category: category,
-        file_size: file.size,
-        file_type: file.type,
-        public_url: publicUrl,
-        storage_location: 'supabase',
-        uploaded_by: userId,
-      })
-
-    if (metadataError) {
-      console.error('[v0] Metadata save error:', metadataError)
-      // Don't throw - file was uploaded successfully
-    }
+    // Note: File metadata is not stored in database, only file URL is stored in relevant tables
 
     console.log('[v0] File uploaded successfully:', filePath)
 

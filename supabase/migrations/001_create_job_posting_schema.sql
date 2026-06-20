@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   phone TEXT,
   avatar_url TEXT,
   is_verified BOOLEAN DEFAULT FALSE,
+  job_seeker_preference TEXT CHECK (job_seeker_preference IN ('looking_for_work', 'not_looking_for_job')) DEFAULT 'looking_for_work',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );

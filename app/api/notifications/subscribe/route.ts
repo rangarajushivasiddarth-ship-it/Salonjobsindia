@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-
-// In-memory store for demonstration
-// In production, use a database like Supabase or Neon
-const subscriptionStore = new Set<string>();
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * POST /api/notifications/subscribe
- * Subscribe a user to push notifications
+ * Subscribe a user to push notifications (stored in Supabase)
  * 
  * Body:
  * {
@@ -17,11 +14,20 @@ const subscriptionStore = new Set<string>();
  */
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient();
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { endpoint, auth, p256dh } = body;
 
     if (!endpoint || !auth || !p256dh) {
-      console.error("[Notifications] Missing required fields");
       return NextResponse.json(
         { 
           error: "Missing required subscription fields",
@@ -35,45 +41,37 @@ export async function POST(request: NextRequest) {
     try {
       new URL(endpoint);
     } catch (err) {
-      console.error("[Notifications] Invalid endpoint URL:", endpoint);
       return NextResponse.json(
         { error: "Invalid endpoint URL" },
         { status: 400 }
       );
     }
 
-    // Store the subscription
-    const subscriptionKey = `${endpoint}:${auth}`;
-    subscriptionStore.add(subscriptionKey);
+    // Store subscription in Supabase
+    const { data, error } = await supabase
+      .from('push_subscriptions')
+      .insert({
+        user_id: user.id,
+        endpoint,
+        auth,
+        p256dh,
+        created_at: new Date().toISOString(),
+      })
+      .select();
 
-    console.log("[Notifications] New subscription received:", {
-      endpoint: endpoint.substring(0, 50) + "...",
-      auth: auth.substring(0, 20) + "...",
-      totalSubscriptions: subscriptionStore.size,
-    });
-
-    // TODO: In production, store in Supabase/Neon
-    // const { data, error } = await supabase.from('push_subscriptions').insert({
-    //   user_id: userId,
-    //   endpoint,
-    //   auth,
-    //   p256dh,
-    //   created_at: new Date().toISOString(),
-    // });
-    //
-    // if (error) {
-    //   console.error("[Notifications] Database error:", error);
-    //   return NextResponse.json(
-    //     { error: "Failed to save subscription" },
-    //     { status: 500 }
-    //   );
-    // }
+    if (error) {
+      console.error("[Notifications] Database error:", error);
+      return NextResponse.json(
+        { error: "Failed to save subscription" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
       { 
         success: true,
         message: "Successfully subscribed to notifications",
-        subscriptionId: Buffer.from(subscriptionKey).toString("base64"),
+        subscriptionId: data?.[0]?.id,
       },
       { status: 201 }
     );
@@ -95,23 +93,38 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { endpoint, auth } = body;
-
-    if (!endpoint || !auth) {
+    const supabase = await createClient();
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return NextResponse.json(
-        { error: "Missing endpoint or auth" },
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { subscriptionId } = body;
+
+    if (!subscriptionId) {
+      return NextResponse.json(
+        { error: "Missing subscriptionId" },
         { status: 400 }
       );
     }
 
-    const subscriptionKey = `${endpoint}:${auth}`;
-    subscriptionStore.delete(subscriptionKey);
+    const { error } = await supabase
+      .from('push_subscriptions')
+      .delete()
+      .eq('id', subscriptionId)
+      .eq('user_id', user.id);
 
-    console.log("[Notifications] Subscription removed:", {
-      endpoint: endpoint.substring(0, 50) + "...",
-      remainingSubscriptions: subscriptionStore.size,
-    });
+    if (error) {
+      return NextResponse.json(
+        { error: "Failed to unsubscribe" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
       { 
@@ -140,7 +153,6 @@ export async function GET() {
     supported: true,
     vapidPublicKey: vapidPublicKey || "",
     isConfigured: !!vapidPublicKey,
-    totalActiveSubscriptions: subscriptionStore.size,
     message: vapidPublicKey 
       ? "Push notifications are configured and ready"
       : "VAPID_PUBLIC_KEY is not configured. Push notifications will not work.",
