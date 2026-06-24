@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     console.log('[v0] Fetching payments with status:', status)
 
     // Fetch credit/badge payments from payments table
+    // Note: No join on users table since there's no foreign key relationship
     let paymentsQuery = supabase
       .from('payments')
       .select(`
@@ -28,8 +29,7 @@ export async function GET(request: NextRequest) {
         screenshot_url,
         contact_credits,
         validity_days,
-        submitted_at,
-        users:user_id(full_name, email, phone)
+        submitted_at
       `)
       .eq('status', status)
 
