@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+// Admin credentials
+const ADMIN_EMAIL = 'fitonzeprofessionals@gmail.com'
+const ADMIN_PASSWORD = 'fitonze123'
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -16,59 +20,46 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Admin login attempt for:', email)
 
-    const supabase = await createClient()
-
-    // First, authenticate with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
-
-    if (authError || !authData.user) {
-      console.error('[v0] Auth failed:', authError?.message)
+    // Simple credential check
+    if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+      console.error('[v0] Invalid credentials for:', email)
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
       )
     }
 
-    console.log('[v0] Supabase auth successful, fetching user profile')
-
     // Get user profile from public.users table
+    const supabase = await createClient()
+    
     const { data: userProfile, error: profileError } = await supabase
       .from('users')
       .select('id, email, full_name, role')
-      .eq('id', authData.user.id)
+      .eq('email', email)
       .single()
 
-    if (profileError || !userProfile) {
-      console.error('[v0] Profile fetch failed:', profileError)
-      return NextResponse.json(
-        { error: 'User profile not found' },
-        { status: 404 }
-      )
+    let user = {
+      id: 'admin-' + Date.now(),
+      email: ADMIN_EMAIL,
+      name: 'Fitonze Admin',
+      role: 'admin' as const
     }
 
-    console.log('[v0] User profile found:', userProfile)
-
-    // Check if user has admin role
-    if (userProfile.role !== 'admin' && userProfile.role !== 'super_admin') {
-      console.error('[v0] User does not have admin privileges. Role:', userProfile.role)
-      return NextResponse.json(
-        { error: 'Unauthorized - admin access required' },
-        { status: 403 }
-      )
-    }
-
-    // Return user data
-    return NextResponse.json({
-      success: true,
-      user: {
+    // If user exists in DB, use that data
+    if (userProfile && !profileError) {
+      user = {
         id: userProfile.id,
         email: userProfile.email,
-        name: userProfile.full_name,
+        name: userProfile.full_name || 'Admin',
         role: userProfile.role
       }
+    }
+
+    console.log('[v0] Admin logged in successfully:', user.email)
+
+    return NextResponse.json({
+      success: true,
+      user
     })
 
   } catch (error) {
