@@ -176,12 +176,55 @@ if (event.key === 'salonjobsindia_subscriptions' ||
   }, [state.isAuthenticated, loadData])
 
   const login = useCallback(async (email: string, password: string) => {
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    // Use Supabase auth instead of hardcoded credentials in production
-    // This is a placeholder - actual auth should use Supabase or your auth provider
-    return false
-  }, [])
+    try {
+      console.log('[v0] Admin login attempt:', email)
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+
+      const data = await response.json()
+      console.log('[v0] Login response status:', response.status, 'data:', data)
+
+      if (!response.ok || !data.success) {
+        console.error('[v0] Login failed:', data.error)
+        return false
+      }
+
+      // Check if user has admin role
+      if (data.user.role !== 'admin' && data.user.role !== 'super_admin') {
+        console.error('[v0] User does not have admin privileges:', data.user.role)
+        return false
+      }
+
+      // Store session
+      const expiresAt = new Date()
+      expiresAt.setHours(expiresAt.getHours() + 24) // 24 hour session
+      localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify({
+        isAuthenticated: true,
+        user: data.user,
+        expiresAt: expiresAt.toISOString()
+      }))
+
+      console.log('[v0] Admin logged in successfully:', data.user.email)
+
+      // Update state
+      setState(prev => ({
+        ...prev,
+        isAuthenticated: true,
+        currentView: 'dashboard',
+      }))
+
+      // Load admin data
+      loadData()
+
+      return true
+    } catch (error) {
+      console.error('[v0] Login error:', error)
+      return false
+    }
+  }, [loadData])
 
   const logout = useCallback(() => {
     localStorage.removeItem(ADMIN_SESSION_KEY)

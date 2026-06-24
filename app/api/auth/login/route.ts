@@ -1,64 +1,71 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectToDatabase, UserDocument } from '@/lib/mongodb'
-import { compare } from 'bcryptjs'
+import { createClient } from '@/lib/supabase/server'
+
+// Admin credentials
+const ADMIN_EMAIL = 'fitonzeprofessionals@gmail.com'
+const ADMIN_PASSWORD = 'fitonze123'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, phone, password } = body
+    const { email, password } = body
 
     // Validate input
-    if ((!email && !phone) || !password) {
+    if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email/Phone and password are required' },
+        { error: 'Email and password are required' },
         { status: 400 }
       )
     }
 
-    const db = await connectToDatabase()
-    const usersCollection = db.collection<UserDocument>('users')
+    console.log('[v0] Admin login attempt for:', email)
 
-    // Find user by email or phone
-    const user = await usersCollection.findOne({
-      $or: [
-        { email: email || '' },
-        { phone: phone || '' }
-      ]
-    })
-
-    if (!user) {
+    // Simple credential check
+    if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+      console.error('[v0] Invalid credentials for:', email)
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
       )
     }
 
-    // Verify password
-    const isValidPassword = await compare(password, user.password)
+    // Get user profile from public.users table
+    const supabase = await createClient()
+    
+    const { data: userProfile, error: profileError } = await supabase
+      .from('users')
+      .select('id, email, full_name, role')
+      .eq('email', email)
+      .single()
 
-    if (!isValidPassword) {
-      return NextResponse.json(
-        { error: 'Invalid credentials' },
-        { status: 401 }
-      )
+    let user = {
+      id: 'admin-' + Date.now(),
+      email: ADMIN_EMAIL,
+      name: 'Fitonze Admin',
+      role: 'admin' as const
     }
 
-    // Return user data (excluding password)
+    // If user exists in DB, use that data
+    if (userProfile && !profileError) {
+      user = {
+        id: userProfile.id,
+        email: userProfile.email,
+        name: userProfile.full_name || 'Admin',
+        role: userProfile.role
+      }
+    }
+
+    console.log('[v0] Admin logged in successfully:', user.email)
+
     return NextResponse.json({
       success: true,
-      user: {
-        id: user._id?.toString(),
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role
-      }
+      user
     })
 
   } catch (error) {
-    console.error('Login error:', error)
+    console.error('[v0] Login error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : '' },
       { status: 500 }
     )
   }
