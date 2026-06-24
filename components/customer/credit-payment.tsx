@@ -107,36 +107,46 @@ export function CreditPayment() {
     if (!user?.id || !selectedPack || !screenshotPreview) return
 
     setIsSubmitting(true)
+    setUploadError(null)
 
     try {
-      const salonProfile = getSalonProfileByOwnerId(user.id)
+      console.log('[v0] Submitting payment:', { userId: user.id, amount: selectedPack.price, type: isVerifiedBadge ? 'verified_badge' : 'contact_pack' })
       
-      // Create payment record
-      const payment: Payment = {
-        id: crypto.randomUUID(),
-        userId: user.id,
-        userName: user.name || salonProfile?.ownerName,
-        userPhone: user.phone || salonProfile?.mobile,
-        salonName: salonProfile?.salonName,
-        type: isVerifiedBadge ? 'verified_badge' : 'contact_pack',
-        planId: selectedPack.id as SalonOwnerPlanType,
-        amount: selectedPack.price,
-        screenshotUrl: screenshotPreview,
-        status: 'pending',
-        contactCredits: selectedPack.credits || 0,
-        validityDays: selectedPack.validityDays || 365,
-        submittedAt: new Date(),
+      // Submit payment to backend API
+      const response = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          amount: selectedPack.price,
+          screenshotUrl: screenshotPreview,
+          type: isVerifiedBadge ? 'verified_badge' : 'contact_pack',
+          planId: selectedPack.id,
+          credits: selectedPack.credits || 0,
+          validityDays: selectedPack.validityDays || 365,
+          durationMonths: selectedPack.durationMonths,
+        }),
+      })
+
+      const data = await response.json()
+      console.log('[v0] Payment response:', { status: response.status, data })
+
+      if (!response.ok) {
+        console.error('[v0] Payment submission failed:', data)
+        setUploadError(data.error || 'Failed to submit payment. Please try again.')
+        return
       }
 
-      savePayment(payment)
+      console.log('[v0] Payment submitted successfully:', data)
       
       // Clear selected pack from localStorage
       localStorage.removeItem('salonjobsindia_selected_credit_pack')
       
       setIsSubmitted(true)
     } catch (error) {
-      console.error('Error submitting payment:', error)
-      alert('Error submitting payment. Please try again.')
+      console.error('[v0] Error submitting payment:', error)
+      const errorMsg = error instanceof Error ? error.message : 'Error submitting payment. Please try again.'
+      setUploadError(errorMsg)
     } finally {
       setIsSubmitting(false)
     }

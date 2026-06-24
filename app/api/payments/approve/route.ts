@@ -3,18 +3,18 @@ import { createClient } from '@/lib/supabase/server'
 import { logSync, verifyDataConsistency } from '@/lib/sync-logs'
 
 /**
- * POST - Admin approve or reject payment
+ * POST - Admin approve or reject payment (job posting or credit/badge)
  * Perfect sync: Single atomic transaction → Both admin and customer see changes instantly
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { jobId, action, reason, adminId } = body
+    const { jobId, paymentId, action, reason, adminId, type } = body
 
     // Validate required fields
-    if (!jobId || !action || !adminId) {
+    if (!action || !adminId) {
       return NextResponse.json(
-        { error: 'Missing required fields: jobId, action, adminId' },
+        { error: 'Missing required fields: action, adminId' },
         { status: 400 }
       )
     }
@@ -26,9 +26,114 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Either jobId or paymentId must be provided
+    if (!jobId && !paymentId) {
+      return NextResponse.json(
+        { error: 'Missing required fields: jobId or paymentId' },
+        { status: 400 }
+      )
+    }
+
     const supabase = await createClient()
 
-    // ATOMIC TRANSACTION: Get job, determine state change, update single record
+    console.log('[v0] Payment approval request:', { jobId, paymentId, action, type })
+
+    // CASE 1: Credit/Badge Payment Approval
+    if (paymentId && !jobId) {
+      console.log(`[v0] Admin ${adminId} ${action}ing credit/badge payment: ${paymentId}`)
+      
+      const { data: payment, error: paymentError } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('id', paymentId)
+        .single()
+
+      if (paymentError || !payment) {
+        console.error('[v0] Payment not found:', paymentError)
+        return NextResponse.json(
+          { error: 'Payment not found' },
+          { status: 404 }
+        )
+      }
+
+      const oldPaymentState = {
+        status: payment.status,
+      }
+
+      if (action === 'approve') {
+        // Update payment status to approved
+        const { data: updatedPayment, error: updateError } = await supabase
+          .from('payments')
+          .update({
+            status: 'approved',
+            approved_by: adminId,
+            approved_at: new Date().toISOString(),
+          })
+          .eq('id', paymentId)
+          .select()
+          .single()
+
+        if (updateError) {
+          console.error('[v0] Error approving payment:', updateError)
+          return NextResponse.json(
+            { error: 'Failed to approve payment' },
+            { status: 500 }
+          )
+        }
+
+        console.log(`[v0] Credit/badge payment approved: ${paymentId}`)
+
+        // Also update salon profile if this is a verified badge
+        if (payment.type === 'verified_badge' && payment.user_id) {
+          await supabase
+            .from('users')
+            .update({
+              is_verified: true,
+              verified_at: new Date().toISOString(),
+            })
+            .eq('id', payment.user_id)
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: `${payment.type === 'verified_badge' ? 'Verified badge' : 'Credits'} approved successfully`,
+          paymentId,
+          status: 'approved',
+        })
+      } else {
+        // Reject payment
+        const { data: updatedPayment, error: updateError } = await supabase
+          .from('payments')
+          .update({
+            status: 'rejected',
+            rejection_reason: reason || 'Rejected by admin',
+            approved_by: adminId,
+            approved_at: new Date().toISOString(),
+          })
+          .eq('id', paymentId)
+          .select()
+          .single()
+
+        if (updateError) {
+          console.error('[v0] Error rejecting payment:', updateError)
+          return NextResponse.json(
+            { error: 'Failed to reject payment' },
+            { status: 500 }
+          )
+        }
+
+        console.log(`[v0] Payment rejected: ${paymentId}`)
+
+        return NextResponse.json({
+          success: true,
+          message: `Payment rejected - ${reason || 'Invalid screenshot'}`,
+          paymentId,
+          status: 'rejected',
+        })
+      }
+    }
+
+    // CASE 2: Job Payment Approval
     // Step 1: Get current job state
     const { data: job, error: jobError } = await supabase
       .from('jobs')
