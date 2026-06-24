@@ -268,49 +268,25 @@ if (event.key === 'salonjobsindia_subscriptions' ||
   }, [loadData])
 
   const approvePayment = useCallback(async (subscriptionId: string) => {
-    const subscription = state.pendingPayments.find(p => p.id === subscriptionId)
-    
-    if (subscription) {
-      // Approve in data-store (this updates customer app)
-      approveSubscriptionInStore(subscriptionId)
+    try {
+      await AdminService.approveSubscription(subscriptionId, 'admin')
       
-      // Also try to approve in data-service
-      try {
-        await AdminService.approveSubscription(subscriptionId, 'admin')
-      } catch {
-        // May not exist in data-service, that's ok
-      }
-      
-      // Get user phone from subscription or user service
-      const userPhone = (subscription as any).userPhone || UserService.getById(subscription.userId)?.phone
-      const planName = (subscription as any).planName || 'Premium'
-      
-      // Send WhatsApp notification
-      if (userPhone) {
-        const phone = userPhone.replace(/\D/g, '')
-        const message = encodeURIComponent(
-          `🎉 Congratulations! Your FITONZE ${planName} subscription has been activated!\n\n✅ You now have full access to premium features.\n\nThank you for subscribing!\n\n- Team FITONZE`
-        )
-        window.open(`https://wa.me/91${phone}?text=${message}`, '_blank')
-      }
-      
-      // Refresh data
+      // Refresh data after approval
       loadData()
+    } catch (error) {
+      console.error('[v0] Failed to approve payment:', error)
     }
-  }, [state.pendingPayments, loadData])
+  }, [loadData])
 
   const rejectPayment = useCallback(async (subscriptionId: string, reason?: string) => {
-    // Reject in data-store (this updates customer app)
-    rejectSubscriptionInStore(subscriptionId, reason)
-    
-    // Also try to reject in data-service
     try {
       await AdminService.rejectSubscription(subscriptionId, 'admin', reason || 'Payment verification failed')
-    } catch {
-      // May not exist in data-service, that's ok
+      
+      // Refresh data after rejection
+      loadData()
+    } catch (error) {
+      console.error('[v0] Failed to reject payment:', error)
     }
-    
-    loadData()
   }, [loadData])
 
   const approveJob = useCallback(async (jobId: string) => {
