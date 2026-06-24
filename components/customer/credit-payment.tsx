@@ -104,13 +104,16 @@ export function CreditPayment() {
   }
 
   const handleSubmit = async () => {
-    if (!user?.id || !selectedPack || !screenshotPreview) return
+    if (!user?.id || !selectedPack) {
+      setUploadError('Missing required information')
+      return
+    }
 
     setIsSubmitting(true)
     setUploadError(null)
 
     try {
-      console.log('[v0] Submitting payment:', { userId: user.id, amount: selectedPack.price, type: isVerifiedBadge ? 'verified_badge' : 'contact_pack' })
+      console.log('[v0] Submitting payment:', { userId: user.id, amount: selectedPack.price, type: isVerifiedBadge ? 'verified_badge' : 'contact_pack', hasScreenshot: !!screenshotPreview })
       
       // Submit payment to backend API
       const response = await fetch('/api/payments', {
@@ -119,7 +122,7 @@ export function CreditPayment() {
         body: JSON.stringify({
           userId: user.id,
           amount: selectedPack.price,
-          screenshotUrl: screenshotPreview,
+          screenshotUrl: screenshotPreview || null,
           type: isVerifiedBadge ? 'verified_badge' : 'contact_pack',
           planId: selectedPack.id,
           credits: selectedPack.credits || 0,
@@ -132,8 +135,8 @@ export function CreditPayment() {
       console.log('[v0] Payment response:', { status: response.status, data })
 
       if (!response.ok) {
-        console.error('[v0] Payment submission failed:', data)
-        setUploadError(data.error || 'Failed to submit payment. Please try again.')
+        console.error('[v0] Payment submission failed:', { status: response.status, data })
+        setUploadError(data.error || `Payment failed: ${response.statusText}`)
         return
       }
 
@@ -146,7 +149,7 @@ export function CreditPayment() {
     } catch (error) {
       console.error('[v0] Error submitting payment:', error)
       const errorMsg = error instanceof Error ? error.message : 'Error submitting payment. Please try again.'
-      setUploadError(errorMsg)
+      setUploadError(`Failed to submit payment: ${errorMsg}`)
     } finally {
       setIsSubmitting(false)
     }
