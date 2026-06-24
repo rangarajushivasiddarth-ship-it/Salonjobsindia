@@ -14,8 +14,38 @@ export async function GET(request: NextRequest) {
     
     const supabase = await createClient()
     
-    // Build query for payments
-    let query = supabase
+    console.log('[v0] Fetching payments with status:', status)
+
+    // Fetch credit/badge payments from payments table
+    let paymentsQuery = supabase
+      .from('payments')
+      .select(`
+        id,
+        user_id,
+        amount,
+        type,
+        status,
+        screenshot_url,
+        contact_credits,
+        validity_days,
+        submitted_at,
+        users:user_id(full_name, email, phone)
+      `)
+      .eq('status', status)
+
+    if (type) {
+      paymentsQuery = paymentsQuery.eq('type', type)
+    }
+
+    const { data: creditPayments, error: paymentsError } = await paymentsQuery
+      .order('submitted_at', { ascending: false })
+
+    if (paymentsError) {
+      console.error('[v0] Error fetching credit payments:', paymentsError)
+    }
+
+    // Also fetch job payments
+    let jobPaymentsQuery = supabase
       .from('jobs')
       .select(`
         id,
@@ -30,27 +60,34 @@ export async function GET(request: NextRequest) {
       `)
       .eq('payment_status', status)
 
-    if (type) {
-      query = query.eq('job_type', type)
-    }
-
-    const { data: payments, error } = await query
+    const { data: jobPayments, error: jobError } = await jobPaymentsQuery
       .order('payment_submitted_at', { ascending: false })
 
-    if (error) {
-      console.error('[v0] Error fetching payments:', error)
-      return NextResponse.json(
-        { error: 'Failed to fetch payments' },
-        { status: 500 }
-      )
+    if (jobError) {
+      console.error('[v0] Error fetching job payments:', jobError)
     }
 
-    console.log(`[v0] Fetched ${payments?.length || 0} payments with status: ${status}`)
+    // Format job payments to match credit payment structure
+    const formattedJobPayments = (jobPayments || []).map((job: any) => ({
+      id: job.id,
+      type: 'job_posting',
+      user_id: job.owner_id,
+      amount: job.payment_amount,
+      status: job.payment_status,
+      screenshot_url: job.payment_screenshot_url,
+      submitted_at: job.payment_submitted_at,
+      users: job.users,
+      title: job.title,
+    }))
+
+    // Combine all payments
+    const allPayments = [...(creditPayments || []), ...formattedJobPayments]
+
+    console.log(`[v0] Fetched ${allPayments.length} total payments (${creditPayments?.length || 0} credit + ${jobPayments?.length || 0} job)`)
 
     return NextResponse.json({
       success: true,
-      data: payments || [],
-      count: payments?.length || 0
+      data: allPayments
     })
   } catch (error) {
     console.error('[v0] Error in GET payments:', error)
