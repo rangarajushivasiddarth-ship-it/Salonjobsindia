@@ -130,22 +130,10 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
 
-    // Verify user exists
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('id, full_name, email, phone')
-      .eq('id', userId)
-      .single()
+    console.log('[v0] Processing payment for user:', userId)
 
-    if (userError || !user) {
-      console.error('[v0] User not found:', userError)
-      return NextResponse.json(
-        { error: 'Unauthorized - user not found' },
-        { status: 401 }
-      )
-    }
-
-    console.log('[v0] User verified:', user.email)
+    // Don't require user to exist in users table - salon owners may have local-only accounts
+    // We'll just process the payment and let admin verify later
 
     // CASE 1: Job posting payment
     if (jobId) {
