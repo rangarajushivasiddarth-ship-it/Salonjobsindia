@@ -120,12 +120,25 @@ export async function POST(request: NextRequest) {
     console.log('[v0] Payment POST request:', { userId, amount, type, jobId })
 
     // Validate required fields
-    if (!userId || !amount || !screenshotUrl) {
-      console.error('[v0] Missing required fields')
+    if (!userId) {
+      console.error('[v0] Missing userId')
       return NextResponse.json(
-        { error: 'Missing required fields: userId, amount, screenshotUrl' },
+        { error: 'User ID is required' },
         { status: 400 }
       )
+    }
+
+    if (!amount || amount <= 0) {
+      console.error('[v0] Invalid amount')
+      return NextResponse.json(
+        { error: 'Valid payment amount is required' },
+        { status: 400 }
+      )
+    }
+
+    // Screenshot URL is optional now - user can provide details later
+    if (!screenshotUrl) {
+      console.warn('[v0] No screenshot URL provided for payment')
     }
 
     const supabase = await createClient()
@@ -227,22 +240,30 @@ export async function POST(request: NextRequest) {
 
     // CASE 2: Credit/Badge payment
     else {
-      console.log('[v0] Processing credit/badge payment')
+      console.log('[v0] Processing credit/badge payment for user:', userId)
       
+      const paymentData: any = {
+        user_id: userId,
+        amount,
+        type: type || 'contact_pack',
+        plan_id: planId,
+        contact_credits: credits || 0,
+        validity_days: validityDays || 365,
+        status: 'pending',
+        submitted_at: new Date().toISOString(),
+      }
+
+      // Add screenshot URL only if provided
+      if (screenshotUrl) {
+        paymentData.screenshot_url = screenshotUrl
+      }
+
+      console.log('[v0] Creating payment with data:', { ...paymentData, screenshot_url: paymentData.screenshot_url ? 'present' : 'absent' })
+
       // Create payment record in payments table
       const { data: payment, error: paymentError } = await supabase
         .from('payments')
-        .insert({
-          user_id: userId,
-          amount,
-          screenshot_url: screenshotUrl,
-          type: type || 'contact_pack',
-          plan_id: planId,
-          contact_credits: credits || 0,
-          validity_days: validityDays || 365,
-          status: 'pending',
-          submitted_at: new Date().toISOString(),
-        })
+        .insert(paymentData)
         .select()
         .single()
 
