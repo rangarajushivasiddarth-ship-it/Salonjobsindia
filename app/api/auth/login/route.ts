@@ -1,64 +1,80 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectToDatabase, UserDocument } from '@/lib/mongodb'
-import { compare } from 'bcryptjs'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, phone, password } = body
+    const { email, password } = body
 
     // Validate input
-    if ((!email && !phone) || !password) {
+    if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email/Phone and password are required' },
+        { error: 'Email and password are required' },
         { status: 400 }
       )
     }
 
-    const db = await connectToDatabase()
-    const usersCollection = db.collection<UserDocument>('users')
+    console.log('[v0] Admin login attempt for:', email)
 
-    // Find user by email or phone
-    const user = await usersCollection.findOne({
-      $or: [
-        { email: email || '' },
-        { phone: phone || '' }
-      ]
+    const supabase = await createClient()
+
+    // First, authenticate with Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password
     })
 
-    if (!user) {
+    if (authError || !authData.user) {
+      console.error('[v0] Auth failed:', authError?.message)
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
       )
     }
 
-    // Verify password
-    const isValidPassword = await compare(password, user.password)
+    console.log('[v0] Supabase auth successful, fetching user profile')
 
-    if (!isValidPassword) {
+    // Get user profile from public.users table
+    const { data: userProfile, error: profileError } = await supabase
+      .from('users')
+      .select('id, email, full_name, role')
+      .eq('id', authData.user.id)
+      .single()
+
+    if (profileError || !userProfile) {
+      console.error('[v0] Profile fetch failed:', profileError)
       return NextResponse.json(
-        { error: 'Invalid credentials' },
-        { status: 401 }
+        { error: 'User profile not found' },
+        { status: 404 }
       )
     }
 
-    // Return user data (excluding password)
+    console.log('[v0] User profile found:', userProfile)
+
+    // Check if user has admin role
+    if (userProfile.role !== 'admin' && userProfile.role !== 'super_admin') {
+      console.error('[v0] User does not have admin privileges. Role:', userProfile.role)
+      return NextResponse.json(
+        { error: 'Unauthorized - admin access required' },
+        { status: 403 }
+      )
+    }
+
+    // Return user data
     return NextResponse.json({
       success: true,
       user: {
-        id: user._id?.toString(),
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role
+        id: userProfile.id,
+        email: userProfile.email,
+        name: userProfile.full_name,
+        role: userProfile.role
       }
     })
 
   } catch (error) {
-    console.error('Login error:', error)
+    console.error('[v0] Login error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : '' },
       { status: 500 }
     )
   }
