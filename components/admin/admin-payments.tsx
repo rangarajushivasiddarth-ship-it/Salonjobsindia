@@ -95,9 +95,9 @@ export function AdminPayments() {
             </p>
           )}
         </div>
-        
+
         {/* Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="mb-6 flex gap-2 border-b border-border/50">
           <button
             onClick={() => setActiveTab('subscriptions')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors relative ${
@@ -143,150 +143,150 @@ export function AdminPayments() {
         
         {/* Subscriptions Tab */}
         {activeTab === 'subscriptions' && (
-        <div className="space-y-4">
-          {pendingSubscriptions.map((payment, index) => (
-            <div
-              key={payment.id}
-              className="p-6 glass-card rounded-2xl animate-slide-up"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
-                    <Crown className="w-7 h-7 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">{payment.userName || 'Unknown User'}</h3>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <span>{payment.userPhone || 'No phone'}</span>
-                      <span>•</span>
-                      <span className="capitalize">{payment.userRole?.replace('_', ' ') || 'Job Seeker'}</span>
+          <div className="space-y-4">
+            {pendingSubscriptions.map((payment, index) => (
+              <div
+                key={payment.id}
+                className="p-6 glass-card rounded-2xl animate-slide-up"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Crown className="w-7 h-7 text-primary" />
                     </div>
-                    <div className="flex items-center gap-3 text-sm mt-1">
-                      <span className="px-2 py-0.5 bg-primary/20 text-primary rounded-full text-xs font-medium">
-                        {payment.planName || 'Premium'} - Rs.{payment.planPrice || 199}
-                      </span>
+                    <div>
+                      <h3 className="font-semibold text-lg">{payment.userName || 'Unknown User'}</h3>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <span>{payment.userPhone || 'No phone'}</span>
+                        <span>•</span>
+                        <span className="capitalize">{payment.userRole?.replace('_', ' ') || 'Job Seeker'}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm mt-1">
+                        <span className="px-2 py-0.5 bg-primary/20 text-primary rounded-full text-xs font-medium">
+                          {payment.planName || 'Premium'} - Rs.{payment.planPrice || 199}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        Submitted {formatTime(new Date(payment.createdAt))}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      Submitted {formatTime(new Date(payment.createdAt))}
-                    </p>
                   </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  {payment.screenshotUrl && (
+                  
+                  <div className="flex items-center gap-3">
+                    {payment.screenshotUrl && (
+                      <Button
+                        variant="outline"
+                        onClick={() => setSelectedPayment({ id: payment.id, type: 'subscription' })}
+                        className="flex items-center gap-2"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View Screenshot
+                      </Button>
+                    )}
                     <Button
-                      variant="outline"
-                      onClick={() => setSelectedPayment({ id: payment.id, type: 'subscription' })}
+                      onClick={() => setConfirmAction({ id: payment.id, type: 'subscription', action: 'approve' })}
+                      className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                    >
+                      <Check className="w-4 h-4" />
+                      Approve
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => setConfirmAction({ id: payment.id, type: 'subscription', action: 'reject' })}
                       className="flex items-center gap-2"
                     >
-                      <Eye className="w-4 h-4" />
-                      View Screenshot
+                      <X className="w-4 h-4" />
+                      Reject
                     </Button>
-                  )}
-                  <Button
-                    onClick={() => setConfirmAction({ id: payment.id, type: 'subscription', action: 'approve' })}
-                    className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
-                  >
-                    <Check className="w-4 h-4" />
-                    Approve
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() => setConfirmAction({ id: payment.id, type: 'subscription', action: 'reject' })}
-                    className="flex items-center gap-2"
-                  >
-                    <X className="w-4 h-4" />
-                    Reject
-                  </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-          
-          {pendingSubscriptions.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center glass-card rounded-2xl">
-              <Check className="w-16 h-16 text-green-400 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">All caught up!</h3>
-              <p className="text-muted-foreground">No pending subscription payments</p>
-            </div>
-          )}
-        </div>
+            ))}
+            
+            {pendingSubscriptions.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-center glass-card rounded-2xl">
+                <Check className="w-16 h-16 text-green-400 mb-4" />
+                <h3 className="text-xl font-semibold mb-2">All caught up!</h3>
+                <p className="text-muted-foreground">No pending subscription payments</p>
+              </div>
+            )}
+          </div>
         )}
         
         {/* Job Payments Tab */}
         {activeTab === 'jobs' && (
-        <div className="space-y-4">
-          {pendingJobPayments.map((payment, index) => (
-            <div
-              key={payment.id}
-              className="p-6 glass-card rounded-2xl animate-slide-up"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-accent/20 flex items-center justify-center">
-                    <Briefcase className="w-7 h-7 text-accent" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">{payment.salonName || 'Unknown Business'}</h3>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <span>{payment.ownerName}</span>
-                      <span>•</span>
-                      <span>{payment.ownerPhone}</span>
+          <div className="space-y-4">
+            {pendingJobPayments.map((payment, index) => (
+              <div
+                key={payment.id}
+                className="p-6 glass-card rounded-2xl animate-slide-up"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-full bg-accent/20 flex items-center justify-center">
+                      <Briefcase className="w-7 h-7 text-accent" />
                     </div>
-                    <div className="flex items-center gap-3 text-sm mt-1">
-                      <span className="px-2 py-0.5 bg-accent/20 text-accent rounded-full text-xs font-medium">
-                        Job: {payment.jobTitle} - Rs.{payment.planPrice}
-                      </span>
+                    <div>
+                      <h3 className="font-semibold text-lg">{payment.salonName || 'Unknown Business'}</h3>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <span>{payment.ownerName}</span>
+                        <span>•</span>
+                        <span>{payment.ownerPhone}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm mt-1">
+                        <span className="px-2 py-0.5 bg-accent/20 text-accent rounded-full text-xs font-medium">
+                          Job: {payment.jobTitle} - Rs.{payment.planPrice}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        Submitted {formatTime(new Date(payment.createdAt))}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      Submitted {formatTime(new Date(payment.createdAt))}
-                    </p>
                   </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  {payment.screenshotUrl && (
+                  
+                  <div className="flex items-center gap-3">
+                    {payment.screenshotUrl && (
+                      <Button
+                        variant="outline"
+                        onClick={() => setSelectedPayment({ id: payment.id, type: 'job-payment' })}
+                        className="flex items-center gap-2"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View Screenshot
+                      </Button>
+                    )}
                     <Button
-                      variant="outline"
-                      onClick={() => setSelectedPayment({ id: payment.id, type: 'job-payment' })}
+                      onClick={() => setConfirmAction({ id: payment.id, type: 'job-payment', action: 'approve' })}
+                      className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                    >
+                      <Check className="w-4 h-4" />
+                      Approve
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => setConfirmAction({ id: payment.id, type: 'job-payment', action: 'reject' })}
                       className="flex items-center gap-2"
                     >
-                      <Eye className="w-4 h-4" />
-                      View Screenshot
+                      <X className="w-4 h-4" />
+                      Reject
                     </Button>
-                  )}
-                  <Button
-                    onClick={() => setConfirmAction({ id: payment.id, type: 'job-payment', action: 'approve' })}
-                    className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
-                  >
-                    <Check className="w-4 h-4" />
-                    Approve
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() => setConfirmAction({ id: payment.id, type: 'job-payment', action: 'reject' })}
-                    className="flex items-center gap-2"
-                  >
-                    <X className="w-4 h-4" />
-                    Reject
-                  </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-          
-          {pendingJobPayments.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center glass-card rounded-2xl">
-              <Check className="w-16 h-16 text-green-400 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">All caught up!</h3>
-              <p className="text-muted-foreground">No pending job posting payments</p>
-            </div>
-          )}
-        </div>
+            ))}
+            
+            {pendingJobPayments.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-center glass-card rounded-2xl">
+                <Check className="w-16 h-16 text-green-400 mb-4" />
+                <h3 className="text-xl font-semibold mb-2">All caught up!</h3>
+                <p className="text-muted-foreground">No pending job posting payments</p>
+              </div>
+            )}
+          </div>
         )}
 
       </main>
@@ -306,7 +306,6 @@ export function AdminPayments() {
             </div>
             <div className="p-6">
               {(() => {
-                // Get screenshot URL from cloud sources
                 let screenshotUrl = null
                 
                 if (selectedPayment.type === 'subscription') {
