@@ -5,13 +5,12 @@ import { Check, X, Eye, Image as ImageIcon, Clock, User, AlertCircle, Crown, Ref
 import { Button } from '@/components/ui/button'
 import { useAdmin } from '@/lib/admin-context'
 import { AdminSidebar } from './admin-sidebar'
-import { JOB_SEEKER_PLANS } from '@/lib/data-store'
 import { useAdminSync } from '@/lib/hooks/use-realtime-sync'
 
 export function AdminPayments() {
-  const { pendingPayments: localPendingPayments, users, approvePayment: localApprovePayment, rejectPayment: localRejectPayment } = useAdmin()
+  const { users } = useAdmin()
   
-  // Real-time sync from cloud storage (cross-device)
+  // Real-time sync from cloud storage
   const { 
     pendingSubscriptions, 
     pendingJobPayments,
@@ -24,11 +23,11 @@ export function AdminPayments() {
     rejectSubscription,
     approveJobPayment,
     rejectJobPayment,
-  } = useAdminSync(2000) // Poll every 2 seconds
+  } = useAdminSync(2000)
   
-  const [selectedPayment, setSelectedPayment] = useState<{ id: string; type: 'subscription' | 'job-payment' | 'local' } | null>(null)
-  const [confirmAction, setConfirmAction] = useState<{ id: string; type: 'subscription' | 'job-payment' | 'local'; action: 'approve' | 'reject' } | null>(null)
-  const [activeTab, setActiveTab] = useState<'subscriptions' | 'jobs' | 'local'>('subscriptions')
+  const [selectedPayment, setSelectedPayment] = useState<{ id: string; type: 'subscription' | 'job-payment' } | null>(null)
+  const [confirmAction, setConfirmAction] = useState<{ id: string; type: 'subscription' | 'job-payment'; action: 'approve' | 'reject' } | null>(null)
+  const [activeTab, setActiveTab] = useState<'subscriptions' | 'jobs'>('subscriptions')
 
   const formatTime = (date: Date) => {
     const hours = Math.floor((Date.now() - new Date(date).getTime()) / (1000 * 60 * 60))
@@ -52,13 +51,6 @@ export function AdminPayments() {
         await approveJobPayment(confirmAction.id)
       } else {
         await rejectJobPayment(confirmAction.id)
-      }
-    } else {
-      // Local fallback
-      if (confirmAction.action === 'approve') {
-        localApprovePayment(confirmAction.id)
-      } else {
-        localRejectPayment(confirmAction.id)
       }
     }
     
@@ -136,21 +128,6 @@ export function AdminPayments() {
               </span>
             )}
           </button>
-          <button
-            onClick={() => setActiveTab('local')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors relative ${
-              activeTab === 'local'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
-            }`}
-          >
-            Local Queue
-            {localPendingPayments.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-accent-foreground text-xs rounded-full flex items-center justify-center">
-                {localPendingPayments.length}
-              </span>
-            )}
-          </button>
         </div>
         
         {/* Pending Count */}
@@ -159,8 +136,8 @@ export function AdminPayments() {
             <Clock className="w-6 h-6 text-accent" />
           </div>
           <div>
-            <p className="text-2xl font-bold">{totalPending + localPendingPayments.length}</p>
-            <p className="text-sm text-muted-foreground">Total Pending Approvals (Cloud: {totalPending}, Local: {localPendingPayments.length})</p>
+            <p className="text-2xl font-bold">{totalPending}</p>
+            <p className="text-sm text-muted-foreground">Total Pending Approvals</p>
           </div>
         </div>
         
@@ -311,69 +288,7 @@ export function AdminPayments() {
           )}
         </div>
         )}
-        
-        {/* Local Queue Tab (fallback) */}
-        {activeTab === 'local' && (
-        <div className="space-y-4">
-          {localPendingPayments.map((payment, index) => {
-            const user = users.find(u => u.id === payment.userId)
-            
-            return (
-              <div
-                key={payment.id}
-                className="p-6 glass-card rounded-2xl animate-slide-up"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
-                      <User className="w-7 h-7 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg">{(payment as unknown as Record<string, unknown>).userName as string || user?.email || 'Unknown User'}</h3>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <span>{(payment as unknown as Record<string, unknown>).userPhone as string || user?.phone || 'No phone'}</span>
-                        <span>•</span>
-                        <span className="capitalize">{((payment as unknown as Record<string, unknown>).userRole as string)?.replace('_', ' ') || user?.role?.replace('_', ' ') || 'Job Seeker'}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        Submitted {formatTime(payment.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <Button
-                      onClick={() => setConfirmAction({ id: payment.id, type: 'local', action: 'approve' })}
-                      className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
-                    >
-                      <Check className="w-4 h-4" />
-                      Approve
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={() => setConfirmAction({ id: payment.id, type: 'local', action: 'reject' })}
-                      className="flex items-center gap-2"
-                    >
-                      <X className="w-4 h-4" />
-                      Reject
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-          
-          {localPendingPayments.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center glass-card rounded-2xl">
-              <Check className="w-16 h-16 text-green-400 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">All caught up!</h3>
-              <p className="text-muted-foreground">No local pending payments</p>
-            </div>
-          )}
-        </div>
-        )}
+
       </main>
       
       {/* Screenshot Modal */}
@@ -391,7 +306,7 @@ export function AdminPayments() {
             </div>
             <div className="p-6">
               {(() => {
-                // Check all sources for the payment based on type
+                // Get screenshot URL from cloud sources
                 let screenshotUrl = null
                 
                 if (selectedPayment.type === 'subscription') {
@@ -400,10 +315,6 @@ export function AdminPayments() {
                 } else if (selectedPayment.type === 'job-payment') {
                   const cloudJob = pendingJobPayments.find(p => p.id === selectedPayment.id)
                   screenshotUrl = cloudJob?.screenshotUrl
-                } else {
-                  const localPayment = localPendingPayments.find(p => p.id === selectedPayment.id)
-                  screenshotUrl = localPayment?.screenshotUrl || 
-                                  (localPayment as unknown as Record<string, unknown>)?.paymentScreenshot as string
                 }
                 
                 if (screenshotUrl) {

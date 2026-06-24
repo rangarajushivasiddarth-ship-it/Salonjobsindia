@@ -10,7 +10,6 @@ import {
   SyncService,
   NotificationService 
 } from './data-service'
-import { JOB_SEEKER_PLANS, approveSubscription as approveSubscriptionInStore, rejectSubscription as rejectSubscriptionInStore, getAllSubscriptions } from './data-store'
 
 interface AdminState {
   isAuthenticated: boolean
@@ -90,10 +89,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       const pendingJobs = JobService.getPendingApproval()
       const allJobs = JobService.getLiveJobs()
       
-      // Also get from data-store for customer app subscriptions
-      const allFromDataStore = getAllSubscriptions()
-      const pendingFromDataStore = allFromDataStore.filter(s => s.status === 'pending')
-      
       // Fetch pending payments from Supabase payments table
       let supabasePending: Subscription[] = []
       try {
@@ -122,14 +117,11 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         console.error('[v0] Error fetching Supabase payments:', error)
       }
       
-      // Merge all pending payments (Supabase payments + data-store subscriptions)
-      const mergedPending = [...supabasePending, ...pendingFromDataStore]
-      
-      console.log('[v0] Merged pending payments:', mergedPending.length)
+      console.log('[v0] Fetched pending payments from Supabase:', supabasePending.length)
       
       setState(prev => ({
         ...prev,
-        pendingPayments: mergedPending as unknown as Subscription[],
+        pendingPayments: supabasePending as unknown as Subscription[],
         jobs: [...pendingJobs, ...allJobs] as unknown as Job[],
         users: usersFromService as unknown as User[],
         stats: {
@@ -140,8 +132,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
           activeSubscriptions: dashboardStats.activeSubscriptions,
           totalJobs: dashboardStats.totalJobs,
           activeJobs: dashboardStats.liveJobs || 0,
-          pendingApprovals: mergedPending.length + (dashboardStats.pendingJobApprovals || 0),
-          pendingSubscriptions: mergedPending.length,
+          pendingApprovals: supabasePending.length + (dashboardStats.pendingJobApprovals || 0),
+          pendingSubscriptions: supabasePending.length,
         },
         lastSyncTime: new Date(),
       }))
