@@ -79,43 +79,75 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   })
 
   // Load data from shared data service
-  const loadData = useCallback(() => {
-    // Get from data-service
-    const dashboardStats = AdminService.getDashboardStats()
-    const pendingPaymentsFromService = SubscriptionService.getPending()
-    const usersFromService = UserService.getAll()
-    const pendingJobs = JobService.getPendingApproval()
-    const allJobs = JobService.getLiveJobs()
-    
-    // Also get from data-store for customer app subscriptions
-    const allFromDataStore = getAllSubscriptions()
-    const pendingFromDataStore = allFromDataStore.filter(s => s.status === 'pending')
-    
-    
-    
-    // Merge pending subscriptions (use data-store as primary since that's what customer app uses)
-    const mergedPending = pendingFromDataStore.length > 0 
-      ? pendingFromDataStore 
-      : pendingPaymentsFromService
-    
-    setState(prev => ({
-      ...prev,
-      pendingPayments: mergedPending as unknown as Subscription[],
-      jobs: [...pendingJobs, ...allJobs] as unknown as Job[],
-      users: usersFromService as unknown as User[],
-      stats: {
-        ...prev.stats,
-        totalUsers: dashboardStats.totalUsers,
-        totalJobSeekers: dashboardStats.jobSeekers || 0,
-        totalSalonOwners: dashboardStats.salonOwners || 0,
-        activeSubscriptions: dashboardStats.activeSubscriptions,
-        totalJobs: dashboardStats.totalJobs,
-        activeJobs: dashboardStats.liveJobs || 0,
-        pendingApprovals: mergedPending.length + (dashboardStats.pendingJobApprovals || 0),
-        pendingSubscriptions: mergedPending.length,
-      },
-      lastSyncTime: new Date(),
-    }))
+  const loadData = useCallback(async () => {
+    try {
+      console.log('[v0] Loading admin data from Supabase...')
+      
+      // Get from data-service
+      const dashboardStats = AdminService.getDashboardStats()
+      const pendingPaymentsFromService = SubscriptionService.getPending()
+      const usersFromService = UserService.getAll()
+      const pendingJobs = JobService.getPendingApproval()
+      const allJobs = JobService.getLiveJobs()
+      
+      // Also get from data-store for customer app subscriptions
+      const allFromDataStore = getAllSubscriptions()
+      const pendingFromDataStore = allFromDataStore.filter(s => s.status === 'pending')
+      
+      // Fetch pending payments from Supabase payments table
+      let supabasePending: Subscription[] = []
+      try {
+        const response = await fetch('/api/payments?status=pending', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        })
+        
+        if (response.ok) {
+          const paymentData = await response.json()
+          console.log('[v0] Fetched payments from API:', paymentData)
+          
+          // Convert Supabase payment records to Subscription format
+          supabasePending = (paymentData.data || []).map((payment: any) => ({
+            id: payment.id,
+            userId: payment.user_id,
+            amount: payment.amount,
+            type: payment.type || 'contact_pack',
+            status: payment.status,
+            screenshotUrl: payment.screenshot_url,
+            submittedAt: payment.submitted_at,
+            credits: payment.contact_credits,
+          }))
+        }
+      } catch (error) {
+        console.error('[v0] Error fetching Supabase payments:', error)
+      }
+      
+      // Merge all pending payments (Supabase payments + data-store subscriptions)
+      const mergedPending = [...supabasePending, ...pendingFromDataStore]
+      
+      console.log('[v0] Merged pending payments:', mergedPending.length)
+      
+      setState(prev => ({
+        ...prev,
+        pendingPayments: mergedPending as unknown as Subscription[],
+        jobs: [...pendingJobs, ...allJobs] as unknown as Job[],
+        users: usersFromService as unknown as User[],
+        stats: {
+          ...prev.stats,
+          totalUsers: dashboardStats.totalUsers,
+          totalJobSeekers: dashboardStats.jobSeekers || 0,
+          totalSalonOwners: dashboardStats.salonOwners || 0,
+          activeSubscriptions: dashboardStats.activeSubscriptions,
+          totalJobs: dashboardStats.totalJobs,
+          activeJobs: dashboardStats.liveJobs || 0,
+          pendingApprovals: mergedPending.length + (dashboardStats.pendingJobApprovals || 0),
+          pendingSubscriptions: mergedPending.length,
+        },
+        lastSyncTime: new Date(),
+      }))
+    } catch (error) {
+      console.error('[v0] Error loading admin data:', error)
+    }
   }, [])
 
   // Check for existing admin session
