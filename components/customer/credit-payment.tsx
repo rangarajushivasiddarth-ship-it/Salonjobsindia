@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { ArrowLeft, Upload, Check, Clock, Crown, Phone, AlertCircle, BadgeCheck, Shield, Loader } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/lib/app-context'
-import { savePayment, getSalonProfileByOwnerId } from '@/lib/data-store'
 import type { Payment, SalonOwnerPlanType, PaymentType } from '@/lib/types'
 
 interface SelectedPack {
@@ -104,8 +103,13 @@ export function CreditPayment() {
   }
 
   const handleSubmit = async () => {
-    if (!user?.id || !selectedPack) {
-      setUploadError('Missing required information')
+    if (!user?.id) {
+      setUploadError('User not authenticated. Please log in and try again.')
+      return
+    }
+
+    if (!selectedPack) {
+      setUploadError('No payment package selected. Please go back and select a package.')
       return
     }
 
@@ -113,43 +117,53 @@ export function CreditPayment() {
     setUploadError(null)
 
     try {
-      console.log('[v0] Submitting payment:', { userId: user.id, amount: selectedPack.price, type: isVerifiedBadge ? 'verified_badge' : 'contact_pack', hasScreenshot: !!screenshotPreview })
+      console.log('[v0] CreditPayment - Submitting payment:', { 
+        userId: user.id, 
+        amount: selectedPack.price, 
+        type: isVerifiedBadge ? 'verified_badge' : 'contact_pack', 
+        hasScreenshot: !!screenshotPreview 
+      })
       
+      const paymentPayload = {
+        userId: user.id,
+        amount: selectedPack.price,
+        screenshotUrl: screenshotPreview || null,
+        type: isVerifiedBadge ? 'verified_badge' : 'contact_pack',
+        planId: selectedPack.id,
+        credits: selectedPack.credits || 0,
+        validityDays: selectedPack.validityDays || 365,
+        durationMonths: selectedPack.durationMonths,
+      }
+
+      console.log('[v0] CreditPayment - Payload:', { ...paymentPayload, screenshotUrl: paymentPayload.screenshotUrl ? 'present' : 'absent' })
+
       // Submit payment to backend API
       const response = await fetch('/api/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          amount: selectedPack.price,
-          screenshotUrl: screenshotPreview || null,
-          type: isVerifiedBadge ? 'verified_badge' : 'contact_pack',
-          planId: selectedPack.id,
-          credits: selectedPack.credits || 0,
-          validityDays: selectedPack.validityDays || 365,
-          durationMonths: selectedPack.durationMonths,
-        }),
+        body: JSON.stringify(paymentPayload),
       })
 
-      const data = await response.json()
-      console.log('[v0] Payment response:', { status: response.status, data })
+      console.log('[v0] CreditPayment - Response status:', response.status)
 
       if (!response.ok) {
-        console.error('[v0] Payment submission failed:', { status: response.status, data })
-        setUploadError(data.error || `Payment failed: ${response.statusText}`)
+        const data = await response.json()
+        console.error('[v0] CreditPayment - Payment submission failed:', { status: response.status, error: data })
+        setUploadError(data.error || data.details || `Payment submission failed (${response.status})`)
         return
       }
 
-      console.log('[v0] Payment submitted successfully:', data)
+      const data = await response.json()
+      console.log('[v0] CreditPayment - Payment submitted successfully:', data)
       
       // Clear selected pack from localStorage
       localStorage.removeItem('salonjobsindia_selected_credit_pack')
       
       setIsSubmitted(true)
     } catch (error) {
-      console.error('[v0] Error submitting payment:', error)
-      const errorMsg = error instanceof Error ? error.message : 'Error submitting payment. Please try again.'
-      setUploadError(`Failed to submit payment: ${errorMsg}`)
+      const errorMsg = error instanceof Error ? error.message : 'Network error. Please check your connection and try again.'
+      console.error('[v0] CreditPayment - Error submitting payment:', errorMsg, error)
+      setUploadError(errorMsg)
     } finally {
       setIsSubmitting(false)
     }
@@ -379,7 +393,7 @@ export function CreditPayment() {
       <div className="relative z-10 p-4 glass">
         <Button
           onClick={handleSubmit}
-          disabled={!screenshotFile || isSubmitting}
+          disabled={isSubmitting}
           className="w-full h-14 bg-primary hover:bg-primary/90 gold-glow"
         >
           {isSubmitting ? (
